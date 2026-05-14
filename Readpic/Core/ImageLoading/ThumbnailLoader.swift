@@ -1,0 +1,172 @@
+import AppKit
+import CoreGraphics
+import Foundation
+import ImageIO
+
+/// Global low-memory flag — checked by ImageDecoder and ThumbnailLoader.
+/// Only written from @MainActor, read from background queues. Brief stale reads are harmless.
+nonisolated(unsafe) var isLowMemoryMode = false
+
+/// Composite key for thumbnail cache using multiple file identity factors.
+struct ThumbnailCacheKey: Hashable, Sendable {
+    let url: URL
+    let fileSize: Int64
+    let modificationDate: TimeInterval
+
+    init(url: URL, fileSize: Int64, modificationDate: TimeInterval) {
+        self.url = url
+        self.fileSize = fileSize
+        self.modificationDate = modificationDate
+    }
+
+    init(url: URL) {
+        let values = try? url.resourceValues(forKeys: [.fileSizeKey, .contentModificationDateKey])
+        self.url = url
+        self.fileSize = Int64(values?.fileSize ?? 0)
+        self.modificationDate = values?.contentModificationDate?.timeIntervalSinceReferenceDate ?? 0
+    }
+}
+
+@MainActor
+final class ThumbnailCache {
+    static let shared = ThumbnailCache()
+
+    private var cache: [ThumbnailCacheKey: CGImage] = [:]
+    private var maxCount: Int = 200
+
+    private init() {}
+
+    func get(key: ThumbnailCacheKey) -> CGImage? {
+        cache[key]
+    }
+
+    func set(_ image: CGImage, for key: ThumbnailCacheKey) {
+        cache[key] = image
+        if cache.count > maxCount {
+            evictLRU()
+        }
+    }
+
+    func remove(_ url: URL) {
+        let key = ThumbnailCacheKey(url: url)
+        cache.removeValue(forKey: key)
+    }
+
+    func clear() {
+        cache.removeAll()
+    }
+
+    func halveCapacity() {
+        maxCount = max(maxCount / 2, 50)
+        if cache.count > maxCount {
+            evictLRU()
+        }
+    }
+
+    func restoreCapacity() {
+        maxCount = 200
+    }
+
+    private func evictLRU() {
+        while cache.count > maxCount, let key = cache.keys.first {
+            cache.removeValue(forKey: key)
+        }
+    }
+}
+
+final class ThumbnailQueueManager: @unchecked Sendable {
+    static let shared = ThumbnailQueueManager()
+
+    private let visibleQueue: OperationQueue
+    private let backgroundQueue: OperationQueue
+    private let preloadQueue: OperationQueue
+
+    private init() {
+        visibleQueue = OperationQueue()
+        visibleQueue.maxConcurrentOperationCount = 4
+        visibleQueue.qualityOfService = .userInitiated
+
+        backgroundQueue = OperationQueue()
+        backgroundQueue.maxConcurrentOperationCount = 2
+        backgroundQueue.qualityOfService = .utility
+
+        preloadQueue = OperationQueue()
+        preloadQueue.maxConcurrentOperationCount = 2
+        preloadQueue.qualityOfService = .userInitiated
+    }
+
+    enum Priority {
+        case visible
+        case background
+        case preload
+    }
+
+    func schedule(url: URL, priority: Priority, completion: @escaping @Sendable (CGImage?) -> Void) {
+        let op = BlockOperation { [weak self] in
+            guard self != nil else { return }
+
+            let cacheKey = ThumbnailCacheKey(url: url)
+
+            // Check cache synchronously (main actor check is done in caller)
+            // Since this runs on background, we use a direct approach
+            let maxSize: CGFloat = isLowMemoryMode ? 128 : 160
+            guard let thumbnail = ThumbnailLoader.generateThumbnail(url: url, maxSize: maxSize) else {
+                DispatchQueue.main.async { completion(nil) }
+                return
+            }
+            DispatchQueue.main.async {
+                ThumbnailCache.shared.set(thumbnail, for: cacheKey)
+                completion(thumbnail)
+            }
+        }
+
+        switch priority {
+        case .visible: visibleQueue.addOperation(op)
+        case .preload: preloadQueue.addOperation(op)
+        case .background: backgroundQueue.addOperation(op)
+        }
+    }
+
+    func cancelAll() {
+        visibleQueue.cancelAllOperations()
+        backgroundQueue.cancelAllOperations()
+        preloadQueue.cancelAllOperations()
+    }
+
+    func cancelBackground() {
+        backgroundQueue.cancelAllOperations()
+        preloadQueue.cancelAllOperations()
+    }
+}
+
+enum ThumbnailLoader {
+    static let maxSize: CGFloat = 160
+
+    static func load(url: URL, priority: ThumbnailQueueManager.Priority = .visible) async -> CGImage? {
+        let cacheKey = ThumbnailCacheKey(url: url)
+        if let cached = await ThumbnailCache.shared.get(key: cacheKey) {
+            return cached
+        }
+
+        return await withCheckedContinuation { continuation in
+            ThumbnailQueueManager.shared.schedule(url: url, priority: priority) { image in
+                continuation.resume(returning: image)
+            }
+        }
+    }
+
+    static func generateThumbnail(url: URL, maxSize: CGFloat = 160) -> CGImage? {
+        guard let source = CGImageSourceCreateWithURL(url as CFURL, [
+            kCGImageSourceShouldCache: false
+        ] as CFDictionary) else { return nil }
+
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceThumbnailMaxPixelSize: maxSize,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceShouldCacheImmediately: false,
+        ]
+
+        return CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary)
+    }
+}

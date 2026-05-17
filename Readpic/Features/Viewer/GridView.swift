@@ -15,13 +15,25 @@ struct GridView: View {
     ]
 
     var body: some View {
-        ScrollView {
-            LazyVGrid(columns: columns, spacing: 12) {
-                ForEach(files.indices, id: \.self) { index in
-                    gridCell(for: index)
+        ScrollViewReader { proxy in
+            ScrollView {
+                LazyVGrid(columns: columns, spacing: 12) {
+                    ForEach(files.indices, id: \.self) { index in
+                        gridCell(for: index)
+                            .id(index)
+                    }
                 }
+                .padding(16)
             }
-            .padding(16)
+            .onAppear {
+                scrollToCurrent(proxy: proxy)
+            }
+            .onChange(of: selectedIndex) { _, _ in
+                scrollToCurrent(proxy: proxy)
+            }
+            .onChange(of: currentIndex) { _, _ in
+                scrollToCurrent(proxy: proxy)
+            }
         }
         .task(id: files.map(\.url)) {
             thumbnails = [:]
@@ -40,34 +52,46 @@ struct GridView: View {
         }
     }
 
+    private func scrollToCurrent(proxy: ScrollViewProxy) {
+        let target = selectedIndex ?? currentIndex
+        guard files.indices.contains(target) else { return }
+        withAnimation(.easeOut(duration: 0.2)) {
+            proxy.scrollTo(target, anchor: .center)
+        }
+    }
+
     @ViewBuilder
     private func gridCell(for index: Int) -> some View {
         let file = files[index]
         let isSelected = selectedIndex == index || (!files.indices.contains(selectedIndex ?? -1) && index == currentIndex)
 
-        Button {
-            open(index)
-        } label: {
-            VStack(spacing: 6) {
-                thumbnailView(for: file)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 120)
-                    .background(Color(nsColor: .darkGray).opacity(0.3))
-                    .cornerRadius(6)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 6)
-                            .stroke(isSelected ? Color.accentColor : Color.clear, lineWidth: 2)
-                    )
+        VStack(spacing: 6) {
+            thumbnailView(for: file)
+                .frame(maxWidth: .infinity)
+                .frame(height: 120)
+                .background(Color(nsColor: .darkGray).opacity(0.3))
+                .cornerRadius(6)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 6)
+                        .stroke(isSelected ? Color.accentColor : Color.clear, lineWidth: 2)
+                )
 
-                Text(file.name)
-                    .font(.system(size: 11))
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
+            Text(file.name)
+                .font(.system(size: 11))
+                .lineLimit(1)
+                .truncationMode(.middle)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .buttonStyle(.plain)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            select(index)
+        }
+        .simultaneousGesture(
+            TapGesture(count: 2).onEnded {
+                open(index)
+            }
+        )
         .task {
             await loadThumbnail(for: file.url)
         }

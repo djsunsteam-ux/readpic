@@ -131,18 +131,6 @@ final class AppSettings {
         rememberLastFolder = UserDefaults.standard.object(forKey: Self.rememberFolderKey) as? Bool ?? false
     }
 
-    static func readScrollBehavior() -> ScrollBehavior {
-        Self.read(key: Self.scrollBehaviorKey, fallback: .zoom)
-    }
-
-    static func readDefaultZoomMode() -> DefaultZoomMode {
-        Self.read(key: Self.defaultZoomModeKey, fallback: .fitWindow)
-    }
-
-    static func readShowStatusBar() -> Bool {
-        UserDefaults.standard.object(forKey: Self.showStatusBarKey) as? Bool ?? true
-    }
-
     private static func read<T: RawRepresentable>(key: String, fallback: T) -> T where T.RawValue == String {
         UserDefaults.standard.string(forKey: key).flatMap { T(rawValue: $0) } ?? fallback
     }

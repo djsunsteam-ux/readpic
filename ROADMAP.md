@@ -227,6 +227,17 @@
 - [ ] 幻灯片。
 - [ ] 快捷键自定义。
 - [ ] 最近文件夹管理。
+- [ ] **菜单栏重构**：按 macOS 惯例重组菜单栏结构，确保所有功能入口在菜单中可用。
+  - File 菜单：Open Image…、Open Folder…、Close Window、Move to Trash、Reveal in Finder、Open Externally
+  - Edit 菜单：Copy Image、Copy File、Copy File Path
+  - View 菜单：Grid View、Fit Window / Fit Width / Actual Size、Zoom In / Out / Reset、Thumbnail Strip、Info Panel、Sort By、Show Status Bar、Fullscreen
+  - Image 菜单：Rotate Left / Right、Flip Horizontal
+  - Help 菜单：Keyboard Shortcuts
+- [ ] **Phase 2+ 菜单扩展**：后续新增功能模块均需同时在菜单栏中提供入口，保持「功能-菜单」一一映射。
+  - File：Export / Save As…、Batch Convert…、Batch Rename…、Open Recent ▸
+  - Edit：Select All、Copy Metadata
+  - View：Filter By ▸ (Format / Date)、Search Files…、Start Slideshow、Metadata Panel
+  - Image：Crop…、Resize…、Save Changes…、Optimize File Size…、Rate ▸、Favorite / Tag…
 - [ ] 本地化（Localizable.xcstrings，简体中文 + English）。
 
 ### 5.5 基础工程

@@ -52,7 +52,18 @@ public struct MetadataReader: Sendable {
     public func read(url: URL, pixelSize: CGSize) -> ImageMetadata {
         let resourceValues = try? url.resourceValues(forKeys: [.fileSizeKey, .creationDateKey, .contentModificationDateKey])
 
-        let exif = readEXIF(url: url)
+        let source = CGImageSourceCreateWithURL(url as CFURL, [kCGImageSourceShouldCache: false] as CFDictionary)
+        let exif = readEXIF(source: source)
+
+        let actualPixelSize: CGSize
+        if pixelSize == .zero, let source,
+           let props = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any] {
+            let w = (props[kCGImagePropertyPixelWidth] as? CGFloat) ?? 0
+            let h = (props[kCGImagePropertyPixelHeight] as? CGFloat) ?? 0
+            actualPixelSize = CGSize(width: w, height: h)
+        } else {
+            actualPixelSize = pixelSize
+        }
 
         return ImageMetadata(
             name: url.lastPathComponent,
@@ -60,10 +71,10 @@ public struct MetadataReader: Sendable {
             fileSize: Int64(resourceValues?.fileSize ?? 0),
             createdAt: resourceValues?.creationDate,
             modifiedAt: resourceValues?.contentModificationDate,
-            pixelSize: pixelSize,
+            pixelSize: actualPixelSize,
             format: url.pathExtension.uppercased(),
-            colorSpace: colorSpaceName(url: url),
-            bitDepth: readBitDepth(url: url),
+            colorSpace: colorSpaceName(source: source),
+            bitDepth: readBitDepth(source: source),
             dateTaken: exif.dateTaken,
             camera: exif.camera,
             lens: exif.lens,
@@ -73,8 +84,8 @@ public struct MetadataReader: Sendable {
         )
     }
 
-    private func readEXIF(url: URL) -> (dateTaken: Date?, camera: String?, lens: String?, iso: Int?, aperture: Double?, shutterSpeed: Double?) {
-        guard let source = CGImageSourceCreateWithURL(url as CFURL, [kCGImageSourceShouldCache: false] as CFDictionary),
+    private func readEXIF(source: CGImageSource?) -> (dateTaken: Date?, camera: String?, lens: String?, iso: Int?, aperture: Double?, shutterSpeed: Double?) {
+        guard let source,
               let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any] else {
             return (nil, nil, nil, nil, nil, nil)
         }
@@ -120,10 +131,8 @@ public struct MetadataReader: Sendable {
         return (dateTaken, camera, lens, iso, aperture, shutterSpeed)
     }
 
-    private func colorSpaceName(url: URL) -> String {
-        guard let source = CGImageSourceCreateWithURL(url as CFURL, [
-            kCGImageSourceShouldCache: false
-        ] as CFDictionary),
+    private func colorSpaceName(source: CGImageSource?) -> String {
+        guard let source,
               let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any] else {
             return "Unknown"
         }
@@ -139,10 +148,8 @@ public struct MetadataReader: Sendable {
         return "Unknown"
     }
 
-    private func readBitDepth(url: URL) -> Int? {
-        guard let source = CGImageSourceCreateWithURL(url as CFURL, [
-            kCGImageSourceShouldCache: false
-        ] as CFDictionary),
+    private func readBitDepth(source: CGImageSource?) -> Int? {
+        guard let source,
               let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any] else {
             return nil
         }

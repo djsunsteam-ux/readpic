@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git init *)",
+      "Bash(xcodebuild *)",
+      "Bash(swift *)",
+      "Bash(command -v xcodegen)",
+      "Bash(command -v tuist)",
+      "Bash(git *)",
+      "Bash(open *)",
+      "Bash(python3 *)",
+      "Bash(grep -A8 \"A00000000000000000000025 /\\\\* Core \\\\*/$\" /Users/yh/workspace/Readpic.xcodeproj/project.pbxproj)",
+      "Bash(grep -A8 \"A00000000000000000000027 /\\\\* Features \\\\*/$\" /Users/yh/workspace/Readpic.xcodeproj/project.pbxproj)",
+      "Bash(awk *)",
+      "Bash(grep -rn \"rememberLastFolder\\\\|lastFolderURL\\\\|lastFolder\" --include=\"*.swift\" *.swift Core/ Services/ ViewModels/ Features/ App/)",
+      "Bash(grep -rn \"showOpenPanel\\\\|showOpenFolderPanel\" --include=\"*.swift\" *.swift Core/ Services/ ViewModels/ Features/ App/)",
+      "Bash(xxd /Users/yh/workspace/Readpic/Features/Viewer/ViewerView.swift)"
+    ]
+  }
+}

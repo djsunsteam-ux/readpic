@@ -34,6 +34,7 @@ final class ViewerModel {
     var isInfoPanelVisible = false
     var showThumbnailStrip = true
     var isGridView = false
+    var selectedGridIndex: Int?
     var showShortcutsHelp = false
     var currentFrameIndex = 0
     var isAnimating = false
@@ -51,6 +52,9 @@ final class ViewerModel {
     var cursorNearBottom = false
     var rotation: Int = 0
     var isFlippedHorizontally = false
+    var needsCanvasFocus = false
+
+    weak var window: NSWindow?
 
     private let scanner = FolderScanner()
     private let decoder = ImageDecoder()
@@ -63,6 +67,15 @@ final class ViewerModel {
     private var loadTask: Task<Void, Never>?
     private var toastTask: Task<Void, Never>?
     private var animationTask: Task<Void, Never>?
+
+    /// Serializes decodes — only one runs at a time regardless of navigation speed.
+    /// This bounds concurrent memory to a single decode's buffer.
+    private let decodeQueue: OperationQueue = {
+        let q = OperationQueue()
+        q.maxConcurrentOperationCount = 1
+        q.qualityOfService = .userInitiated
+        return q
+    }()
 
     let settings = AppSettings()
     private var fullscreenObserver: Any?
@@ -227,26 +240,20 @@ final class ViewerModel {
         errorMessage = nil
 
         currentProxyMaxPixelSize = 2048
-        let mode = settings.sortMode
         loadTask = Task {
             do {
-                async let scannedFiles = scanner.scanContainingFolder(for: url, sortMode: mode)
-                async let decoded = Task.detached(priority: .userInitiated) {
+                let image = try await Task.detached(priority: .userInitiated) {
                     try self.decoder.decode(url: url)
                 }.value
 
-                let items = try await scannedFiles
-                let image = try await decoded
-
                 guard !Task.isCancelled else { return }
-                files = items.isEmpty ? [FileItem(url: url)] : items
-                currentIndex = files.firstIndex { $0.url == url } ?? 0
+                files = [FileItem(url: url)]
+                currentIndex = 0
                 ImageCache.shared.set(image)
                 decodedImage = image
                 metadata = metadataReader.read(url: image.url, pixelSize: image.pixelSize)
                 zoomMode = defaultZoomModeFromSettings
                 isLoading = false
-                preloadAdjacent()
             } catch {
                 guard !Task.isCancelled else { return }
                 files = [FileItem(url: url)]
@@ -319,6 +326,7 @@ final class ViewerModel {
         guard files.count > 1 else { return }
         currentIndex = min(currentIndex + 1, files.count - 1)
         loadCurrentImage()
+        needsCanvasFocus = true
     }
 
     private func startAnimation() {
@@ -359,6 +367,7 @@ final class ViewerModel {
         guard files.indices.contains(index), index != currentIndex else { return }
         currentIndex = index
         loadCurrentImage()
+        needsCanvasFocus = true
     }
 
     func toggleZoomMode() {
@@ -367,14 +376,17 @@ final class ViewerModel {
 
     func setFitMode() {
         zoomMode = .fitWindow
+        zoomAction = .resetZoom
     }
 
     func setFitWidthMode() {
         zoomMode = .fitWidth
+        zoomAction = .resetZoom
     }
 
     func setActualSizeMode() {
         zoomMode = .actualSize
+        zoomAction = .resetZoom
     }
 
     func setSortMode(_ mode: SortMode) {
@@ -413,7 +425,7 @@ final class ViewerModel {
     }
 
     func toggleFullScreen() {
-        NSApp.keyWindow?.toggleFullScreen(nil)
+        (window ?? NSApp.keyWindow)?.toggleFullScreen(nil)
     }
 
     func setDragTargeted(_ isTargeted: Bool) {
@@ -425,10 +437,9 @@ final class ViewerModel {
     }
 
     func requestHigherResolution() {
-        guard let currentFile, let currentImage = decodedImage else { return }
-        let currentProxy = max(currentImage.pixelSize.width, currentImage.pixelSize.height)
-        // In low memory mode, cap at a moderate resolution to avoid OOM
-        let higherRes = isLowMemoryMode ? min(currentProxy * 1.5, 4096) : currentProxy * 2
+        guard let currentFile else { return }
+        // Double the proxy resolution each level — ImageIO caps at the image's native size.
+        let higherRes = currentProxyMaxPixelSize * 2
 
         Task.detached(priority: .userInitiated) { [weak self] in
             guard let self, let image = try? self.decoder.decode(url: currentFile.url, maxPixelSize: higherRes) else { return }
@@ -451,8 +462,10 @@ final class ViewerModel {
     func toggleGridView() {
         isGridView.toggle()
         if isGridView {
+            selectedGridIndex = nil
             stopAnimation()
         } else {
+            selectedGridIndex = nil
             startAnimation()
         }
     }
@@ -461,15 +474,66 @@ final class ViewerModel {
         showShortcutsHelp.toggle()
     }
 
+    func selectInGrid(at index: Int) {
+        guard files.indices.contains(index) else { return }
+        selectedGridIndex = index
+        let file = files[index]
+        Task.detached(priority: .userInitiated) { [weak self] in
+            guard let self else { return }
+            let meta = self.metadataReader.read(url: file.url, pixelSize: .zero)
+            await MainActor.run {
+                guard self.selectedGridIndex == index else { return }
+                self.metadata = meta
+            }
+        }
+    }
+
+    func gridSelectPrevious() {
+        let idx = selectedGridIndex ?? currentIndex
+        guard idx > 0 else { return }
+        selectInGrid(at: idx - 1)
+    }
+
+    func gridSelectNext() {
+        let idx = selectedGridIndex ?? currentIndex
+        guard idx < files.count - 1 else { return }
+        selectInGrid(at: idx + 1)
+    }
+
+    func gridSelectUp(columns: Int) {
+        let idx = selectedGridIndex ?? currentIndex
+        let target = idx - columns
+        if files.indices.contains(target) {
+            selectInGrid(at: target)
+        }
+    }
+
+    func gridSelectDown(columns: Int) {
+        let idx = selectedGridIndex ?? currentIndex
+        let target = idx + columns
+        if files.indices.contains(target) {
+            selectInGrid(at: target)
+        }
+    }
+
     func openFromGrid(at index: Int) {
         guard files.indices.contains(index) else { return }
+        selectedGridIndex = nil
         isGridView = false
         currentIndex = index
         loadCurrentImage()
+        needsCanvasFocus = true
+    }
+
+    private var activeFile: FileItem? {
+        if isGridView, let idx = selectedGridIndex, files.indices.contains(idx) {
+            return files[idx]
+        }
+        return currentFile
     }
 
     func copyFilePath() {
-        guard let url = currentFile?.url else { return }
+        guard let url = activeFile?.url else { return }
         clipboardService.copyFilePath(url)
         showToast("Path copied")
     }
@@ -481,38 +545,50 @@ final class ViewerModel {
     }
 
     func copyFile() {
-        guard let url = currentFile?.url else { return }
+        guard let url = activeFile?.url else { return }
         clipboardService.copyFile(url)
         showToast("File copied")
     }
 
     func revealInFinder() {
-        guard let url = currentFile?.url else { return }
+        guard let url = activeFile?.url else { return }
         finderService.reveal(url)
         showToast("Revealed in Finder")
     }
 
     func openExternally() {
-        guard let url = currentFile?.url else { return }
+        guard let url = activeFile?.url else { return }
         externalOpenService.open(url)
     }
 
     func moveCurrentFileToTrash() {
-        guard let currentFile else { return }
+        guard let file = activeFile, let idx = files.firstIndex(where: { $0.url == file.url }) else { return }
 
         do {
-            let trashedFile = try fileOperationService.moveToTrash(currentFile.url)
+            let trashedFile = try fileOperationService.moveToTrash(file.url)
             lastTrashedItem = trashedFile
-            files.remove(at: currentIndex)
+            files.remove(at: idx)
 
-            if files.isEmpty {
-                currentIndex = 0
-                decodedImage = nil
-                metadata = nil
-                isLoading = false
+            if isGridView {
+                if files.isEmpty {
+                    selectedGridIndex = nil
+                    metadata = nil
+                } else {
+                    selectedGridIndex = min(selectedGridIndex ?? 0, files.count - 1)
+                    if let newIdx = selectedGridIndex {
+                        selectInGrid(at: newIdx)
+                    }
+                }
             } else {
-                currentIndex = min(currentIndex, files.count - 1)
-                loadCurrentImage()
+                if files.isEmpty {
+                    currentIndex = 0
+                    decodedImage = nil
+                    metadata = nil
+                    isLoading = false
+                } else {
+                    currentIndex = min(currentIndex, files.count - 1)
+                    loadCurrentImage()
+                }
             }
 
             showToast("Moved to Trash", actionTitle: "Undo")
@@ -577,26 +653,39 @@ final class ViewerModel {
         isLoading = true
         errorMessage = nil
 
-        loadTask = Task {
-            do {
-                let image = try await Task.detached(priority: .userInitiated) {
-                    try self.decoder.decode(url: currentFile.url)
-                }.value
+        // Cancel any pending decode — the serial queue bounds concurrent memory.
+        decodeQueue.cancelAllOperations()
 
-                guard !Task.isCancelled else { return }
-                ImageCache.shared.set(image)
-                decodedImage = image
-                metadata = metadataReader.read(url: image.url, pixelSize: image.pixelSize)
-                zoomMode = defaultZoomModeFromSettings
-                isLoading = false
-                preloadAdjacent()
+        loadTask = Task {
+            let image: DecodedImage
+            do {
+                image = try await withCheckedThrowingContinuation { continuation in
+                    let op = BlockOperation {
+                        do {
+                            let result = try self.decoder.decode(url: currentFile.url)
+                            continuation.resume(returning: result)
+                        } catch {
+                            continuation.resume(throwing: error)
+                        }
+                    }
+                    decodeQueue.addOperation(op)
+                }
             } catch {
                 guard !Task.isCancelled else { return }
                 decodedImage = nil
                 metadata = nil
                 errorMessage = "The file is damaged and can’t be displayed"
                 isLoading = false
+                return
             }
+
+            guard !Task.isCancelled else { return }
+            ImageCache.shared.set(image)
+            decodedImage = image
+            metadata = metadataReader.read(url: image.url, pixelSize: image.pixelSize)
+            zoomMode = defaultZoomModeFromSettings
+            isLoading = false
+            preloadAdjacent()
         }
     }
 

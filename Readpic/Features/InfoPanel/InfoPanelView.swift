@@ -61,7 +61,7 @@ struct InfoPanelView: View {
             .padding(16)
         }
         .frame(width: 300)
-        .background(Color(red: 0.067, green: 0.067, blue: 0.075))
+        .background(Color(nsColor: .windowBackgroundColor))
     }
 }
 

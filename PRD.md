@@ -285,6 +285,57 @@ v1 不做完整快捷键自定义，但保留后续扩展空间。
 
 ---
 
+## 7a. 菜单栏规划
+
+Readpic 遵循 macOS 菜单栏惯例，所有功能/模块均有对应的菜单栏入口。菜单结构如下：
+
+### Phase 1 菜单结构（已实现）
+
+```text
+Readpic                         File                          Edit
+├── About Readpic               ├── Open Image… (⌘O)          ├── Copy Image (⌘C)
+├── Preferences… (⌘,)           ├── Open Folder… (⌘⇧O)        ├── Copy File (⌘⇧C)
+├── ───────                     ├── ───────                   └── Copy File Path (⌘⌥C)
+├── Hide Readpic (⌘H)           ├── Close Window (⌘W)
+├── Hide Others (⌥⌘H)           ├── ───────
+├── Show All                    ├── Move to Trash (⌘⌫)
+└── Quit Readpic (⌘Q)           ├── ───────
+                                ├── Reveal in Finder (⌘⌥E)
+                                └── Open Externally (⌘E)
+
+View                            Image                         Help
+├── Grid View (G)               ├── Rotate Left (⌘[)          └── Keyboard Shortcuts (?)
+├── ───────                     ├── Rotate Right (⌘])
+├── Fit Window                  └── Flip Horizontal (⌘⇧H)
+├── Fit Width
+├── Actual Size
+├── ───────
+├── Zoom In (⌘=)
+├── Zoom Out (⌘-)
+├── Reset Zoom (⌘0)
+├── ───────
+├── Thumbnail Strip
+├── Info Panel (I)
+├── ───────
+├── Sort By ▸ Name / Date
+├── Show Status Bar
+├── ───────
+└── Fullscreen (F)
+```
+
+### Phase 2 菜单扩展
+
+| 菜单 | 新增项 |
+|---|---|
+| File | Open Recent ▸、Export / Save As…、Batch Convert…、Batch Rename… |
+| Edit | Select All (⌘A)、Copy Metadata |
+| View | Filter By ▸ (Format / Date)、Search Files… (⌘F)、Start Slideshow、Metadata Panel |
+| Image | Crop…、Resize…、Save Changes…、Optimize File Size…、Rate ▸、Favorite / Tag… |
+
+> **原则：** 后续所有 Phase 2+ 新增功能模块必须同时在菜单栏中提供入口，不允许仅有工具栏或快捷键而无菜单项。
+
+---
+
 ## 8. 非功能需求
 
 ### 8.1 性能目标

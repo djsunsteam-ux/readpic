@@ -4,6 +4,13 @@ import SwiftUI
 struct ViewerRepresentable: NSViewRepresentable {
     let model: ViewerModel
 
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    class Coordinator {
+        var currentImageURL: URL?
+        var currentZoomMode: ViewerModel.ZoomMode?
+    }
+
     func makeNSView(context: Context) -> ViewerNSView {
         let view = ViewerNSView()
         view.onPrevious = { model.showPrevious() }
@@ -26,10 +33,10 @@ struct ViewerRepresentable: NSViewRepresentable {
         view.onToggleShortcutsHelp = { model.toggleShortcutsHelp() }
         view.onToggleAnimationPause = { model.toggleAnimationPause() }
         view.onToggleThumbnailStrip = { model.toggleThumbnailStrip() }
+        view.onToggleFullScreen = { model.toggleFullScreen() }
         view.onEscape = {
             if model.showShortcutsHelp { model.showShortcutsHelp = false }
             else if model.isInfoPanelVisible { model.isInfoPanelVisible = false }
-            else if model.isGridView { model.isGridView = false }
             else { model.closeWindow() }
         }
         view.onOpenURL = { url in
@@ -47,8 +54,21 @@ struct ViewerRepresentable: NSViewRepresentable {
         let frameIndex = model.currentFrameIndex
         if model.isAnimating, let frames = model.decodedImage?.animatedFrames, frameIndex < frames.count {
             nsView.setAnimatedFrame(frames[frameIndex].image)
+        } else if let image = model.decodedImage?.image {
+            // Use decodedImage.url (actual displayed image), NOT currentFile.url (may update early)
+            let decodedURL = model.decodedImage?.url
+            let isSameImage = decodedURL != nil && decodedURL == context.coordinator.currentImageURL
+            let zoomModeChanged = model.zoomMode != context.coordinator.currentZoomMode
+            context.coordinator.currentImageURL = decodedURL
+            context.coordinator.currentZoomMode = model.zoomMode
+
+            if isSameImage && model.zoomAction == .none && !zoomModeChanged {
+                nsView.upgradeImage(image, zoomMode: model.zoomMode)
+            } else {
+                nsView.setImage(image, zoomMode: model.zoomMode)
+            }
         } else {
-            nsView.setImage(model.decodedImage?.image, zoomMode: model.zoomMode)
+            nsView.setImage(nil, zoomMode: model.zoomMode)
         }
         nsView.setProxyMaxPixelSize(model.currentProxyMaxPixelSize)
         nsView.setRotation(model.rotation, flipped: model.isFlippedHorizontally)
@@ -61,6 +81,12 @@ struct ViewerRepresentable: NSViewRepresentable {
         }
         if model.zoomAction != .none {
             Task { @MainActor in model.zoomAction = .none }
+        }
+
+        // Reclaim first responder after thumbnail/grid tap so arrow keys work immediately
+        if model.needsCanvasFocus, let window = nsView.window, window.firstResponder !== nsView {
+            window.makeFirstResponder(nsView)
+            model.needsCanvasFocus = false
         }
     }
 }

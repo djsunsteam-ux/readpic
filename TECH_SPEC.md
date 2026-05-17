@@ -49,7 +49,30 @@
 - 高频状态如缩放、平移不依赖 Observation 自动刷新。
 - 低频状态如当前图片切换、工具栏显隐、主题变化可使用 Observation 或显式事件。
 
-### 2.3 Observation 使用原则
+### 2.3 工具栏布局变更说明
+
+v1 工具栏按钮（从左到右）：Grid | Fit | Zoom Out | Zoom In | Rotate Left | Rotate Right | Mirror | Thumbnails | Info。
+
+> **工具栏与菜单栏分工：** 工具栏保留高频视觉操作（网格、缩放、变换、面板开关）；低频/配置型功能（打开、原始尺寸、Finder 中显示等）移入菜单栏。所有功能在菜单栏中均有对应入口。
+
+### 2.3 菜单栏架构
+
+菜单栏使用 SwiftUI `.commands` 构建，划分 6 个标准菜单组：
+
+| 菜单 | 职责 | SwiftUI 实现方式 |
+|---|---|---|
+| Readpic (App) | 应用级：关于、偏好设置、退出 | 系统自动 + `CommandGroup(replacing: .appInfo)` |
+| File | 文件级：打开、关闭、删除、外部操作 | `CommandGroup(replacing: .newItem)` + `CommandGroup(after: .newItem)` |
+| Edit | 剪贴板：复制图片/文件/路径 | `CommandGroup(replacing: .pasteboard)` |
+| View | 显示：网格、缩放、面板开关、排序、全屏 | `CommandMenu("View")` |
+| Image | 图片变换：旋转、翻转 | `CommandMenu("Image")` |
+| Help | 帮助：快捷键参考 | `CommandMenu("Help")` |
+
+菜单项通过 `@State private var model` 直接访问 `ViewerModel`，统一使用 `.keyboardShortcut()` 声明快捷键，`.disabled()` 跟随 Model 状态自动切换。
+
+> **Phase 2 扩展：** 新增 Feature 模块需同步在对应菜单组添加入口。保持「功能-菜单」一一映射原则。
+
+### 2.4 Observation 使用原则
 
 `@Observable` 可用于 ViewModel，但不把它作为 AppKit 高频渲染的唯一同步机制。
 

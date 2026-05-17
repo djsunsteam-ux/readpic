@@ -32,16 +32,24 @@ final class ThumbnailCache {
     static let shared = ThumbnailCache()
 
     private var cache: [ThumbnailCacheKey: CGImage] = [:]
+    /// Tracks access order — front is least-recently-used, back is most-recently-used.
+    private var accessOrder: [ThumbnailCacheKey] = []
     private var maxCount: Int = 200
 
     private init() {}
 
     func get(key: ThumbnailCacheKey) -> CGImage? {
-        cache[key]
+        guard cache[key] != nil else { return nil }
+        // Promote to most-recently-used
+        accessOrder.removeAll { $0 == key }
+        accessOrder.append(key)
+        return cache[key]
     }
 
     func set(_ image: CGImage, for key: ThumbnailCacheKey) {
         cache[key] = image
+        accessOrder.removeAll { $0 == key }
+        accessOrder.append(key)
         if cache.count > maxCount {
             evictLRU()
         }
@@ -50,10 +58,12 @@ final class ThumbnailCache {
     func remove(_ url: URL) {
         let key = ThumbnailCacheKey(url: url)
         cache.removeValue(forKey: key)
+        accessOrder.removeAll { $0 == key }
     }
 
     func clear() {
         cache.removeAll()
+        accessOrder.removeAll()
     }
 
     func halveCapacity() {
@@ -67,11 +77,25 @@ final class ThumbnailCache {
         maxCount = 200
     }
 
+    /// Evicts the least-recently-used entries (front of accessOrder).
     private func evictLRU() {
-        while cache.count > maxCount, let key = cache.keys.first {
-            cache.removeValue(forKey: key)
+        while cache.count > maxCount, !accessOrder.isEmpty {
+            let lru = accessOrder.removeFirst()
+            cache.removeValue(forKey: lru)
         }
     }
+
+#if TESTING
+    /// Override max count for unit tests — resets restoreCapcity on next call.
+    func forceMaxCountForTesting(_ count: Int) {
+        maxCount = count
+    }
+
+    /// Returns current entry count for unit test assertions.
+    func countForTesting() -> Int {
+        cache.count
+    }
+#endif
 }
 
 final class ThumbnailQueueManager: @unchecked Sendable {

@@ -23,6 +23,7 @@ final class ViewerNSView: NSView {
     var onToggleShortcutsHelp: (() -> Void)?
     var onToggleAnimationPause: (() -> Void)?
     var onToggleThumbnailStrip: (() -> Void)?
+    var onToggleFullScreen: (() -> Void)?
     var onEscape: (() -> Void)?
 
     private var currentProxyMaxPixelSize: CGFloat = 2048
@@ -52,6 +53,14 @@ final class ViewerNSView: NSView {
         imageLayer.magnificationFilter = .linear
         imageLayer.minificationFilter = .linear
         layer?.addSublayer(imageLayer)
+
+        let doubleClick = NSClickGestureRecognizer(target: self, action: #selector(handleDoubleClick))
+        doubleClick.numberOfClicksRequired = 2
+        addGestureRecognizer(doubleClick)
+    }
+
+    @objc private func handleDoubleClick() {
+        onToggleZoom?()
     }
 
     required init?(coder: NSCoder) {
@@ -65,25 +74,44 @@ final class ViewerNSView: NSView {
 
     override func layout() {
         super.layout()
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
         layoutImageLayer()
+        CATransaction.commit()
     }
 
     func setProxyMaxPixelSize(_ size: CGFloat) {
+        guard currentProxyMaxPixelSize != size else { return }
         currentProxyMaxPixelSize = size
         hasRequestedHigherRes = false
     }
 
+    /// Called when navigating to a new image or toggling zoom mode — resets zoom/pan.
     func setImage(_ image: CGImage?, zoomMode: ViewerModel.ZoomMode) {
+        guard self.image !== image || self.zoomMode != zoomMode else { return }
         CATransaction.begin()
         CATransaction.setDisableActions(true)
+        let imageChanged = self.image !== image
         let zoomModeChanged = self.zoomMode != zoomMode
         self.image = image
         self.zoomMode = zoomMode
         updateDisplayImage()
-        if zoomModeChanged {
+        if imageChanged || zoomModeChanged {
             panOffset = .zero
             zoomScale = 1
         }
+        layoutImageLayer()
+        CATransaction.commit()
+    }
+
+    /// Called when the same image gets a higher-resolution decode — preserves current zoom/pan.
+    func upgradeImage(_ image: CGImage, zoomMode: ViewerModel.ZoomMode) {
+        guard self.image !== image || self.zoomMode != zoomMode else { return }
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        self.image = image
+        self.zoomMode = zoomMode
+        updateDisplayImage()
         layoutImageLayer()
         CATransaction.commit()
     }
@@ -127,6 +155,7 @@ final class ViewerNSView: NSView {
             case "i": onToggleInfoPanel?()
             case "g": onToggleGridView?()
             case "t": onToggleThumbnailStrip?()
+            case "f": onToggleFullScreen?()
             default:
                 if chars == "?" { onToggleShortcutsHelp?() }
                 else { super.keyDown(with: event) }
@@ -162,14 +191,6 @@ final class ViewerNSView: NSView {
     @objc private func doRotateRight() { onRotateRight?() }
     @objc private func doFlipHorizontal() { onFlipHorizontal?() }
     @objc private func doMoveToTrash() { onMoveToTrash?() }
-
-    override func mouseDown(with event: NSEvent) {
-        if event.clickCount == 2 {
-            onToggleZoom?()
-        } else {
-            super.mouseDown(with: event)
-        }
-    }
 
     override func scrollWheel(with event: NSEvent) {
         if event.modifierFlags.contains(.option) || event.modifierFlags.contains(.command) {
@@ -269,28 +290,22 @@ final class ViewerNSView: NSView {
     /// Returns the maximum pan offset (half the difference between image and viewport).
     /// Returns (0, 0) when the image fits entirely within the view.
     private func maxPanOffset() -> (CGFloat, CGFloat) {
-        guard let displayImage else { return (0, 0) }
-        guard bounds.width > 0, bounds.height > 0 else { return (0, 0) }
-
+        guard let displayImage, bounds.width > 0, bounds.height > 0 else { return (0, 0) }
         let imageSize = CGSize(width: displayImage.width, height: displayImage.height)
-
-        let baseScale: CGFloat
-        switch zoomMode {
-        case .fitWindow:
-            baseScale = min(bounds.width / imageSize.width, bounds.height / imageSize.height)
-        case .fitWidth:
-            baseScale = bounds.width / imageSize.width
-        case .actualSize:
-            baseScale = 1
-        }
-
-        let effectiveScale = baseScale * zoomScale
+        let effectiveScale = baseScale(for: imageSize) * zoomScale
         let displayW = imageSize.width * effectiveScale
         let displayH = imageSize.height * effectiveScale
-
         let panX = max((displayW - bounds.width) / 2, 0)
         let panY = max((displayH - bounds.height) / 2, 0)
         return (panX, panY)
+    }
+
+    private func baseScale(for imageSize: CGSize) -> CGFloat {
+        switch zoomMode {
+        case .fitWindow:  min(bounds.width / imageSize.width, bounds.height / imageSize.height)
+        case .fitWidth:   bounds.width / imageSize.width
+        case .actualSize: 1
+        }
     }
 
     private func applyZoomDelta(_ delta: CGFloat) {
@@ -311,17 +326,7 @@ final class ViewerNSView: NSView {
             return
         }
 
-        let baseScale: CGFloat
-        switch zoomMode {
-        case .fitWindow:
-            baseScale = min(bounds.width / imageSize.width, bounds.height / imageSize.height)
-        case .fitWidth:
-            baseScale = bounds.width / imageSize.width
-        case .actualSize:
-            baseScale = 1
-        }
-
-        let effectiveScale = baseScale * zoomScale
+        let effectiveScale = baseScale(for: imageSize) * zoomScale
         let targetSize = CGSize(width: imageSize.width * effectiveScale, height: imageSize.height * effectiveScale)
         onZoomChanged?(Int((effectiveScale * 100).rounded()))
 

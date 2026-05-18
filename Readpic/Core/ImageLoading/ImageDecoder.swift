@@ -21,7 +21,7 @@ enum ImageDecodeError: Error {
 }
 
 struct ImageDecoder {
-    private static let maxAnimationFrames = 100
+    private static let maxAnimationFrames = 1000
     private static let maxFPS: TimeInterval = 30
     private static let minFrameDelay: TimeInterval = 1.0 / maxFPS
 

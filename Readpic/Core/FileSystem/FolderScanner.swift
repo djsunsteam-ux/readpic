@@ -3,7 +3,7 @@ import Foundation
 public struct FolderScanner: Sendable {
     private static let supportedExtensions: Set<String> = [
         "jpg", "jpeg", "png",
-        "heic", "heif", "webp", "gif", "tiff", "tif", "bmp",
+        "heic", "heif", "webp", "gif", "tiff", "tif", "bmp", "ico",
     ]
 
     public init() {}

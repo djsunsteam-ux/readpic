@@ -10,130 +10,171 @@ struct ViewerView: View {
         model.isFullScreen && !model.cursorNearTop && !model.cursorNearBottom
     }
 
+    private var gridTopInset: CGFloat {
+        barsHidden ? 0 : 40
+    }
+
+    private var gridBottomInset: CGFloat {
+        guard !barsHidden else { return 0 }
+        var height: CGFloat = 0
+        if model.showFrameStrip && model.hasAnimatedFrames { height += 80 }
+        if model.settings.showStatusBar && !model.statusText.isEmpty { height += 26 }
+        return height
+    }
+
     var body: some View {
-        VStack(spacing: 0) {
-            ViewerToolbar(model: model)
-                .opacity(barsHidden ? 0 : 1)
-                .frame(height: barsHidden ? 0 : 40)
-                .clipped()
-                .animation(.easeInOut(duration: 0.15), value: barsHidden)
+        ZStack(alignment: .top) {
+            // Canvas fills the entire ZStack
+            ZStack(alignment: .bottom) {
+                model.isFullScreen ? Color.black : model.settings.backgroundColor.color
 
-            HStack(spacing: 0) {
-                ZStack(alignment: .bottom) {
-                    model.isFullScreen ? Color.black : model.settings.backgroundColor.color
+                if model.currentFile == nil {
+                    EmptyStateView(model: model)
+                } else if model.isGridView {
+                    GridView(
+                        files: model.files,
+                        currentIndex: model.currentIndex,
+                        selectedIndex: model.selectedGridIndex,
+                        select: { model.selectInGrid(at: $0) },
+                        open: { model.openFromGrid(at: $0) },
+                        topInset: gridTopInset,
+                        bottomInset: gridBottomInset,
+                        infoPanelVisible: model.isInfoPanelVisible
+                    )
+                    .id(model.fileListVersion)
+                    .padding(.trailing, model.isInfoPanelVisible ? 300 : 0)
+                } else {
+                    ViewerRepresentable(model: model)
+                }
 
-                    if model.currentFile == nil {
-                        EmptyStateView(model: model)
-                    } else if model.isGridView {
-                        GridView(
-                            files: model.files,
-                            currentIndex: model.currentIndex,
-                            selectedIndex: model.selectedGridIndex,
-                            select: { model.selectInGrid(at: $0) },
-                            open: { model.openFromGrid(at: $0) }
-                        )
-                    } else {
-                        ViewerRepresentable(model: model)
-                    }
+                if model.isDragTargeted {
+                    DragHoverOverlay()
+                }
 
-                    if model.isDragTargeted {
-                        DragHoverOverlay()
-                    }
-
-                    if model.isLoading {
-                        ProgressView()
-                            .controlSize(.small)
-                            .padding(12)
-                            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
-                            .frame(maxHeight: .infinity, alignment: .center)
-                    }
-
-                    if let errorMessage = model.errorMessage {
-                        Text(errorMessage)
-                            .font(.system(size: 13))
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 10)
-                            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
-                            .frame(maxHeight: .infinity, alignment: .center)
-                    }
-
-                    if let toastMessage = model.toastMessage {
-                        HStack(spacing: 12) {
-                            Text(toastMessage)
-                                .font(.system(size: 13))
-
-                            if let actionTitle = model.toastActionTitle {
-                                Button(actionTitle) {
-                                    model.performToastAction()
-                                }
-                                .buttonStyle(.borderless)
-                                .font(.system(size: 13, weight: .medium))
-                            }
-                        }
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 10)
+                if model.isLoading {
+                    ProgressView()
+                        .controlSize(.small)
+                        .padding(12)
                         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
-                        .padding(.bottom, 16)
-                    }
-
-                    if model.showShortcutsHelp {
-                        ShortcutsHelpView()
-                    }
+                        .frame(maxHeight: .infinity, alignment: .center)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .onDrop(of: [.fileURL], isTargeted: nil) { providers in
-                    guard let provider = providers.first else { return false }
-                    provider.loadItem(forTypeIdentifier: "public.file-url", options: nil) { item, _ in
-                        guard let data = item as? Data,
-                              let url = URL(dataRepresentation: data, relativeTo: nil) else { return }
-                        DispatchQueue.main.async {
-                            var isDirectory: ObjCBool = false
-                            if FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory), isDirectory.boolValue {
-                                model.openFolder(url)
-                            } else {
-                                model.open(url)
+
+                if let toastMessage = model.toastMessage {
+                    HStack(spacing: 12) {
+                        Text(toastMessage)
+                            .font(.system(size: 13))
+
+                        if let actionTitle = model.toastActionTitle {
+                            Button(actionTitle) {
+                                model.performToastAction()
                             }
+                            .buttonStyle(.borderless)
+                            .font(.system(size: 13, weight: .medium))
                         }
                     }
-                    return true
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
+                    .padding(.bottom, 16)
                 }
 
-                if model.isInfoPanelVisible {
+                if model.showShortcutsHelp {
+                    ShortcutsHelpView()
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .onDrop(of: [.fileURL], isTargeted: nil) { providers in
+                guard let provider = providers.first else { return false }
+                provider.loadItem(forTypeIdentifier: "public.file-url", options: nil) { item, _ in
+                    guard let data = item as? Data,
+                          let url = URL(dataRepresentation: data, relativeTo: nil) else { return }
+                    DispatchQueue.main.async {
+                        var isDirectory: ObjCBool = false
+                        if FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory), isDirectory.boolValue {
+                            model.openFolder(url)
+                        } else {
+                            model.open(url)
+                        }
+                    }
+                }
+                return true
+            }
+
+            // ── Info Panel floats over the canvas, right-aligned ──
+            if model.isInfoPanelVisible {
+                HStack(spacing: 0) {
+                    Spacer()
                     InfoPanelView(model: model)
                         .transition(.move(edge: .trailing))
                 }
             }
-            .frame(maxHeight: .infinity)
-            .background(Color.black)
 
-            if model.files.count > 1 && model.showThumbnailStrip && !model.isGridView {
-                ThumbnailStripView(
-                    files: model.files,
-                    currentIndex: model.currentIndex,
-                    select: { model.selectFile(at: $0) }
-                )
-                .transition(.move(edge: .bottom))
-            }
-            if model.settings.showStatusBar && !model.statusText.isEmpty {
-                Text(model.statusText)
-                    .font(.system(size: 12, design: .monospaced))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+            // ── Toolbar overlaid at top ──
+            ViewerToolbar(model: model)
+                .frame(height: barsHidden ? 0 : 40)
+                .background(.ultraThinMaterial)
+                .opacity(barsHidden ? 0 : 1)
+                .animation(.easeInOut(duration: 0.15), value: barsHidden)
+                .clipped()
+                .zIndex(2)
+
+            // ── Bottom bars overlaid at bottom ──
+            VStack(spacing: 0) {
+                Spacer()
+
+                if model.showFrameStrip, model.hasAnimatedFrames, let frames = model.decodedImage?.animatedFrames {
+                    FrameStripView(
+                        frames: frames.map(\.image),
+                        totalFrameCount: model.decodedImage?.frameCount ?? frames.count,
+                        currentIndex: model.currentFrameIndex,
+                        isPlaying: model.isAnimating && !model.isAnimationPaused,
+                        onSelect: { model.selectFrame(at: $0) },
+                        onTogglePlay: { model.toggleAnimationPause() }
+                    )
+                    .transition(.move(edge: .bottom))
+                }
+
+                if model.files.count > 1 && model.showThumbnailStrip && !model.isGridView {
+                    ThumbnailStripView(
+                        files: model.files,
+                        currentIndex: model.currentIndex,
+                        select: { model.selectFile(at: $0) }
+                    )
+                    .id(model.fileListVersion)
+                    .transition(.move(edge: .bottom))
+                }
+
+                if model.settings.showStatusBar && !model.statusText.isEmpty {
+                    HStack(spacing: 6) {
+                        if model.isLoading {
+                            ProgressView()
+                                .controlSize(.mini)
+                                .scaleEffect(0.6)
+                        }
+                        Text(model.statusText)
+                            .font(.system(size: 12, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
                     .padding(.horizontal, 12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .frame(height: barsHidden ? 0 : 26)
-                    .background(Color.black)
+                    .background(.ultraThinMaterial)
                     .clipped()
                     .opacity(barsHidden ? 0 : 1)
                     .animation(.easeInOut(duration: 0.15), value: barsHidden)
-                    .zIndex(1)
+                }
             }
+            .zIndex(2)
         }
         .background(Color.black)
         .background {
             WindowAccessor { window in
                 model.window = window
+                // Keep the title bar opaque — prevents ScrollView content from extending
+                // behind it (which triggers the system's title-bar vibrancy in GridView).
+                window.styleMask.remove(.fullSizeContentView)
                 if !window.setFrameUsingName("mainWindow") {
                     window.setFrame(NSRect(x: 0, y: 0, width: 1280, height: 800), display: false)
                     window.center()
@@ -172,6 +213,13 @@ struct ViewerView: View {
                     default: break
                     }
                 }
+                if chars?.lowercased() == "g" {
+                    let mods = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+                    if mods.isEmpty || mods == .shift || mods == .capsLock {
+                        model.toggleGridView()
+                        return nil
+                    }
+                }
                 if chars?.lowercased() == "i" {
                     let mods = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
                     if mods.isEmpty || mods == .shift || mods == .capsLock {
@@ -183,6 +231,15 @@ struct ViewerView: View {
                     let mods = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
                     if mods.isEmpty || mods == .shift || mods == .capsLock {
                         withAnimation(.easeInOut(duration: 0.2)) { model.toggleThumbnailStrip() }
+                        return nil
+                    }
+                }
+                if chars?.lowercased() == "s" {
+                    let mods = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+                    if mods.isEmpty || mods == .shift || mods == .capsLock {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            model.toggleFrameStrip()
+                        }
                         return nil
                     }
                 }
@@ -267,6 +324,8 @@ private struct ViewerToolbar: View {
             Spacer()
         }
         .padding(.horizontal, 10)
+        .frame(maxHeight: .infinity)
+        .background(.ultraThinMaterial)
     }
 }
 
@@ -346,7 +405,7 @@ private struct EmptyStateView: View {
                     .help(lastURL.path)
                 }
 
-                Text("Supports JPEG, PNG, HEIC, WebP, GIF, TIFF, BMP")
+                Text("Supports JPEG, PNG, HEIC, WebP, GIF, TIFF, BMP, ICO")
                     .font(.system(size: 12))
                     .foregroundStyle(.tertiary)
             }
@@ -437,11 +496,13 @@ private struct ShortcutsHelpView: View {
                     shortcutRow("\u{2318}[ / \u{2318}]", "Rotate left / right")
                     shortcutRow("\u{2318}\u{21E7}H", "Flip horizontal")
                     shortcutRow("T", "Toggle thumbnail strip")
+                    shortcutRow("S", "Toggle frame strip")
                 }
             }
             .padding(24)
             .frame(width: 380)
             .background(.ultraThickMaterial, in: RoundedRectangle(cornerRadius: 14))
+            .offset(y: -20)
         }
     }
 

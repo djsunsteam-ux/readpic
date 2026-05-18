@@ -6,6 +6,9 @@ struct GridView: View {
     let selectedIndex: Int?
     let select: (Int) -> Void
     let open: (Int) -> Void
+    let topInset: CGFloat
+    let bottomInset: CGFloat
+    let infoPanelVisible: Bool
 
     @State private var thumbnails: [URL: CGImage] = [:]
     @State private var failedURLs: Set<URL> = []
@@ -25,6 +28,9 @@ struct GridView: View {
                 }
                 .padding(16)
             }
+            .contentMargins(.top, topInset, for: .scrollContent)
+            .contentMargins(.bottom, bottomInset, for: .scrollContent)
+
             .onAppear {
                 scrollToCurrent(proxy: proxy)
             }
@@ -34,22 +40,20 @@ struct GridView: View {
             .onChange(of: currentIndex) { _, _ in
                 scrollToCurrent(proxy: proxy)
             }
+            .onChange(of: infoPanelVisible) { _, _ in
+                // Delay slightly to let LazyVGrid finish re-laying out
+                // after the width change from info panel open/close.
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(80))
+                    scrollToCurrent(proxy: proxy)
+                }
+            }
         }
         .task(id: files.map(\.url)) {
             thumbnails = [:]
             failedURLs = []
         }
-        .safeAreaInset(edge: .bottom) {
-            HStack {
-                Text("\(files.count) image\(files.count == 1 ? "" : "s")")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
-                Spacer()
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(.ultraThinMaterial)
-        }
+
     }
 
     private func scrollToCurrent(proxy: ScrollViewProxy) {
@@ -69,7 +73,7 @@ struct GridView: View {
             thumbnailView(for: file)
                 .frame(maxWidth: .infinity)
                 .frame(height: 120)
-                .background(Color(nsColor: .darkGray).opacity(0.3))
+                .background(Color.clear)
                 .cornerRadius(6)
                 .overlay(
                     RoundedRectangle(cornerRadius: 6)

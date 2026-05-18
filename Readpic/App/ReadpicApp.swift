@@ -28,7 +28,6 @@ struct ReadpicApp: App {
 
                 Button("Move to Trash") { model.moveCurrentFileToTrash() }
                     .keyboardShortcut(.delete, modifiers: .command)
-                    .disabled(model.currentFile == nil)
 
                 Divider()
 
@@ -100,6 +99,14 @@ struct ReadpicApp: App {
                     }
                 }
                 .disabled(model.currentFile == nil)
+
+                Button("Frame Strip") {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        model.toggleFrameStrip()
+                    }
+                }
+                .keyboardShortcut("s")
+                .disabled(!model.hasAnimatedFrames)
 
                 Button("Info Panel") {
                     withAnimation(.easeInOut(duration: 0.2)) {

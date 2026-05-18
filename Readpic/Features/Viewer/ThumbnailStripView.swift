@@ -11,8 +11,7 @@ struct ThumbnailStripView: View {
         ScrollViewReader { proxy in
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(spacing: 4) {
-                    ForEach(files.indices, id: \.self) { index in
-                        let file = files[index]
+                    ForEach(Array(files.enumerated()), id: \.element.url) { index, file in
                         let isSelected = index == currentIndex
 
                         Button {

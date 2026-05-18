@@ -25,9 +25,10 @@ final class ViewerModel {
     var decodedImage: DecodedImage? {
         didSet {
             if oldValue?.url != decodedImage?.url {
-                stopAnimation()
-                startAnimation()
+                showFrameStrip = false
             }
+            stopAnimation()
+            startAnimation()
         }
     }
     var metadata: ImageMetadata?
@@ -44,7 +45,6 @@ final class ViewerModel {
     var zoomAction: ZoomAction = .none
     var isDragTargeted = false
     var isLoading = false
-    var errorMessage: String?
     var toastMessage: String?
     var toastActionTitle: String?
     var isFullScreen = false
@@ -53,6 +53,7 @@ final class ViewerModel {
     var rotation: Int = 0
     var isFlippedHorizontally = false
     var needsCanvasFocus = false
+    var showFrameStrip = false
 
     weak var window: NSWindow?
 
@@ -63,10 +64,12 @@ final class ViewerModel {
     private let finderService = FinderService()
     private let externalOpenService = ExternalOpenService()
     private let fileOperationService = FileOperationService()
-    private var lastTrashedItem: TrashedFile?
+    private var lastTrashRecord: (file: TrashedFile, index: Int)?
     private var loadTask: Task<Void, Never>?
     private var toastTask: Task<Void, Never>?
     private var animationTask: Task<Void, Never>?
+    /// Background preload chain for higher-resolution proxies of the current image.
+    private var preloadTask: Task<Void, Never>?
 
     /// Serializes decodes — only one runs at a time regardless of navigation speed.
     /// This bounds concurrent memory to a single decode's buffer.
@@ -155,6 +158,7 @@ final class ViewerModel {
         ThumbnailCache.shared.halveCapacity()
         ImageCache.shared.clear()
         ThumbnailCache.shared.clear()
+        preloadTask?.cancel()
     }
 
     private func handleMemoryRestore() {
@@ -198,6 +202,7 @@ final class ViewerModel {
         panel.allowedContentTypes = [
             .jpeg, .png, .heic, .heif, .gif, .tiff, .bmp,
             UTType(filenameExtension: "webp")!,
+            UTType(filenameExtension: "ico")!,
         ]
         panel.allowsMultipleSelection = false
         panel.canChooseFiles = true
@@ -227,7 +232,7 @@ final class ViewerModel {
 
     func open(_ url: URL) {
         guard FolderScanner.supports(url) else {
-            errorMessage = "Unsupported format"
+            showToast("Unsupported format")
             return
         }
         if settings.rememberLastFolder {
@@ -236,9 +241,9 @@ final class ViewerModel {
 
         ImageCache.shared.clear()
         loadTask?.cancel()
+        preloadTask?.cancel()
+        isGridView = false
         isLoading = true
-        errorMessage = nil
-
         currentProxyMaxPixelSize = 2048
         loadTask = Task {
             do {
@@ -248,6 +253,7 @@ final class ViewerModel {
 
                 guard !Task.isCancelled else { return }
                 files = [FileItem(url: url)]
+                fileListVersion &+= 1
                 currentIndex = 0
                 ImageCache.shared.set(image)
                 decodedImage = image
@@ -257,10 +263,11 @@ final class ViewerModel {
             } catch {
                 guard !Task.isCancelled else { return }
                 files = [FileItem(url: url)]
+                fileListVersion &+= 1
                 currentIndex = 0
                 decodedImage = nil
                 metadata = nil
-                errorMessage = "The file is damaged and can’t be displayed"
+                showToast("The file is damaged and can’t be displayed")
                 isLoading = false
             }
         }
@@ -273,9 +280,8 @@ final class ViewerModel {
         currentProxyMaxPixelSize = 2048
         ImageCache.shared.clear()
         loadTask?.cancel()
+        preloadTask?.cancel()
         isLoading = true
-        errorMessage = nil
-
         let mode = settings.sortMode
         loadTask = Task {
             do {
@@ -283,10 +289,11 @@ final class ViewerModel {
                 guard !Task.isCancelled else { return }
                 guard let first = items.first else {
                     files = []
+                    fileListVersion &+= 1
                     currentIndex = 0
                     decodedImage = nil
                     metadata = nil
-                    errorMessage = "No supported images found"
+                    showToast("No supported images found")
                     isLoading = false
                     return
                 }
@@ -297,6 +304,8 @@ final class ViewerModel {
 
                 guard !Task.isCancelled else { return }
                 files = items
+                fileListVersion &+= 1
+                isGridView = items.count > 1
                 currentIndex = 0
                 ImageCache.shared.set(image)
                 decodedImage = image
@@ -307,10 +316,11 @@ final class ViewerModel {
             } catch {
                 guard !Task.isCancelled else { return }
                 files = []
+                fileListVersion &+= 1
                 currentIndex = 0
                 decodedImage = nil
                 metadata = nil
-                errorMessage = "The folder can’t be opened"
+                showToast("The folder can’t be opened")
                 isLoading = false
             }
         }
@@ -319,12 +329,14 @@ final class ViewerModel {
     func showPrevious() {
         guard files.count > 1 else { return }
         currentIndex = max(currentIndex - 1, 0)
+        resetRotation()
         loadCurrentImage()
     }
 
     func showNext() {
         guard files.count > 1 else { return }
         currentIndex = min(currentIndex + 1, files.count - 1)
+        resetRotation()
         loadCurrentImage()
         needsCanvasFocus = true
     }
@@ -363,9 +375,16 @@ final class ViewerModel {
         isAnimationPaused.toggle()
     }
 
+    func selectFrame(at index: Int) {
+        guard let frames = decodedImage?.animatedFrames, frames.indices.contains(index) else { return }
+        isAnimationPaused = true
+        currentFrameIndex = index
+    }
+
     func selectFile(at index: Int) {
         guard files.indices.contains(index), index != currentIndex else { return }
         currentIndex = index
+        resetRotation()
         loadCurrentImage()
         needsCanvasFocus = true
     }
@@ -437,26 +456,55 @@ final class ViewerModel {
     }
 
     func requestHigherResolution() {
-        guard let currentFile else { return }
-        // Double the proxy resolution each level — ImageIO caps at the image's native size.
-        let higherRes = currentProxyMaxPixelSize * 2
+        guard let currentFile, let currentDecoded = decodedImage else { return }
+        // Animated images are already at their native resolution — frames don't benefit
+        // from upscaling, and re-decoding would lose animatedFrames.
+        guard currentDecoded.animatedFrames == nil else { return }
 
+        let nativeMax = max(currentDecoded.pixelSize.width, currentDecoded.pixelSize.height)
+        let nextRes = min(currentProxyMaxPixelSize * 2, nativeMax)
+        guard nextRes > currentProxyMaxPixelSize else { return }
+
+        // Preloaded version already sitting in cache?
+        if let cached = ImageCache.shared.get(currentFile.url),
+           cached.animatedFrames == nil {
+            let cachedMax = max(cached.pixelSize.width, cached.pixelSize.height)
+            if cachedMax >= nextRes {
+                decodedImage = cached
+                currentProxyMaxPixelSize = nextRes
+                return
+            }
+        }
+
+        // Fall back to on-demand decode
         Task.detached(priority: .userInitiated) { [weak self] in
-            guard let self, let image = try? self.decoder.decode(url: currentFile.url, maxPixelSize: higherRes) else { return }
+            guard let self, let image = try? self.decoder.decode(url: currentFile.url, maxPixelSize: nextRes) else { return }
             await MainActor.run {
                 guard !Task.isCancelled else { return }
                 ImageCache.shared.set(image)
                 self.decodedImage = image
-                self.currentProxyMaxPixelSize = higherRes
+                self.currentProxyMaxPixelSize = nextRes
             }
         }
     }
 
     /// Tracks the proxy decode size for the current image (used by ViewerNSView adaptive zoom).
     var currentProxyMaxPixelSize: CGFloat = 2048
+    /// Incremented whenever `files` changes to force thumbnail strip / grid rebuild.
+    var fileListVersion: UInt = 0
 
     func toggleThumbnailStrip() {
         showThumbnailStrip.toggle()
+    }
+
+    func toggleFrameStrip() {
+        showFrameStrip.toggle()
+    }
+
+    /// Whether the current image has animation frames (GIF etc.)
+    var hasAnimatedFrames: Bool {
+        guard let frames = decodedImage?.animatedFrames else { return false }
+        return frames.count > 1
     }
 
     func toggleGridView() {
@@ -521,6 +569,7 @@ final class ViewerModel {
         selectedGridIndex = nil
         isGridView = false
         currentIndex = index
+        resetRotation()
         loadCurrentImage()
         needsCanvasFocus = true
     }
@@ -536,6 +585,26 @@ final class ViewerModel {
         guard let url = activeFile?.url else { return }
         clipboardService.copyFilePath(url)
         showToast("Path copied")
+    }
+
+    func exportMetadata() {
+        guard let meta = metadata else { return }
+        let content = meta.exportText
+
+        let panel = NSSavePanel()
+        panel.title = "Export Metadata"
+        panel.nameFieldStringValue = "\(meta.name).metadata.txt"
+        panel.allowedContentTypes = [.plainText]
+        panel.canCreateDirectories = true
+
+        guard panel.runModal() == .OK, let targetURL = panel.url else { return }
+
+        do {
+            try content.write(to: targetURL, atomically: true, encoding: .utf8)
+            showToast("Metadata exported")
+        } catch {
+            showToast("Failed to export")
+        }
     }
 
     func copyImage() {
@@ -566,8 +635,9 @@ final class ViewerModel {
 
         do {
             let trashedFile = try fileOperationService.moveToTrash(file.url)
-            lastTrashedItem = trashedFile
+            lastTrashRecord = (trashedFile, idx)
             files.remove(at: idx)
+            fileListVersion &+= 1
 
             if isGridView {
                 if files.isEmpty {
@@ -598,13 +668,30 @@ final class ViewerModel {
     }
 
     func undoTrash() {
-        guard let lastTrashedItem else { return }
+        guard let record = lastTrashRecord else { return }
 
         do {
-            try fileOperationService.restore(lastTrashedItem)
-            self.lastTrashedItem = nil
+            try fileOperationService.restore(record.file)
+            lastTrashRecord = nil
+
+            // Re-insert the file into the folder list and re-sort
+            let restoredItem = FileItem(url: record.file.originalURL)
+            files.append(restoredItem)
+            files = FileSorter.sort(files, by: settings.sortMode)
+            fileListVersion &+= 1
+
+            if let newIdx = files.firstIndex(where: { $0.url == record.file.originalURL }) {
+                currentIndex = newIdx
+                loadCurrentImage()
+            }
+
             showToast("Restored")
-            open(lastTrashedItem.originalURL)
+
+            // Pre-cache thumbnail so ThumbnailStripView finds it immediately
+            // even if LazyHStack recycles a cell without re-firing .task.
+            Task.detached(priority: .utility) {
+                _ = await ThumbnailLoader.load(url: record.file.originalURL)
+            }
         } catch {
             showToast("Couldn’t restore file")
         }
@@ -639,6 +726,7 @@ final class ViewerModel {
     private func loadCurrentImage() {
         guard let currentFile else { return }
         loadTask?.cancel()
+        preloadTask?.cancel()
 
         if let cached = ImageCache.shared.get(currentFile.url) {
             decodedImage = cached
@@ -646,13 +734,12 @@ final class ViewerModel {
             zoomMode = defaultZoomModeFromSettings
             isLoading = false
             preloadAdjacent()
+            preloadHigherResolutions()
             return
         }
 
         currentProxyMaxPixelSize = 2048
         isLoading = true
-        errorMessage = nil
-
         // Cancel any pending decode — the serial queue bounds concurrent memory.
         decodeQueue.cancelAllOperations()
 
@@ -674,7 +761,7 @@ final class ViewerModel {
                 guard !Task.isCancelled else { return }
                 decodedImage = nil
                 metadata = nil
-                errorMessage = "The file is damaged and can’t be displayed"
+                showToast("The file is damaged and can’t be displayed")
                 isLoading = false
                 return
             }
@@ -686,6 +773,7 @@ final class ViewerModel {
             zoomMode = defaultZoomModeFromSettings
             isLoading = false
             preloadAdjacent()
+            preloadHigherResolutions()
         }
     }
 
@@ -698,6 +786,53 @@ final class ViewerModel {
             Task.detached(priority: .low) {
                 guard let image = try? decoder.decode(url: file.url) else { return }
                 await MainActor.run { ImageCache.shared.set(image) }
+            }
+        }
+    }
+
+    /// Start background preloading higher-resolution proxies for the current image.
+    ///
+    /// Each step doubles the proxy resolution and stores the result in `ImageCache`
+    /// (replacing the previous entry for the same URL). When the user zooms past the
+    /// stretch cap, `requestHigherResolution()` finds the pre-decoded level in cache
+    /// instantly — no decode-induced stutter during zoom.
+    private func preloadHigherResolutions() {
+        guard let currentFile, let currentDecoded = decodedImage else { return }
+        // Preloading animated images is destructive: re-decoding loses animatedFrames.
+        // GIF/APNG frames are already at their native resolution.
+        guard currentDecoded.animatedFrames == nil else { return }
+
+        let nativeMax = max(currentDecoded.pixelSize.width, currentDecoded.pixelSize.height)
+        let startSize = currentProxyMaxPixelSize
+
+        preloadTask?.cancel()
+        preloadTask = Task.detached(priority: .low) { [weak self] in
+            var size = startSize
+            // Low memory: only 1 level ahead. Normal: up to 3 levels (2×, 4×, 8×).
+            let maxLevels = isLowMemoryMode ? 1 : 3
+            let url = currentFile.url
+            let decoder = self?.decoder
+
+            for _ in 0..<maxLevels {
+                guard !Task.isCancelled else { break }
+
+                let nextSize = min(size * 2, nativeMax)
+                guard nextSize > size else { break }
+
+                guard let d = decoder,
+                      let image = try? d.decode(url: url, maxPixelSize: nextSize)
+                else { break }
+
+                let proceed = await MainActor.run {
+                    guard let self, !Task.isCancelled else { return false }
+                    // Only store if still viewing the same image
+                    guard self.currentFile?.url == url else { return false }
+                    ImageCache.shared.set(image)
+                    return true
+                }
+
+                guard proceed else { break }
+                size = nextSize
             }
         }
     }

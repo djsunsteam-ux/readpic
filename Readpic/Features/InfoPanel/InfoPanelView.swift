@@ -6,6 +6,8 @@ struct InfoPanelView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
+                Color.clear.frame(height: topContentPadding)
+
                 if let metadata = model.metadata {
                     GroupSection(title: "File") {
                         InfoRow(label: "Name", value: metadata.name)
@@ -47,21 +49,48 @@ struct InfoPanelView: View {
                         }
                     }
 
+                    if metadata.locationText != nil {
+                        GroupSection(title: "GPS") {
+                            if let loc = metadata.locationText {
+                                InfoRow(label: "Location", value: loc, monospaced: true, lineLimit: 3)
+                            }
+                        }
+                    }
+
                     Divider()
                         .padding(.vertical, 12)
 
-                    Button(action: { model.copyFilePath() }) {
-                        Label("Copy Path", systemImage: "doc.on.doc")
+                    Button(action: { model.exportMetadata() }) {
+                        Label("Export Info", systemImage: "square.and.arrow.up")
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .buttonStyle(.borderless)
                     .font(.system(size: 13))
                 }
+
+                Color.clear.frame(height: bottomContentPadding)
             }
             .padding(16)
         }
         .frame(width: 300)
-        .background(Color(nsColor: .windowBackgroundColor))
+        .background(.ultraThinMaterial)
+    }
+
+    /// Extra top padding so content starts below the overlaid toolbar.
+    private var topContentPadding: CGFloat {
+        let barsHidden = model.isFullScreen && !model.cursorNearTop && !model.cursorNearBottom
+        return barsHidden ? 0 : 40
+    }
+
+    /// Extra bottom padding so content ends above the overlaid bottom bars.
+    private var bottomContentPadding: CGFloat {
+        let barsHidden = model.isFullScreen && !model.cursorNearTop && !model.cursorNearBottom
+        guard !barsHidden else { return 0 }
+        var height: CGFloat = 0
+        if model.showFrameStrip && model.hasAnimatedFrames { height += 80 }   // FrameStrip: header ~20 + scroll 52 + padding ≈ 80
+        if model.showThumbnailStrip && model.files.count > 1 && !model.isGridView { height += 64 } // ThumbnailStrip: .frame(height: 64)
+        if model.settings.showStatusBar && !model.statusText.isEmpty { height += 26 }               // Status bar: .frame(height: 26)
+        return height
     }
 }
 

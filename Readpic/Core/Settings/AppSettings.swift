@@ -126,7 +126,7 @@ final class AppSettings {
         defaultZoomMode = Self.read(key: Self.defaultZoomModeKey, fallback: DefaultZoomMode.fitWindow)
         showStatusBar = UserDefaults.standard.object(forKey: Self.showStatusBarKey).flatMap { $0 as? Bool } ?? true
         theme = Self.read(key: Self.themeKey, fallback: ThemeMode.dark)
-        backgroundColor = Self.read(key: Self.bgColorKey, fallback: BackgroundColor.theme)
+        backgroundColor = Self.read(key: Self.bgColorKey, fallback: BackgroundColor.black)
         sortMode = Self.read(key: Self.sortModeKey, fallback: SortMode.name)
         rememberLastFolder = UserDefaults.standard.object(forKey: Self.rememberFolderKey) as? Bool ?? false
     }

@@ -131,13 +131,25 @@ final class ThumbnailQueueManager: @unchecked Sendable {
 
             let cacheKey = ThumbnailCacheKey(url: url)
 
-            // Check cache synchronously (main actor check is done in caller)
-            // Since this runs on background, we use a direct approach
+            // 1. Check disk cache before hitting ImageIO
+            if let diskCached = ThumbnailDiskCache.shared.get(key: cacheKey) {
+                DispatchQueue.main.async {
+                    ThumbnailCache.shared.set(diskCached, for: cacheKey)
+                    completion(diskCached)
+                }
+                return
+            }
+
+            // 2. Generate thumbnail via ImageIO
             let maxSize: CGFloat = isLowMemoryMode ? 128 : 160
             guard let thumbnail = ThumbnailLoader.generateThumbnail(url: url, maxSize: maxSize) else {
                 DispatchQueue.main.async { completion(nil) }
                 return
             }
+
+            // 3. Persist to disk (fire-and-forget on this background thread)
+            ThumbnailDiskCache.shared.set(key: cacheKey, image: thumbnail)
+
             DispatchQueue.main.async {
                 ThumbnailCache.shared.set(thumbnail, for: cacheKey)
                 completion(thumbnail)

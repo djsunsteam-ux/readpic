@@ -1,6 +1,16 @@
 import AppKit
 import SwiftUI
 
+extension ZoomGeometry.Mode {
+    init(from modelMode: ViewerModel.ZoomMode) {
+        switch modelMode {
+        case .fitWindow:  self = .fitWindow
+        case .fitWidth:   self = .fitWidth
+        case .actualSize: self = .actualSize
+        }
+    }
+}
+
 struct ViewerRepresentable: NSViewRepresentable {
     let model: ViewerModel
 
@@ -51,39 +61,92 @@ struct ViewerRepresentable: NSViewRepresentable {
     }
 
     func updateNSView(_ nsView: ViewerNSView, context: Context) {
-        let frameIndex = model.currentFrameIndex
-        if model.isAnimating, let frames = model.decodedImage?.animatedFrames, frameIndex < frames.count {
-            nsView.setAnimatedFrame(frames[frameIndex].image)
-        } else if let image = model.decodedImage?.image {
-            // Use decodedImage.url (actual displayed image), NOT currentFile.url (may update early)
-            let decodedURL = model.decodedImage?.url
-            let isSameImage = decodedURL != nil && decodedURL == context.coordinator.currentImageURL
-            let zoomModeChanged = model.zoomMode != context.coordinator.currentZoomMode
-            context.coordinator.currentImageURL = decodedURL
-            context.coordinator.currentZoomMode = model.zoomMode
+        let nativeSize = model.decodedImage?.pixelSize ?? .zero
+        let zoomMode = ZoomGeometry.Mode(from: model.zoomMode)
 
-            if isSameImage && model.zoomAction == .none && !zoomModeChanged {
-                nsView.upgradeImage(image, zoomMode: model.zoomMode)
+        // ── Animation frame ──────────────────────────────────────
+        if model.isAnimating, let frames = model.decodedImage?.animatedFrames,
+           model.currentFrameIndex < frames.count
+        {
+            let frame = frames[model.currentFrameIndex].image
+            let zoomModeChanged = model.zoomMode != context.coordinator.currentZoomMode
+            context.coordinator.currentZoomMode = model.zoomMode
+            if zoomModeChanged {
+                nsView.setImage(frame, zoomMode: zoomMode, nativeSize: nativeSize)
             } else {
-                nsView.setImage(image, zoomMode: model.zoomMode)
+                nsView.setAnimatedFrame(frame)
+            }
+            // Apply rotation/flip and bar insets even for animated frames
+            nsView.setRotation(model.rotation, flipped: model.isFlippedHorizontally)
+            nsView.setBarInsets(
+                isFullScreen: model.isFullScreen,
+                cursorNearTop: model.cursorNearTop,
+                cursorNearBottom: model.cursorNearBottom,
+                showFrameStrip: model.showFrameStrip,
+                frameStripVisible: model.showFrameStrip && model.hasAnimatedFrames,
+                showThumbnailStrip: model.showThumbnailStrip,
+                thumbnailStripVisible: model.files.count > 1 && model.showThumbnailStrip && !model.isGridView,
+                showStatusBar: model.settings.showStatusBar,
+                statusBarVisible: model.settings.showStatusBar && !model.statusText.isEmpty,
+                infoPanelWidth: model.isInfoPanelVisible ? 300 : 0
+            )
+            return
+        }
+
+        guard let displayImage = model.decodedImage?.image else {
+            nsView.setImage(nil, zoomMode: zoomMode, nativeSize: .zero)
+            context.coordinator.currentImageURL = nil
+            context.coordinator.currentZoomMode = nil
+            return
+        }
+
+        // ── Image / mode / action routing ────────────────────────
+        let decodedURL = model.decodedImage?.url
+        let isSameImage = decodedURL != nil && decodedURL == context.coordinator.currentImageURL
+        let zoomModeChanged = model.zoomMode != context.coordinator.currentZoomMode
+        context.coordinator.currentImageURL = decodedURL
+        context.coordinator.currentZoomMode = model.zoomMode
+
+        if isSameImage {
+            // Same image — preserve zoom/pan/rotation state, just upgrade proxy if available
+            nsView.upgradeImage(displayImage, nativeSize: nativeSize)
+            if zoomModeChanged {
+                nsView.applyZoomMode(zoomMode)
             }
         } else {
-            nsView.setImage(nil, zoomMode: model.zoomMode)
+            // New image — full set (resets zoom/pan/rotation)
+            nsView.setImage(displayImage, zoomMode: zoomMode, nativeSize: nativeSize)
         }
-        nsView.setProxyMaxPixelSize(model.currentProxyMaxPixelSize)
-        nsView.setRotation(model.rotation, flipped: model.isFlippedHorizontally)
-        nsView.scrollBehavior = model.settings.scrollBehavior
+
+        // ── Zoom action commands ─────────────────────────────────
         switch model.zoomAction {
         case .zoomIn:     nsView.zoomIn()
         case .zoomOut:    nsView.zoomOut()
-        case .resetZoom:  nsView.resetZoom()
+        case .resetZoom:  nsView.applyZoomMode(zoomMode)
         case .none:       break
         }
         if model.zoomAction != .none {
             Task { @MainActor in model.zoomAction = .none }
         }
 
-        // Reclaim first responder after thumbnail/grid tap so arrow keys work immediately
+        // ── Rotation / flip / proxy / scroll / bar insets ────────
+        nsView.setRotation(model.rotation, flipped: model.isFlippedHorizontally)
+        nsView.setProxyMaxPixelSize(model.currentProxyMaxPixelSize)
+        nsView.scrollBehavior = model.settings.scrollBehavior
+        nsView.setBarInsets(
+            isFullScreen: model.isFullScreen,
+            cursorNearTop: model.cursorNearTop,
+            cursorNearBottom: model.cursorNearBottom,
+            showFrameStrip: model.showFrameStrip,
+            frameStripVisible: model.showFrameStrip && model.hasAnimatedFrames,
+            showThumbnailStrip: model.showThumbnailStrip,
+            thumbnailStripVisible: model.files.count > 1 && model.showThumbnailStrip && !model.isGridView,
+            showStatusBar: model.settings.showStatusBar,
+            statusBarVisible: model.settings.showStatusBar && !model.statusText.isEmpty,
+            infoPanelWidth: model.isInfoPanelVisible ? 300 : 0
+        )
+
+        // Reclaim first responder after thumbnail/grid tap
         if model.needsCanvasFocus, let window = nsView.window, window.firstResponder !== nsView {
             window.makeFirstResponder(nsView)
             model.needsCanvasFocus = false

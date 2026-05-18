@@ -2,6 +2,7 @@ import AppKit
 import CoreGraphics
 
 final class ViewerNSView: NSView {
+    // MARK: - Callbacks
     var onPrevious: (() -> Void)?
     var onNext: (() -> Void)?
     var onToggleZoom: (() -> Void)?
@@ -26,22 +27,34 @@ final class ViewerNSView: NSView {
     var onToggleFullScreen: (() -> Void)?
     var onEscape: (() -> Void)?
 
-    private var currentProxyMaxPixelSize: CGFloat = 2048
-    private var hasRequestedHigherRes = false
-
+    // MARK: - Public state
     var scrollBehavior: ScrollBehavior = .scrollPan
 
+    // MARK: - Private state
+
+    /// Single source of truth for all zoom / pan / rotation / flip geometry.
+    private var zoom = ZoomGeometry()
+    /// The current proxy image displayed in the layer (unrotated).
+    /// Set as `imageLayer.contents` directly.
+    private var proxyImage: CGImage?
+
     private let imageLayer = CALayer()
-    private var image: CGImage?
-    private var displayImage: CGImage?
-    private var zoomMode: ViewerModel.ZoomMode = .fitWindow
-    private var panOffset: CGPoint = .zero
-    private var zoomScale: CGFloat = 1
-    private var rotation: Int = 0
-    private var flippedHorizontally = false
+
+    /// Tracks the proxy decode size so we don't request upgrades more than once per proxy level.
+    private var currentProxyMaxPixelSize: CGFloat = 2048
+    /// Prevents re-requesting a higher-res proxy while one is already in flight.
+    private var hasRequestedHigherRes = false
+    /// Accumulated horizontal scroll delta for side-wheel page navigation.
+    private var horizontalScrollAccumulator: CGFloat = 0
+
+    /// Maximum stretch factor for the proxy image before requesting a higher-res decode.
+    /// Avoids displaying blurry stretched pixels while the async decode is in flight.
+    private static let proxyStretchLimit: CGFloat = 1.2
 
     override var acceptsFirstResponder: Bool { true }
     override var wantsUpdateLayer: Bool { true }
+
+    // MARK: - Init
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -63,6 +76,20 @@ final class ViewerNSView: NSView {
         onToggleZoom?()
     }
 
+    // MARK: - Key equivalents (⌘ shortcuts)
+
+    /// Override to handle ⌘Delete with keyCode instead of relying on the menu's
+    /// `KeyEquivalent` (which may not match third-party keyboards that send varying
+    /// Unicode characters for the Delete key). HID keyCode 51 is the standard
+    /// Backspace/Delete scan code across all keyboards.
+    override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        if event.modifierFlags.contains(.command), event.keyCode == 51 {
+            onMoveToTrash?()
+            return true
+        }
+        return super.performKeyEquivalent(with: event)
+    }
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
@@ -72,71 +99,127 @@ final class ViewerNSView: NSView {
         window?.makeFirstResponder(self)
     }
 
+    // MARK: - Layout
+
     override func layout() {
         super.layout()
         CATransaction.begin()
         CATransaction.setDisableActions(true)
+
+        if bounds.size != zoom.viewportSize {
+            zoom.viewportDidChange(to: bounds.size)
+        }
+
         layoutImageLayer()
         CATransaction.commit()
     }
+
+    // MARK: - Public configuration
 
     func setProxyMaxPixelSize(_ size: CGFloat) {
-        guard currentProxyMaxPixelSize != size else { return }
         currentProxyMaxPixelSize = size
-        hasRequestedHigherRes = false
     }
 
-    /// Called when navigating to a new image or toggling zoom mode — resets zoom/pan.
-    func setImage(_ image: CGImage?, zoomMode: ViewerModel.ZoomMode) {
-        guard self.image !== image || self.zoomMode != zoomMode else { return }
+    /// Set a new image (first load or navigation).
+    /// Recomputes zoom from the current mode and native size.
+    func setImage(_ image: CGImage?, zoomMode: ZoomGeometry.Mode, nativeSize: CGSize) {
         CATransaction.begin()
         CATransaction.setDisableActions(true)
-        let imageChanged = self.image !== image
-        let zoomModeChanged = self.zoomMode != zoomMode
-        self.image = image
-        self.zoomMode = zoomMode
-        updateDisplayImage()
-        if imageChanged || zoomModeChanged {
-            panOffset = .zero
-            zoomScale = 1
+
+        proxyImage = image
+        imageLayer.contents = image
+        zoom.imageSize = nativeSize
+        zoom.viewportSize = bounds.size
+        zoom.defaultMode = zoomMode
+        zoom.mode = zoomMode
+        zoom.rotation = 0
+        zoom.isFlipped = false
+        zoom.resetZoom()
+        hasRequestedHigherRes = false
+
+        imageLayer.transform = CATransform3DIdentity
+        layoutImageLayer()
+        CATransaction.commit()
+    }
+
+    /// Upgrade proxy resolution for the same image — preserves zoom level and mode.
+    func upgradeImage(_ image: CGImage, nativeSize: CGSize) {
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+
+        proxyImage = image
+        imageLayer.contents = image
+        zoom.imageSize = nativeSize
+        // Proxy just arrived — allow re-requesting a higher one if still needed.
+        hasRequestedHigherRes = false
+        // zoomLevel, mode, pan, rotation, flip all preserved
+        layoutImageLayer()
+        CATransaction.commit()
+    }
+
+    /// Update the displayed frame during animation playback.
+    /// Only swaps the layer contents — `proxyImage` is deliberately NOT updated
+    /// because individual GIF frames may be smaller than the canvas, which would
+    /// trigger a false proxy cap in `layoutImageLayer`.
+    func setAnimatedFrame(_ image: CGImage) {
+        guard (imageLayer.contents as! CGImage) !== image else { return }
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        imageLayer.contents = image
+        CATransaction.commit()
+    }
+
+    /// Update rotation and flip — applied as CATransform3D on the imageLayer,
+    /// no bitmap copy needed.
+    func setRotation(_ degrees: Int, flipped: Bool) {
+        guard zoom.rotation != degrees || zoom.isFlipped != flipped else { return }
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        zoom.rotation = degrees
+        zoom.isFlipped = flipped
+        zoom.panOffset = .zero
+        layoutImageLayer()
+        CATransaction.commit()
+    }
+
+    /// Update zoom mode from the model (menu / toolbar action).
+    func applyZoomMode(_ mode: ZoomGeometry.Mode) {
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        zoom.setMode(mode)
+        layoutImageLayer()
+        CATransaction.commit()
+    }
+
+    /// Set visible insets that exclude overlaid bars / panels for fit-window calculations.
+    /// When bars are hidden (fullscreen) the insets become zero, so the image fills the full viewport.
+    func setBarInsets(isFullScreen: Bool, cursorNearTop: Bool, cursorNearBottom: Bool,
+                      showFrameStrip: Bool, frameStripVisible: Bool,
+                      showThumbnailStrip: Bool, thumbnailStripVisible: Bool,
+                      showStatusBar: Bool, statusBarVisible: Bool,
+                      infoPanelWidth: CGFloat = 0) {
+        let barsHidden = isFullScreen && !cursorNearTop && !cursorNearBottom
+        let top: CGFloat = barsHidden ? 0 : 40
+        let right = infoPanelWidth
+        let bottom: CGFloat
+        if barsHidden {
+            bottom = 0
+        } else {
+            bottom = (frameStripVisible ? 56 : 0)
+                   + (thumbnailStripVisible ? 64 : 0)
+                   + (statusBarVisible ? 26 : 0)
+        }
+        let newInsets = NSEdgeInsets(top: top, left: 0, bottom: bottom, right: right)
+        let oldInsets = zoom.visibleInsets
+        guard newInsets.top != oldInsets.top || newInsets.bottom != oldInsets.bottom || newInsets.right != oldInsets.right else { return }
+        zoom.visibleInsets = newInsets
+        if zoom.mode == .fitWindow || zoom.mode == .fitWidth {
+            zoom.resetZoom()
         }
         layoutImageLayer()
-        CATransaction.commit()
     }
 
-    /// Called when the same image gets a higher-resolution decode — preserves current zoom/pan.
-    func upgradeImage(_ image: CGImage, zoomMode: ViewerModel.ZoomMode) {
-        guard self.image !== image || self.zoomMode != zoomMode else { return }
-        CATransaction.begin()
-        CATransaction.setDisableActions(true)
-        self.image = image
-        self.zoomMode = zoomMode
-        updateDisplayImage()
-        layoutImageLayer()
-        CATransaction.commit()
-    }
-
-    func setAnimatedFrame(_ image: CGImage) {
-        guard self.image !== image else { return }
-        CATransaction.begin()
-        CATransaction.setDisableActions(true)
-        self.image = image
-        updateDisplayImage()
-        CATransaction.commit()
-    }
-
-    func setRotation(_ degrees: Int, flipped: Bool) {
-        guard rotation != degrees || flippedHorizontally != flipped else { return }
-        CATransaction.begin()
-        CATransaction.setDisableActions(true)
-        rotation = degrees
-        flippedHorizontally = flipped
-        updateDisplayImage()
-        panOffset = .zero
-        zoomScale = 1
-        layoutImageLayer()
-        CATransaction.commit()
-    }
+    // MARK: - Keyboard & context menu (unchanged)
 
     override func keyDown(with event: NSEvent) {
         let key = event.charactersIgnoringModifiers?.lowercased()
@@ -192,7 +275,20 @@ final class ViewerNSView: NSView {
     @objc private func doFlipHorizontal() { onFlipHorizontal?() }
     @objc private func doMoveToTrash() { onMoveToTrash?() }
 
+    // MARK: - Scroll wheel
+
     override func scrollWheel(with event: NSEvent) {
+        // Side-scroll wheel (MX Master 3S etc.): pure horizontal → accumulate + page nav
+        if event.scrollingDeltaY == 0, abs(event.scrollingDeltaX) > 0.5 {
+            horizontalScrollAccumulator += event.scrollingDeltaX
+            let threshold: CGFloat = 45
+            if abs(horizontalScrollAccumulator) >= threshold {
+                if horizontalScrollAccumulator > 0 { onPrevious?() } else { onNext?() }
+                horizontalScrollAccumulator = 0
+            }
+            return
+        }
+
         if event.modifierFlags.contains(.option) || event.modifierFlags.contains(.command) {
             applyZoomDelta(event.scrollingDeltaY == 0 ? -event.scrollingDeltaX : event.scrollingDeltaY)
             return
@@ -208,46 +304,21 @@ final class ViewerNSView: NSView {
                 if event.scrollingDeltaY > 0 { onPrevious?() } else { onNext?() }
             }
         case .scrollPan:
-            let newX = panOffset.x + event.scrollingDeltaX
-            let newY = panOffset.y - event.scrollingDeltaY
+            let maxPan = zoom.maxPanOffset
+            let newX = zoom.panOffset.x + event.scrollingDeltaX
+            let newY = zoom.panOffset.y - event.scrollingDeltaY
 
-            let (maxPanX, maxPanY) = maxPanOffset()
-
-            // Check if at horizontal edges
-            if maxPanX > 0 {
-                if newX > maxPanX * 0.5 {
-                    panOffset.x = maxPanX
-                } else if newX < -maxPanX * 0.5 {
-                    panOffset.x = -maxPanX
-                } else {
-                    panOffset.x = newX
-                }
-            }
-
-            // Check if at vertical edges — if so, trigger page navigation
-            if maxPanY > 0 {
-                let threshold = maxPanY * 0.15
-                if newY > maxPanY + threshold {
-                    onNext?()
-                    panOffset.y = 0
-                } else if newY < -maxPanY - threshold {
-                    onPrevious?()
-                    panOffset.y = 0
-                } else if newY > maxPanY {
-                    panOffset.y = maxPanY
-                } else if newY < -maxPanY {
-                    panOffset.y = -maxPanY
-                } else {
-                    panOffset.y = newY
-                }
-            }
+            zoom.panOffset.x = clampPanAxis(newX, limit: maxPan.x)
+            zoom.panOffset.y = clampPanAxis(newY, limit: maxPan.y,
+                                            overflowNext: { self.onNext?() },
+                                            overflowPrevious: { self.onPrevious?() })
 
             layoutImageLayer()
         }
     }
 
     override func magnify(with event: NSEvent) {
-        zoomScale = min(max(zoomScale * (1 + event.magnification), 0.1), 8)
+        zoom.applyMagnification(event.magnification)
         layoutImageLayer()
     }
 
@@ -261,22 +332,6 @@ final class ViewerNSView: NSView {
         onDragTargetedChanged?(false)
     }
 
-    func zoomIn() {
-        zoomScale = min(zoomScale * 1.25, 8)
-        layoutImageLayer()
-    }
-
-    func zoomOut() {
-        zoomScale = max(zoomScale / 1.25, 0.1)
-        layoutImageLayer()
-    }
-
-    func resetZoom() {
-        zoomScale = 1
-        panOffset = .zero
-        layoutImageLayer()
-    }
-
     override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
         defer { onDragTargetedChanged?(false) }
         guard let urls = sender.draggingPasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL],
@@ -287,114 +342,148 @@ final class ViewerNSView: NSView {
         return true
     }
 
-    /// Returns the maximum pan offset (half the difference between image and viewport).
-    /// Returns (0, 0) when the image fits entirely within the view.
-    private func maxPanOffset() -> (CGFloat, CGFloat) {
-        guard let displayImage, bounds.width > 0, bounds.height > 0 else { return (0, 0) }
-        let imageSize = CGSize(width: displayImage.width, height: displayImage.height)
-        let effectiveScale = baseScale(for: imageSize) * zoomScale
-        let displayW = imageSize.width * effectiveScale
-        let displayH = imageSize.height * effectiveScale
-        let panX = max((displayW - bounds.width) / 2, 0)
-        let panY = max((displayH - bounds.height) / 2, 0)
-        return (panX, panY)
-    }
+    // MARK: - Zoom actions
 
-    private func baseScale(for imageSize: CGSize) -> CGFloat {
-        switch zoomMode {
-        case .fitWindow:  min(bounds.width / imageSize.width, bounds.height / imageSize.height)
-        case .fitWidth:   bounds.width / imageSize.width
-        case .actualSize: 1
-        }
-    }
-
-    private func applyZoomDelta(_ delta: CGFloat) {
-        let factor = exp(delta * 0.01)
-        zoomScale = min(max(zoomScale * factor, 0.1), 8)
+    func zoomIn() {
+        zoom.zoomIn()
         layoutImageLayer()
     }
 
+    func zoomOut() {
+        zoom.zoomOut()
+        layoutImageLayer()
+    }
+
+    func resetZoom() {
+        zoom.resetZoom()
+        layoutImageLayer()
+    }
+
+    // MARK: - Layout
+
+    /// Core layout routine.
+    ///
+    /// **Geometry vs. proxy cap separation:**
+    /// - `zoom` computes the ideal display size from pure geometry (native size × zoomLevel,
+    ///   accounting for rotation).
+    /// - This method applies a proxy stretch cap so the proxy CGImage is never stretched
+    ///   beyond `proxyStretchLimit` × its pixel dimensions, preventing blur while a
+    ///   higher-res decode is in flight.
+    /// - **Pan bounds always use the ideal (uncapped) size** so they don't jump when the
+    ///   proxy upgrades.
     private func layoutImageLayer() {
-        guard let displayImage else {
+        guard let proxyImage else {
             imageLayer.frame = .zero
             return
         }
 
-        let imageSize = CGSize(width: displayImage.width, height: displayImage.height)
-        guard imageSize.width > 0, imageSize.height > 0, bounds.width > 0, bounds.height > 0 else {
+        let proxySize = CGSize(width: proxyImage.width, height: proxyImage.height)
+        guard proxySize.width > 0, proxySize.height > 0, bounds.width > 0, bounds.height > 0 else {
             imageLayer.frame = .zero
             return
         }
 
-        let effectiveScale = baseScale(for: imageSize) * zoomScale
-        let targetSize = CGSize(width: imageSize.width * effectiveScale, height: imageSize.height * effectiveScale)
-        onZoomChanged?(Int((effectiveScale * 100).rounded()))
+        // Ensure zoom sees the latest viewport size
+        zoom.viewportSize = bounds.size
 
-        imageLayer.frame = CGRect(
-            x: (bounds.width - targetSize.width) / 2 + panOffset.x,
-            y: (bounds.height - targetSize.height) / 2 + panOffset.y,
-            width: targetSize.width,
-            height: targetSize.height
-        ).integral
+        // ── Proxy cap ──────────────────────────────────────────────
+        // The layer's bounds are in the UNROTATED coordinate frame
+        // (the CATransform3D handles rotation visually).
+        let idealDisplay = zoom.displaySize
+        let unrotatedIdeal: CGSize
+        if zoom.rotation % 180 == 0 {
+            unrotatedIdeal = idealDisplay
+        } else {
+            unrotatedIdeal = CGSize(width: idealDisplay.height, height: idealDisplay.width)
+        }
 
-        // Request higher resolution decode if zoomed past proxy threshold
-        if !hasRequestedHigherRes {
-            let displayedPixelWidth = targetSize.width
-            let proxyWidth = CGFloat(displayImage.width)
-            if displayedPixelWidth > proxyWidth * 1.2 {
+        // When the proxy already covers the full native resolution, skip the stretch cap.
+        // The image will get pixelated at high zoom — that's expected and standard.
+        // EXIF orientation may swap dimensions (e.g. 4032×3024 image with orientation=6
+        // produces a 3024×4032 CGImage), so we check both orderings.
+        let imageW = zoom.imageSize.width
+        let imageH = zoom.imageSize.height
+        let isAtNativeRes = (proxySize.width >= imageW && proxySize.height >= imageH)
+                         || (proxySize.width >= imageH && proxySize.height >= imageW)
+
+        let displaySize: CGSize
+        if isAtNativeRes {
+            displaySize = unrotatedIdeal
+        } else {
+            let maxStretch = CGSize(
+                width:  proxySize.width  * Self.proxyStretchLimit,
+                height: proxySize.height * Self.proxyStretchLimit
+            )
+            displaySize = CGSize(
+                width:  min(unrotatedIdeal.width,  maxStretch.width),
+                height: min(unrotatedIdeal.height, maxStretch.height)
+            )
+        }
+
+        // ── Pan ────────────────────────────────────────────────────
+        // Pan bounds use IDEAL (uncapped) size for stability across proxy upgrades.
+        let pan = zoom.clampedPan
+
+        // ── Position ───────────────────────────────────────────────
+        imageLayer.bounds = CGRect(origin: .zero, size: displaySize)
+        // Center in the VISIBLE area (between bars / beside panel) instead of
+        // the full viewport. The image starts out fitting within the insets,
+        // but pan/zoom content can extend behind the overlaid bars and panel.
+        let visibleLeft = zoom.visibleInsets.left
+        let visibleRight = zoom.visibleInsets.right
+        let xCenter = (bounds.width - visibleLeft - visibleRight) / 2 + visibleLeft
+        let yCenter = bounds.midY + (zoom.visibleInsets.bottom - zoom.visibleInsets.top) / 2
+        imageLayer.position = CGPoint(x: xCenter + pan.x, y: yCenter + pan.y)
+        imageLayer.transform = zoom.layerTransform
+
+        // ── Report zoom ────────────────────────────────────────────
+        onZoomChanged?(Int((zoom.zoomLevel * 100).rounded()))
+
+        // ── Request higher-res proxy if needed ─────────────────────
+        // Only request when a) proxy is NOT at native res and b) either dimension is stretched beyond limit.
+        if !isAtNativeRes, !hasRequestedHigherRes {
+            let neededProxyWidth  = unrotatedIdeal.width  / Self.proxyStretchLimit
+            let neededProxyHeight = unrotatedIdeal.height / Self.proxyStretchLimit
+            if proxySize.width < neededProxyWidth || proxySize.height < neededProxyHeight {
                 hasRequestedHigherRes = true
                 onRequestHigherRes?()
             }
         }
     }
 
-    private func updateDisplayImage() {
-        guard let image else {
-            displayImage = nil
-            imageLayer.contents = nil
-            return
-        }
-        guard rotation != 0 || flippedHorizontally else {
-            displayImage = image
-            imageLayer.contents = image
-            return
-        }
+    // MARK: - Helpers
 
-        // Create a rotated/flipped copy of the CGImage
-        let radians = CGFloat(rotation) * .pi / 180
-        let outputSize: CGSize
-        if rotation == 90 || rotation == 270 {
-            outputSize = CGSize(width: image.height, height: image.width)
+    private func applyZoomDelta(_ delta: CGFloat) {
+        zoom.applyScrollDelta(delta)
+        layoutImageLayer()
+    }
+
+    /// Clamp a single pan axis with optional overflow page navigation.
+    /// - `limit`: the max absolute offset on this axis (from `maxPanOffset`).
+    /// - `overflowNext`: triggered when panning past the positive edge.
+    /// - `overflowPrevious`: triggered when panning past the negative edge.
+    private func clampPanAxis(
+        _ desired: CGFloat,
+        limit: CGFloat,
+        overflowNext: (() -> Void)? = nil,
+        overflowPrevious: (() -> Void)? = nil
+    ) -> CGFloat {
+        guard limit > 0 else { return 0 }
+
+        let threshold = limit * 0.15
+
+        if desired > limit + threshold {
+            overflowNext?()
+            return 0
+        } else if desired < -limit - threshold {
+            overflowPrevious?()
+            return 0
+        } else if desired > limit {
+            return limit
+        } else if desired < -limit {
+            return -limit
         } else {
-            outputSize = CGSize(width: image.width, height: image.height)
+            return desired
         }
-
-        let context = CGContext(
-            data: nil,
-            width: Int(outputSize.width),
-            height: Int(outputSize.height),
-            bitsPerComponent: 8,
-            bytesPerRow: 0,
-            space: image.colorSpace ?? CGColorSpaceCreateDeviceRGB(),
-            bitmapInfo: image.bitmapInfo.rawValue
-        )
-        guard let ctx = context else { return }
-
-        ctx.translateBy(x: outputSize.width / 2, y: outputSize.height / 2)
-        if flippedHorizontally {
-            ctx.scaleBy(x: -1, y: 1)
-        }
-        if rotation != 0 {
-            ctx.rotate(by: radians)
-        }
-        ctx.draw(image, in: CGRect(
-            x: -CGFloat(image.width) / 2,
-            y: -CGFloat(image.height) / 2,
-            width: CGFloat(image.width),
-            height: CGFloat(image.height)
-        ))
-
-        displayImage = ctx.makeImage()
-        imageLayer.contents = displayImage
     }
 }

@@ -141,7 +141,25 @@ final class ThumbnailDiskCache: @unchecked Sendable {
 
 private extension CGImage {
     /// Encode this CGImage as JPEG data at the given quality.
+    /// Strips any alpha channel first to avoid ImageIO warnings.
     func jpegData(compressionQuality: CGFloat) -> Data? {
+        // Strip alpha by drawing into an opaque context
+        let image: CGImage
+        if alphaInfo != .none && alphaInfo != .noneSkipFirst && alphaInfo != .noneSkipLast {
+            let colorSpace = self.colorSpace ?? CGColorSpaceCreateDeviceRGB()
+            let bitmapInfo = CGBitmapInfo.byteOrder32Little.rawValue | CGImageAlphaInfo.noneSkipFirst.rawValue
+            guard let ctx = CGContext(
+                data: nil, width: width, height: height,
+                bitsPerComponent: 8, bytesPerRow: 0,
+                space: colorSpace, bitmapInfo: bitmapInfo
+            ) else { return nil }
+            ctx.draw(self, in: CGRect(x: 0, y: 0, width: width, height: height))
+            guard let opaque = ctx.makeImage() else { return nil }
+            image = opaque
+        } else {
+            image = self
+        }
+
         let data = NSMutableData()
         guard let destination = CGImageDestinationCreateWithData(
             data as CFMutableData,
@@ -153,7 +171,7 @@ private extension CGImage {
         let options: [CFString: Any] = [
             kCGImageDestinationLossyCompressionQuality: compressionQuality
         ]
-        CGImageDestinationAddImage(destination, self, options as CFDictionary)
+        CGImageDestinationAddImage(destination, image, options as CFDictionary)
         guard CGImageDestinationFinalize(destination) else { return nil }
         return data as Data
     }

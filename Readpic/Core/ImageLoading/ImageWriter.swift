@@ -118,6 +118,37 @@ struct ImageWriter {
         return ctx.makeImage()
     }
 
+    // MARK: - Crop
+
+    /// Crop a CGImage to the given pixel rect.
+    /// The rect is in pixel coordinates relative to the source image.
+    /// Returns `nil` if the rect is empty or the context can't be created.
+    static func crop(_ image: CGImage, to rect: CGRect) -> CGImage? {
+        let x = max(0, Int(rect.origin.x))
+        let y = max(0, Int(rect.origin.y))
+        let w = max(1, Int(rect.width))
+        let h = max(1, Int(rect.height))
+
+        guard x + w <= image.width, y + h <= image.height else { return nil }
+
+        let colorSpace = image.colorSpace ?? CGColorSpaceCreateDeviceRGB()
+        let bitmapInfo = CGBitmapInfo.byteOrder32Little.rawValue | CGImageAlphaInfo.noneSkipFirst.rawValue
+
+        guard let ctx = CGContext(
+            data: nil,
+            width: w,
+            height: h,
+            bitsPerComponent: 8,
+            bytesPerRow: 0,
+            space: colorSpace,
+            bitmapInfo: bitmapInfo
+        ) else { return nil }
+
+        ctx.interpolationQuality = .high
+        ctx.draw(image, in: CGRect(x: -x, y: -y, width: image.width, height: image.height))
+        return ctx.makeImage()
+    }
+
     // MARK: - Write
 
     /// Write a CGImage to a file at the given URL.

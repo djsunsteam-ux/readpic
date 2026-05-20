@@ -120,7 +120,7 @@ struct ReadpicApp: App {
                     }
                 }
                 .keyboardShortcut("s")
-                .disabled(!model.hasAnimatedFrames)
+                .disabled(!model.hasAnimatedFrames || model.isGridView)
 
                 Button("Info Panel") {
                     withAnimation(.easeInOut(duration: 0.2)) {
@@ -148,6 +148,9 @@ struct ReadpicApp: App {
 
             // MARK: - Image
             CommandMenu("Image") {
+                Button("Crop\u{2026}") { model.enterCropMode() }
+                    .disabled(!model.isGridView && model.currentFile == nil)
+
                 Button("Rotate Left") { model.rotateLeft() }
                     .keyboardShortcut("[", modifiers: .command)
                     .disabled(model.currentFile == nil)

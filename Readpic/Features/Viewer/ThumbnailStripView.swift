@@ -4,12 +4,14 @@ struct ThumbnailStripView: View {
     let files: [FileItem]
     let currentIndex: Int
     let select: (Int) -> Void
+    var onScrollStart: (() -> Void)?
+    var onScrollEnd: (() -> Void)?
 
     @State private var thumbnails: [URL: CGImage] = [:]
 
     var body: some View {
         ScrollViewReader { proxy in
-            ScrollView(.horizontal, showsIndicators: false) {
+            NativeHScroll {
                 LazyHStack(spacing: 4) {
                     ForEach(Array(files.enumerated()), id: \.element.url) { index, file in
                         let isSelected = index == currentIndex
@@ -36,6 +38,8 @@ struct ThumbnailStripView: View {
                 .padding(.horizontal, 8)
                 .frame(height: 64)
             }
+            .onScrollStart { onScrollStart?() }
+            .onScrollEnd { onScrollEnd?() }
             .frame(height: 64)
             .background(.ultraThinMaterial)
             .onAppear {

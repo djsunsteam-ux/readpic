@@ -10,6 +10,8 @@ struct FrameStripView: View {
     let isPlaying: Bool
     let onSelect: (Int) -> Void
     let onTogglePlay: () -> Void
+    var onScrollStart: (() -> Void)?
+    var onScrollEnd: (() -> Void)?
 
     private let cellSize: CGFloat = 48
 
@@ -31,9 +33,9 @@ struct FrameStripView: View {
             .padding(.horizontal, 12)
             .padding(.top, 4)
 
-            // Frame thumbnails
+            // Frame thumbnails in native horizontal scroll view
             ScrollViewReader { proxy in
-                ScrollView(.horizontal, showsIndicators: false) {
+                NativeHScroll {
                     LazyHStack(spacing: 3) {
                         ForEach(frames.indices, id: \.self) { index in
                             frameCell(index: index)
@@ -42,6 +44,8 @@ struct FrameStripView: View {
                     }
                     .padding(.horizontal, 8)
                 }
+                .onScrollStart { onScrollStart?() }
+                .onScrollEnd { onScrollEnd?() }
                 .frame(height: cellSize + 4)
                 .onAppear { proxy.scrollTo(currentIndex, anchor: .center) }
                 .onChange(of: currentIndex) { _, newIndex in

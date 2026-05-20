@@ -60,6 +60,16 @@ final class ViewerModel {
     var showFrameStrip = false
     var showExportPanel = false
     var showBatchExportPanel = false
+    var isCropMode = false
+    /// Normalized crop rect in image pixel space (0…1).
+    var cropRect: CGRect = .init(x: 0, y: 0, width: 1, height: 1)
+    var cropPreset: CropPreset = .free
+    /// When cropping a GIF, the selected frame to display (nil = use proxy).
+    var cropFrameImage: CGImage?
+    /// Remembered thumbnail strip state for restore on crop exit.
+    private var wasThumbnailStripVisibleBeforeCrop = true
+    /// Remembered grid mode state — restore on crop cancel.
+    private var wasInGridViewBeforeCrop = false
 
     weak var window: NSWindow?
 
@@ -335,6 +345,7 @@ final class ViewerModel {
                 fileListVersion &+= 1
                 isGridView = items.count > 1
                 currentIndex = 0
+                selectedGridIndices = [0]
                 ImageCache.shared.set(image)
                 decodedImage = image
                 metadata = metadataReader.read(url: image.url, pixelSize: image.pixelSize)
@@ -403,10 +414,37 @@ final class ViewerModel {
         isAnimationPaused.toggle()
     }
 
+    /// Resume animation from the current frame index (does not reset to frame 0).
+    private func resumeAnimation() {
+        guard let frames = decodedImage?.animatedFrames, frames.count > 1 else { return }
+        animationTask?.cancel()
+        animationTask = nil
+        let startIndex = min(currentFrameIndex, frames.count - 1)
+        isAnimating = true
+        isAnimationPaused = false
+        currentFrameIndex = startIndex
+        animationTask = Task { [weak self] in
+            while !Task.isCancelled {
+                guard let self else { return }
+                let delay = frames[self.currentFrameIndex].delay
+                try? await Task.sleep(for: .seconds(delay))
+                guard !Task.isCancelled else { return }
+                if self.isAnimationPaused { continue }
+                await MainActor.run {
+                    guard !self.isAnimationPaused else { return }
+                    self.currentFrameIndex = (self.currentFrameIndex + 1) % frames.count
+                }
+            }
+        }
+    }
+
     func selectFrame(at index: Int) {
         guard let frames = decodedImage?.animatedFrames, frames.indices.contains(index) else { return }
         isAnimationPaused = true
         currentFrameIndex = index
+        if isCropMode {
+            cropFrameImage = frames[index].image
+        }
     }
 
     func selectFile(at index: Int) {
@@ -452,10 +490,12 @@ final class ViewerModel {
 
     func rotateLeft() {
         rotation = (rotation + 90) % 360
+        if isCropMode { reapplyCropPreset() }
     }
 
     func rotateRight() {
         rotation = (rotation - 90 + 360) % 360
+        if isCropMode { reapplyCropPreset() }
     }
 
     func flipHorizontal() {
@@ -538,10 +578,17 @@ final class ViewerModel {
     func toggleGridView() {
         isGridView.toggle()
         if isGridView {
-            selectedGridIndices.removeAll()
+            selectedGridIndices = [currentIndex]
             stopAnimation()
         } else {
+            // Switch to the grid-selected file
+            if let first = selectedGridIndices.sorted().first, files.indices.contains(first) {
+                currentIndex = first
+            }
             selectedGridIndices.removeAll()
+            resetRotation()
+            loadCurrentImage()
+            needsCanvasFocus = true
             startAnimation()
         }
     }
@@ -601,6 +648,218 @@ final class ViewerModel {
         resetRotation()
         loadCurrentImage()
         needsCanvasFocus = true
+    }
+
+    // MARK: - Crop
+
+    enum CropPreset: String, CaseIterable, Sendable {
+        case free = "Free"
+        case r1v1  = "1:1"
+        case r3v2  = "3:2"
+        case r2v3  = "2:3"
+        case r4v3  = "4:3"
+        case r3v4  = "3:4"
+        case r16v9 = "16:9"
+        case r9v16 = "9:16"
+        case r21v9 = "21:9"
+
+        var ratio: CGFloat? {
+            switch self {
+            case .free: nil
+            case .r1v1:  1
+            case .r3v2:  3.0 / 2.0
+            case .r2v3:  2.0 / 3.0
+            case .r4v3:  4.0 / 3.0
+            case .r3v4:  3.0 / 4.0
+            case .r16v9: 16.0 / 9.0
+            case .r9v16: 9.0 / 16.0
+            case .r21v9: 21.0 / 9.0
+            }
+        }
+    }
+
+    func enterCropMode() {
+        if isGridView {
+            // Determine target file: explicit selection → grid highlight → first file
+            let targetIdx = selectedGridIndices.sorted().first ?? currentIndex
+            guard files.indices.contains(targetIdx) else { return }
+            let file = files[targetIdx]
+
+            // Exit grid view so ViewerNSView becomes visible for the crop overlay
+            wasInGridViewBeforeCrop = true
+            isGridView = false
+            selectedGridIndices.removeAll()
+            currentIndex = targetIdx
+            needsCanvasFocus = true
+
+            if decodedImage?.url == file.url {
+                // Already decoded — enter crop directly
+                enterCropModeDirect()
+            } else {
+                // Decode first, then enter crop
+                isLoading = true
+                loadTask?.cancel()
+                loadTask = Task {
+                    do {
+                        let image = try await Task.detached(priority: .userInitiated) {
+                            try self.decoder.decode(url: file.url)
+                        }.value
+                        guard !Task.isCancelled else { return }
+                        ImageCache.shared.set(image)
+                        decodedImage = image
+                        metadata = self.metadataReader.read(url: image.url, pixelSize: image.pixelSize)
+                        rotation = 0
+                        isFlippedHorizontally = false
+                        isLoading = false
+                        enterCropModeDirect()
+                    } catch {
+                        isLoading = false
+                        showToast("The file is damaged and can’t be displayed")
+                    }
+                }
+            }
+        } else {
+            wasInGridViewBeforeCrop = false
+            enterCropModeDirect()
+        }
+    }
+
+    private func enterCropModeDirect() {
+        guard decodedImage != nil else { return }
+        stopAnimation()
+        if hasAnimatedFrames { isAnimationPaused = true }
+        wasThumbnailStripVisibleBeforeCrop = showThumbnailStrip
+        if showThumbnailStrip { showThumbnailStrip = false }
+        cropFrameImage = nil
+        cropRect = .init(x: 0, y: 0, width: 1, height: 1)
+        cropPreset = .free
+        isCropMode = true
+    }
+
+    /// Re-apply the current preset after image/rotation change.
+    /// Does nothing if the current preset is .free.
+    private func reapplyCropPreset() {
+        guard isCropMode, cropPreset != .free else { return }
+        // Temporarily save preset, reset rect, then re-apply
+        let saved = cropPreset
+        cropRect = .init(x: 0, y: 0, width: 1, height: 1)
+        cropPreset = .free
+        setCropPreset(saved)
+    }
+
+    func applyCrop() {
+        isCropMode = false
+        if wasThumbnailStripVisibleBeforeCrop { showThumbnailStrip = true }
+        if hasAnimatedFrames { resumeAnimation() }
+        let restoreGrid = wasInGridViewBeforeCrop
+        guard let img = decodedImage, let currentFile else { return }
+        let imgW = CGFloat(img.image.width)
+        let imgH = CGFloat(img.image.height)
+        let pixelRect = CGRect(
+            x: cropRect.origin.x * imgW,
+            y: cropRect.origin.y * imgH,
+            width: cropRect.width * imgW,
+            height: cropRect.height * imgH
+        )
+        guard pixelRect.width >= 1, pixelRect.height >= 1 else { return }
+
+        // Crop the image (use frame strip selection if available)
+        let sourceImage = cropFrameImage ?? img.image
+        guard let cropped = ImageWriter.crop(sourceImage, to: pixelRect) else {
+            showToast("Failed to crop image")
+            return
+        }
+
+        // Generate output filename in the same folder: original_crop_N.ext
+        let folder = currentFile.url.deletingLastPathComponent()
+        let baseName = (currentFile.name as NSString).deletingPathExtension
+        let ext = currentFile.url.pathExtension
+        let existingNames = Set(files.map(\.name))
+        var sequence = 1
+        var outputName: String
+        repeat {
+            outputName = "\(baseName)_crop_\(sequence).\(ext)"
+            sequence += 1
+        } while existingNames.contains(outputName)
+
+        let outputURL = folder.appendingPathComponent(outputName)
+        let format = ImageWriter.SaveFormat.from(url: currentFile.url)
+        guard ImageWriter.write(cropped, to: outputURL, format: format) else {
+            showToast("Failed to save cropped file")
+            return
+        }
+
+        // Add to file list and reload
+        let newItem = FileItem(url: outputURL)
+        files.append(newItem)
+        files = FileSorter.sort(files, by: settings.sortMode)
+        fileListVersion &+= 1
+
+        if let newIdx = files.firstIndex(where: { $0.url == outputURL }) {
+            currentIndex = newIdx
+            stopAnimation()
+            loadCurrentImage()
+            needsCanvasFocus = true
+        }
+
+        cropFrameImage = nil
+
+        // Return to grid if we came from there
+        if restoreGrid {
+            isGridView = true
+            selectedGridIndices = [currentIndex]
+            wasInGridViewBeforeCrop = false
+        }
+
+        showToast("Saved as \(outputName)")
+    }
+
+    func cancelCrop() {
+        isCropMode = false
+        cropFrameImage = nil
+        if wasThumbnailStripVisibleBeforeCrop { showThumbnailStrip = true }
+        if hasAnimatedFrames { resumeAnimation() }
+        if wasInGridViewBeforeCrop {
+            isGridView = true
+            selectedGridIndices = [currentIndex]
+            needsCanvasFocus = true
+        }
+    }
+
+    func setCropPreset(_ preset: CropPreset) {
+        cropPreset = preset
+        guard let ratio = preset.ratio else {
+            // Free — reset to full image
+            cropRect = .init(x: 0, y: 0, width: 1, height: 1)
+            return
+        }
+        guard let img = decodedImage else { return }
+        // Use the actual CGImage dimensions (post-EXIF-orientation) rather than
+        // the ImageIO property values which may differ for HEIC/GIF with EXIF.
+        // Account for rotation: when 90° or 270°, effective W/H swaps.
+        let rotated = (rotation % 180 != 0)
+        let imgW = rotated ? CGFloat(img.image.height) : CGFloat(img.image.width)
+        let imgH = rotated ? CGFloat(img.image.width)  : CGFloat(img.image.height)
+        guard imgW > 0, imgH > 0 else { return }
+
+        // Try to fill the longer dimension first. If it would exceed the image
+        // bounds, fall back to filling the shorter dimension instead.
+        let pw: CGFloat
+        let ph: CGFloat
+        let tryW = imgW
+        let tryH = imgW / ratio
+        if tryH <= imgH {
+            pw = tryW; ph = tryH
+        } else {
+            ph = imgH; pw = ph * ratio
+        }
+
+        // Centre within image bounds
+        let px = (imgW - pw) / 2
+        let py = (imgH - ph) / 2
+
+        cropRect = CGRect(x: px / imgW, y: py / imgH,
+                          width: pw / imgW, height: ph / imgH)
     }
 
     // MARK: - Multi-Select
@@ -973,6 +1232,7 @@ final class ViewerModel {
             isLoading = false
             preloadAdjacent()
             preloadHigherResolutions()
+            if isCropMode { reapplyCropPreset() }
             return
         }
 
@@ -1012,6 +1272,7 @@ final class ViewerModel {
             isLoading = false
             preloadAdjacent()
             preloadHigherResolutions()
+            if isCropMode { reapplyCropPreset() }
         }
     }
 

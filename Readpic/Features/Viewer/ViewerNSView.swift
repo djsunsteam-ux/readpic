@@ -26,6 +26,10 @@ final class ViewerNSView: NSView {
     var onToggleThumbnailStrip: (() -> Void)?
     var onToggleFullScreen: (() -> Void)?
     var onEscape: (() -> Void)?
+    var onCropRectChanged: ((CGRect) -> Void)?
+    var onCropConfirm: (() -> Void)?
+    var onCropCancel: (() -> Void)?
+    var onCrop: (() -> Void)?
 
     // MARK: - Public state
     var scrollBehavior: ScrollBehavior = .scrollPan
@@ -51,6 +55,22 @@ final class ViewerNSView: NSView {
     /// Avoids displaying blurry stretched pixels while the async decode is in flight.
     private static let proxyStretchLimit: CGFloat = 1.2
 
+    // MARK: - Crop
+
+    private let cropOverlayView = CropOverlayView(frame: .zero)
+    var isCropMode = false {
+        didSet { cropOverlayView.isHidden = !isCropMode; needsLayout = true }
+    }
+    /// Ratio to lock the crop overlay (nil = free).
+    var cropLockedRatio: CGFloat? {
+        get { cropOverlayView.lockedRatio }
+        set { cropOverlayView.lockedRatio = newValue }
+    }
+    var cropImagePixelSize: CGSize {
+        get { cropOverlayView.imagePixelSize }
+        set { cropOverlayView.imagePixelSize = newValue }
+    }
+
     override var acceptsFirstResponder: Bool { true }
     override var wantsUpdateLayer: Bool { true }
 
@@ -70,6 +90,14 @@ final class ViewerNSView: NSView {
         let doubleClick = NSClickGestureRecognizer(target: self, action: #selector(handleDoubleClick))
         doubleClick.numberOfClicksRequired = 2
         addGestureRecognizer(doubleClick)
+
+        // Crop overlay (hidden until crop mode)
+        cropOverlayView.isHidden = true
+        cropOverlayView.postsFrameChangedNotifications = false
+        cropOverlayView.onDragEnded = { [weak self] rect in
+            self?.onCropRectChanged?(rect)
+        }
+        addSubview(cropOverlayView)
     }
 
     @objc private func handleDoubleClick() {
@@ -111,6 +139,13 @@ final class ViewerNSView: NSView {
         }
 
         layoutImageLayer()
+
+        // Crop overlay — match image layer frame
+        if !cropOverlayView.isHidden {
+            cropOverlayView.frame = bounds
+            cropOverlayView.imageRect = imageLayer.frame
+        }
+
         CATransaction.commit()
     }
 
@@ -228,7 +263,11 @@ final class ViewerNSView: NSView {
         switch event.keyCode {
         case 123: onPrevious?()
         case 124: onNext?()
-        case 53:  onEscape?()
+        case 53:
+            if isCropMode { onCropCancel?() }
+            else { onEscape?() }
+        case 36:
+            if isCropMode { onCropConfirm?() }
         case 49:  onToggleAnimationPause?()
         default:
             switch key {
@@ -239,6 +278,7 @@ final class ViewerNSView: NSView {
             case "g": onToggleGridView?()
             case "t": onToggleThumbnailStrip?()
             case "f": onToggleFullScreen?()
+            case "c": onCrop?()  // toggle handled by ViewerView key monitor
             default:
                 if chars == "?" { onToggleShortcutsHelp?() }
                 else { super.keyDown(with: event) }
@@ -341,6 +381,11 @@ final class ViewerNSView: NSView {
         onOpenURL?(url)
         return true
     }
+
+    // MARK: - Crop
+
+    func getCropRect() -> CGRect { cropOverlayView.normalizedCropRect }
+    func setCropRect(_ rect: CGRect) { cropOverlayView.normalizedCropRect = rect }
 
     // MARK: - Zoom actions
 

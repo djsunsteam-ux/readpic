@@ -40,6 +40,8 @@
 		A00000000000000000000083 /* ImageWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000084 /* ImageWriter.swift */; };
 		A00000000000000000000085 /* ExportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000086 /* ExportView.swift */; };
 		A00000000000000000000089 /* BatchConvertView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000088 /* BatchConvertView.swift */; };
+		A00000000000000000000090 /* CropOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000091 /* CropOverlayView.swift */; };
+		A00000000000000000000092 /* NativeHScroll.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000093 /* NativeHScroll.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -79,6 +81,8 @@
 		A00000000000000000000084 /* ImageWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageWriter.swift; sourceTree = "<group>"; };
 		A00000000000000000000086 /* ExportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportView.swift; sourceTree = "<group>"; };
 		A00000000000000000000088 /* BatchConvertView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatchConvertView.swift; sourceTree = "<group>"; };
+		A00000000000000000000091 /* CropOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CropOverlayView.swift; sourceTree = "<group>"; };
+		A00000000000000000000093 /* NativeHScroll.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeHScroll.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXContainerItemProxy section */
@@ -238,6 +242,8 @@
 				A00000000000000000000062 /* ThumbnailStripView.swift */,
 				A00000000000000000000064 /* GridView.swift */,
 				A00000000000000000000072 /* FrameStripView.swift */,
+				A00000000000000000000091 /* CropOverlayView.swift */,
+				A00000000000000000000093 /* NativeHScroll.swift */,
 			);
 			path = Viewer;
 			sourceTree = "<group>";
@@ -434,6 +440,8 @@
 				A00000000000000000000083 /* ImageWriter.swift in Sources */,
 				A00000000000000000000085 /* ExportView.swift in Sources */,
 				A00000000000000000000089 /* BatchConvertView.swift in Sources */,
+				A00000000000000000000090 /* CropOverlayView.swift in Sources */,
+				A00000000000000000000092 /* NativeHScroll.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

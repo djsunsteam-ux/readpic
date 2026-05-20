@@ -44,8 +44,13 @@ struct ViewerRepresentable: NSViewRepresentable {
         view.onToggleAnimationPause = { model.toggleAnimationPause() }
         view.onToggleThumbnailStrip = { model.toggleThumbnailStrip() }
         view.onToggleFullScreen = { model.toggleFullScreen() }
+        view.onCropConfirm = { model.applyCrop() }
+        view.onCropCancel = { model.cancelCrop() }
+        view.onCrop = { model.enterCropMode() }
+        view.onCropRectChanged = { rect in model.cropRect = rect }
         view.onEscape = {
-            if model.showShortcutsHelp { model.showShortcutsHelp = false }
+            if model.isCropMode { model.cancelCrop() }
+            else if model.showShortcutsHelp { model.showShortcutsHelp = false }
             else if model.isInfoPanelVisible { model.isInfoPanelVisible = false }
             else { model.closeWindow() }
         }
@@ -61,11 +66,21 @@ struct ViewerRepresentable: NSViewRepresentable {
     }
 
     func updateNSView(_ nsView: ViewerNSView, context: Context) {
-        let nativeSize = model.decodedImage?.pixelSize ?? .zero
+        // Use actual CGImage dimensions so zoom/layout matches the displayed pixels.
+        // pixelSize from ImageIO properties may have swapped W/H for EXIF-oriented HEIC.
+        let nativeSize: CGSize
+        if let img = model.decodedImage {
+            nativeSize = CGSize(width: img.image.width, height: img.image.height)
+        } else {
+            nativeSize = .zero
+        }
         let zoomMode = ZoomGeometry.Mode(from: model.zoomMode)
 
         // ── Animation frame ──────────────────────────────────────
-        if model.isAnimating, let frames = model.decodedImage?.animatedFrames,
+        // Also enter this path in crop mode so the user can select frames
+        // via the frame strip (paused display, not auto-advancing).
+        let shouldShowFrame = model.isAnimating
+        if shouldShowFrame, let frames = model.decodedImage?.animatedFrames,
            model.currentFrameIndex < frames.count
         {
             let frame = frames[model.currentFrameIndex].image
@@ -90,10 +105,18 @@ struct ViewerRepresentable: NSViewRepresentable {
                 statusBarVisible: model.settings.showStatusBar && !model.statusText.isEmpty,
                 infoPanelWidth: model.isInfoPanelVisible ? 300 : 0
             )
+            // Crop mode must be set even for animated images.
+            syncCropMode(nsView: nsView, model: model)
             return
         }
 
-        guard let displayImage = model.decodedImage?.image else {
+        // Determine which image to display
+        let displayImage: CGImage
+        if let frameImg = model.cropFrameImage {
+            displayImage = frameImg
+        } else if let img = model.decodedImage?.image {
+            displayImage = img
+        } else {
             nsView.setImage(nil, zoomMode: zoomMode, nativeSize: .zero)
             context.coordinator.currentImageURL = nil
             context.coordinator.currentZoomMode = nil
@@ -146,10 +169,33 @@ struct ViewerRepresentable: NSViewRepresentable {
             infoPanelWidth: model.isInfoPanelVisible ? 300 : 0
         )
 
+        // ── Crop mode — shared between animation and normal paths ──
+        // Sync crop state from model to NSView (shared by animation and normal paths).
+        syncCropMode(nsView: nsView, model: model)
+
         // Reclaim first responder after thumbnail/grid tap
         if model.needsCanvasFocus, let window = nsView.window, window.firstResponder !== nsView {
             window.makeFirstResponder(nsView)
             model.needsCanvasFocus = false
+        }
+    }
+
+    /// Push crop state from the model to the NSView (shared by animation + normal paths).
+    private func syncCropMode(nsView: ViewerNSView, model: ViewerModel) {
+        nsView.isCropMode = model.isCropMode
+        guard model.isCropMode else { return }
+        nsView.cropLockedRatio = model.cropPreset.ratio
+        if let img = model.decodedImage {
+            nsView.cropImagePixelSize = CGSize(width: img.image.width, height: img.image.height)
+        }
+        // Sync crop rect from model → view (e.g. when preset changes)
+        let viewRect = nsView.getCropRect()
+        if abs(viewRect.origin.x - model.cropRect.origin.x) > 0.001 ||
+           abs(viewRect.origin.y - model.cropRect.origin.y) > 0.001 ||
+           abs(viewRect.width  - model.cropRect.width)  > 0.001 ||
+           abs(viewRect.height - model.cropRect.height) > 0.001
+        {
+            nsView.setCropRect(model.cropRect)
         }
     }
 }

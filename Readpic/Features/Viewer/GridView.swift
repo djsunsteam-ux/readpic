@@ -54,8 +54,8 @@ struct GridView: View {
     }
 
     private func scrollToCurrent(proxy: ScrollViewProxy) {
-        // Don't scroll when nothing is selected — preserves previous scroll position.
-        guard let target = selectedIndices.sorted().first, files.indices.contains(target) else { return }
+        let target = selectedIndices.sorted().first ?? currentIndex
+        guard files.indices.contains(target) else { return }
         withAnimation(.easeOut(duration: 0.2)) {
             proxy.scrollTo(target, anchor: .center)
         }

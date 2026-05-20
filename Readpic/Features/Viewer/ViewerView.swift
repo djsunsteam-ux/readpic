@@ -17,7 +17,7 @@ struct ViewerView: View {
     private var gridBottomInset: CGFloat {
         guard !barsHidden else { return 0 }
         var height: CGFloat = 0
-        if model.showFrameStrip && model.hasAnimatedFrames { height += 80 }
+        if model.showFrameStrip && model.hasAnimatedFrames && !model.isGridView { height += 80 }
         if model.settings.showStatusBar && !model.statusText.isEmpty { height += 26 }
         return height
     }
@@ -30,7 +30,9 @@ struct ViewerView: View {
 
                 if model.currentFile == nil {
                     EmptyStateView(model: model)
-                } else if model.isGridView {
+                } else {
+                    // Both grid and viewer stay in the view tree so scroll position
+                    // and state are preserved when switching between them.
                     GridView(
                         files: model.files,
                         currentIndex: model.currentIndex,
@@ -50,9 +52,13 @@ struct ViewerView: View {
                         infoPanelVisible: model.isInfoPanelVisible
                     )
                     .id(model.fileListVersion)
+                    .opacity(model.isGridView ? 1 : 0)
+                    .allowsHitTesting(model.isGridView)
                     .padding(.trailing, model.isInfoPanelVisible ? 300 : 0)
-                } else {
+
                     ViewerRepresentable(model: model)
+                        .opacity(model.isGridView ? 0 : 1)
+                        .allowsHitTesting(!model.isGridView)
                 }
 
                 if model.isDragTargeted {
@@ -130,14 +136,16 @@ struct ViewerView: View {
             VStack(spacing: 0) {
                 Spacer()
 
-                if model.showFrameStrip, model.hasAnimatedFrames, let frames = model.decodedImage?.animatedFrames {
+                if model.showFrameStrip, model.hasAnimatedFrames, !model.isGridView, let frames = model.decodedImage?.animatedFrames {
                     FrameStripView(
                         frames: frames.map(\.image),
                         totalFrameCount: model.decodedImage?.frameCount ?? frames.count,
                         currentIndex: model.currentFrameIndex,
                         isPlaying: model.isAnimating && !model.isAnimationPaused,
                         onSelect: { model.selectFrame(at: $0) },
-                        onTogglePlay: { model.toggleAnimationPause() }
+                        onTogglePlay: { model.toggleAnimationPause() },
+                        onScrollStart: { model.isAnimationPaused = true },
+                        onScrollEnd: { model.isAnimationPaused = false }
                     )
                     .transition(.move(edge: .bottom))
                 }
@@ -146,7 +154,9 @@ struct ViewerView: View {
                     ThumbnailStripView(
                         files: model.files,
                         currentIndex: model.currentIndex,
-                        select: { model.selectFile(at: $0) }
+                        select: { model.selectFile(at: $0) },
+                        onScrollStart: { if model.hasAnimatedFrames { model.isAnimationPaused = true } },
+                        onScrollEnd: { if model.hasAnimatedFrames { model.isAnimationPaused = false } }
                     )
                     .id(model.fileListVersion)
                     .transition(.move(edge: .bottom))
@@ -259,6 +269,17 @@ struct ViewerView: View {
                         return nil
                     }
                 }
+                if chars?.lowercased() == "c" {
+                    let mods = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+                    if mods.isEmpty || mods == .shift || mods == .capsLock {
+                        if model.isCropMode {
+                            model.cancelCrop()
+                        } else {
+                            model.enterCropMode()
+                        }
+                        return nil
+                    }
+                }
                 if event.keyCode == 53 {
                     if model.showShortcutsHelp {
                         withAnimation(.easeInOut(duration: 0.15)) { model.showShortcutsHelp = false }
@@ -308,6 +329,16 @@ private struct ViewerToolbar: View {
     }
 
     var body: some View {
+        if model.isCropMode {
+            cropToolbar
+        } else {
+            normalToolbar
+        }
+    }
+
+    // ── Normal viewer toolbar ──
+
+    private var normalToolbar: some View {
         HStack(spacing: 8) {
             ToolbarButton(title: model.isGridView ? "Viewer" : "Grid", systemImage: model.isGridView ? "photo" : "square.grid.3x3", action: model.toggleGridView)
                 .disabled(model.currentFile == nil)
@@ -332,6 +363,9 @@ private struct ViewerToolbar: View {
             ToolbarButton(title: "Mirror", systemImage: "flip.horizontal", action: model.flipHorizontal)
                 .disabled(disabled)
 
+            ToolbarButton(title: "Crop", systemImage: "crop", action: model.enterCropMode)
+                .disabled(model.currentFile == nil)
+
             Divider()
                 .frame(height: 18)
 
@@ -346,6 +380,46 @@ private struct ViewerToolbar: View {
                 withAnimation(.easeInOut(duration: 0.2)) { model.toggleInfoPanel() }
             }
             .disabled(!model.isGridView && model.currentFile == nil)
+
+            Spacer()
+        }
+        .padding(.horizontal, 10)
+        .frame(maxHeight: .infinity)
+        .background(.ultraThinMaterial)
+    }
+
+    // ── Crop toolbar ──
+
+    private var cropToolbar: some View {
+        HStack(spacing: 8) {
+            Button("Apply") { model.applyCrop() }
+                .font(.system(size: 12, weight: .medium))
+                .keyboardShortcut(.return, modifiers: [])
+
+            Button("Cancel") { model.cancelCrop() }
+                .font(.system(size: 12))
+                .keyboardShortcut(.escape, modifiers: [])
+
+            Divider()
+                .frame(height: 18)
+
+            ToolbarButton(title: "Rotate Left", systemImage: "rotate.left", action: model.rotateLeft)
+            ToolbarButton(title: "Rotate Right", systemImage: "rotate.right", action: model.rotateRight)
+            ToolbarButton(title: "Mirror", systemImage: "flip.horizontal", action: model.flipHorizontal)
+
+            Divider()
+                .frame(height: 18)
+
+            ForEach(ViewerModel.CropPreset.allCases, id: \.self) { preset in
+                Button(preset.rawValue) {
+                    model.setCropPreset(preset)
+                }
+                .font(.system(size: 11, design: .monospaced))
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .background(preset == model.cropPreset ? Color.accentColor.opacity(0.3) : Color.clear)
+                .clipShape(RoundedRectangle(cornerRadius: 4))
+            }
 
             Spacer()
         }
@@ -557,3 +631,5 @@ private struct ShortcutsHelpView: View {
         }
     }
 }
+
+

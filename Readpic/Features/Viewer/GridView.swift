@@ -9,6 +9,7 @@ struct GridView: View {
     let topInset: CGFloat
     let bottomInset: CGFloat
     let infoPanelVisible: Bool
+    let needsGridScroll: UInt
 
     @State private var thumbnails: [URL: CGImage] = [:]
     @State private var failedURLs: Set<URL> = []
@@ -45,6 +46,9 @@ struct GridView: View {
                     try? await Task.sleep(for: .milliseconds(80))
                     scrollToCurrent(proxy: proxy)
                 }
+            }
+            .onChange(of: needsGridScroll) { _, _ in
+                scrollToCurrent(proxy: proxy)
             }
         }
         .task(id: files.map(\.url)) {

@@ -49,7 +49,8 @@ struct ViewerView: View {
                         open: { model.openFromGrid(at: $0) },
                         topInset: gridTopInset,
                         bottomInset: gridBottomInset,
-                        infoPanelVisible: model.isInfoPanelVisible
+                        infoPanelVisible: model.isInfoPanelVisible,
+                        needsGridScroll: model.needsGridScroll
                     )
                     .id(model.fileListVersion)
                     .opacity(model.isGridView ? 1 : 0)

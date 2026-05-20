@@ -57,6 +57,7 @@ final class ViewerModel {
     var rotation: Int = 0
     var isFlippedHorizontally = false
     var needsCanvasFocus = false
+    var needsGridScroll: UInt = 0
     var showFrameStrip = false
     var showExportPanel = false
     var showBatchExportPanel = false
@@ -120,6 +121,7 @@ final class ViewerModel {
                     self?.cursorNearTop = false
                     self?.cursorNearBottom = false
                     self?.stopMouseMonitor()
+                    if self?.isGridView == true { self?.needsGridScroll &+= 1 }
                 }
             }
 

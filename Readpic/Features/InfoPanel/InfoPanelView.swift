@@ -57,6 +57,37 @@ struct InfoPanelView: View {
                         }
                     }
 
+                    // MARK: - Favorites
+                    GroupSection(title: "Favorites") {
+                        Button(action: { model.toggleFavorite() }) {
+                            Image(systemName: model.isCurrentFileFavorite ? "heart.fill" : "heart")
+                                .font(.system(size: 20))
+                                .foregroundStyle(model.isCurrentFileFavorite ? .red : .secondary)
+                        }
+                        .buttonStyle(.plain)
+                        .help(model.isCurrentFileFavorite ? "Remove from Favorites" : "Add to Favorites")
+                        .padding(.vertical, 2)
+                    }
+
+                    // MARK: - Rating
+                    GroupSection(title: "Rating") {
+                        HStack(spacing: 2) {
+                            ForEach(1...5, id: \.self) { star in
+                                Button(action: {
+                                    let newRating = star == model.currentFileRating ? 0 : star
+                                    model.rateCurrentFile(newRating)
+                                }) {
+                                    Image(systemName: star <= model.currentFileRating ? "star.fill" : "star")
+                                        .font(.system(size: 18))
+                                        .foregroundStyle(star <= model.currentFileRating ? Color.yellow : Color.secondary)
+                                }
+                                .buttonStyle(.plain)
+                                .help("Rate \(star) star\(star == 1 ? "" : "s")")
+                            }
+                        }
+                        .padding(.vertical, 2)
+                    }
+
                     Divider()
                         .padding(.vertical, 12)
 

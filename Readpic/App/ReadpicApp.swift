@@ -24,6 +24,10 @@ struct ReadpicApp: App {
             }
 
             CommandGroup(after: .newItem) {
+                Button("Export / Convert\u{2026}") { model.showExport() }
+                    .keyboardShortcut("s", modifiers: [.command, .shift])
+                    .disabled(model.currentFile == nil || model.selectedGridIndices.count >= 2)
+
                 Divider()
 
                 Button("Move to Trash") { model.moveCurrentFileToTrash() }
@@ -58,6 +62,16 @@ struct ReadpicApp: App {
                 Button("Copy File Path") { model.copyFilePath() }
                     .keyboardShortcut("c", modifiers: [.command, .option])
                     .disabled(model.currentFile == nil)
+
+                Divider()
+
+                Button("Select All") { model.selectAllGrid() }
+                    .keyboardShortcut("a", modifiers: .command)
+                    .disabled(!model.isGridView || model.files.isEmpty)
+
+                Button("Invert Selection") { model.invertGridSelection() }
+                    .keyboardShortcut("a", modifiers: [.command, .shift])
+                    .disabled(!model.isGridView || model.files.isEmpty)
             }
 
             // MARK: - View
@@ -145,6 +159,33 @@ struct ReadpicApp: App {
                 Button("Flip Horizontal") { model.flipHorizontal() }
                     .keyboardShortcut("h", modifiers: [.command, .shift])
                     .disabled(model.currentFile == nil)
+
+                Divider()
+
+                Menu("Rate") {
+                    Button("None") { model.rateCurrentFile(0) }
+                    Divider()
+                    ForEach(1...5, id: \.self) { rating in
+                        Button(String(repeating: "★", count: rating)) {
+                            model.rateCurrentFile(rating)
+                        }
+                    }
+                }
+                .disabled(model.currentFile == nil)
+
+                Button("Toggle Favorite") { model.toggleFavorite() }
+                    .keyboardShortcut("d", modifiers: .command)
+                    .disabled(model.currentFile == nil)
+
+                Divider()
+
+                Button("Save Changes") { model.saveChanges() }
+                    .disabled(model.currentFile == nil || (model.rotation == 0 && !model.isFlippedHorizontally))
+
+                Divider()
+
+                Button("Batch Convert / Export\u{2026}") { model.showBatchExport() }
+                    .disabled(!model.isGridView || model.selectedGridIndices.count < 2)
             }
 
             // MARK: - Help

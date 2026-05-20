@@ -3,8 +3,8 @@ import SwiftUI
 struct GridView: View {
     let files: [FileItem]
     let currentIndex: Int
-    let selectedIndex: Int?
-    let select: (Int) -> Void
+    let selectedIndices: Set<Int>
+    let handleClick: (Int, _ isCommand: Bool, _ isShift: Bool) -> Void
     let open: (Int) -> Void
     let topInset: CGFloat
     let bottomInset: CGFloat
@@ -34,15 +34,13 @@ struct GridView: View {
             .onAppear {
                 scrollToCurrent(proxy: proxy)
             }
-            .onChange(of: selectedIndex) { _, _ in
+            .onChange(of: selectedIndices) { _, _ in
                 scrollToCurrent(proxy: proxy)
             }
             .onChange(of: currentIndex) { _, _ in
                 scrollToCurrent(proxy: proxy)
             }
             .onChange(of: infoPanelVisible) { _, _ in
-                // Delay slightly to let LazyVGrid finish re-laying out
-                // after the width change from info panel open/close.
                 Task { @MainActor in
                     try? await Task.sleep(for: .milliseconds(80))
                     scrollToCurrent(proxy: proxy)
@@ -53,12 +51,11 @@ struct GridView: View {
             thumbnails = [:]
             failedURLs = []
         }
-
     }
 
     private func scrollToCurrent(proxy: ScrollViewProxy) {
-        let target = selectedIndex ?? currentIndex
-        guard files.indices.contains(target) else { return }
+        // Don't scroll when nothing is selected — preserves previous scroll position.
+        guard let target = selectedIndices.sorted().first, files.indices.contains(target) else { return }
         withAnimation(.easeOut(duration: 0.2)) {
             proxy.scrollTo(target, anchor: .center)
         }
@@ -67,7 +64,8 @@ struct GridView: View {
     @ViewBuilder
     private func gridCell(for index: Int) -> some View {
         let file = files[index]
-        let isSelected = selectedIndex == index || (!files.indices.contains(selectedIndex ?? -1) && index == currentIndex)
+        let isSelected = selectedIndices.contains(index)
+            || (selectedIndices.isEmpty && index == currentIndex)
 
         VStack(spacing: 6) {
             thumbnailView(for: file)
@@ -89,7 +87,8 @@ struct GridView: View {
         }
         .contentShape(Rectangle())
         .onTapGesture {
-            select(index)
+            let flags = NSApp.currentEvent?.modifierFlags.intersection(.deviceIndependentFlagsMask) ?? []
+            handleClick(index, flags.contains(.command), flags.contains(.shift))
         }
         .simultaneousGesture(
             TapGesture(count: 2).onEnded {
@@ -103,24 +102,34 @@ struct GridView: View {
 
     @ViewBuilder
     private func thumbnailView(for file: FileItem) -> some View {
-        if let cgImage = thumbnails[file.url] {
-            Image(cgImage, scale: 1, label: Text(file.name))
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(maxHeight: 120)
-        } else if failedURLs.contains(file.url) {
-            VStack(spacing: 6) {
-                Image(systemName: "photo.badge.exclamationmark")
-                    .font(.system(size: 24))
-                    .foregroundStyle(.tertiary)
-                Text("Failed to load")
-                    .font(.system(size: 10))
-                    .foregroundStyle(.tertiary)
+        ZStack(alignment: .topTrailing) {
+            if let cgImage = thumbnails[file.url] {
+                Image(cgImage, scale: 1, label: Text(file.name))
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(maxHeight: 120)
+            } else if failedURLs.contains(file.url) {
+                VStack(spacing: 6) {
+                    Image(systemName: "photo.badge.exclamationmark")
+                        .font(.system(size: 24))
+                        .foregroundStyle(.tertiary)
+                    Text("Failed to load")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.tertiary)
+                }
+            } else {
+                ProgressView()
+                    .controlSize(.small)
+                    .frame(maxHeight: 120)
             }
-        } else {
-            ProgressView()
-                .controlSize(.small)
-                .frame(maxHeight: 120)
+
+            if FavoritesManager.shared.isFavorite(file.url) {
+                Image(systemName: "heart.fill")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.red)
+                    .shadow(color: .black.opacity(0.4), radius: 2, x: 0, y: 1)
+                    .padding(4)
+            }
         }
     }
 

@@ -36,6 +36,10 @@
 		A00000000000000000000065 /* GridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000064 /* GridView.swift */; };
 		A00000000000000000000073 /* FrameStripView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000072 /* FrameStripView.swift */; };
 		A00000000000000000000075 /* ZoomGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000074 /* ZoomGeometry.swift */; };
+		A00000000000000000000080 /* FavoritesManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000081 /* FavoritesManager.swift */; };
+		A00000000000000000000083 /* ImageWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000084 /* ImageWriter.swift */; };
+		A00000000000000000000085 /* ExportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000086 /* ExportView.swift */; };
+		A00000000000000000000089 /* BatchConvertView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000088 /* BatchConvertView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -71,6 +75,10 @@
 		A00000000000000000000070 /* ThumbnailDiskCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThumbnailDiskCache.swift; sourceTree = "<group>"; };
 		A00000000000000000000072 /* FrameStripView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameStripView.swift; sourceTree = "<group>"; };
 		A00000000000000000000074 /* ZoomGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZoomGeometry.swift; sourceTree = "<group>"; };
+		A00000000000000000000081 /* FavoritesManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesManager.swift; sourceTree = "<group>"; };
+		A00000000000000000000084 /* ImageWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageWriter.swift; sourceTree = "<group>"; };
+		A00000000000000000000086 /* ExportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportView.swift; sourceTree = "<group>"; };
+		A00000000000000000000088 /* BatchConvertView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatchConvertView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXContainerItemProxy section */
@@ -144,6 +152,7 @@
 			isa = PBXGroup;
 			children = (
 				A0000000000000000000005E /* WindowAccessor.swift */,
+				A00000000000000000000082 /* Favorites */,
 				A00000000000000000000076 /* Geometry */,
 				A00000000000000000000029 /* ImageLoading */,
 				A0000000000000000000002A /* FileSystem */,
@@ -161,6 +170,14 @@
 			path = Geometry;
 			sourceTree = "<group>";
 		};
+		A00000000000000000000082 /* Favorites */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000081 /* FavoritesManager.swift */,
+			);
+			path = Favorites;
+			sourceTree = "<group>";
+		};
 		A00000000000000000000026 /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
@@ -175,6 +192,7 @@
 				A0000000000000000000002B /* Viewer */,
 				A00000000000000000000055 /* InfoPanel */,
 				A0000000000000000000005B /* Settings */,
+				A00000000000000000000087 /* Export */,
 			);
 			path = Features;
 			sourceTree = "<group>";
@@ -196,6 +214,7 @@
 				A0000000000000000000005D /* ImageCache.swift */,
 				A00000000000000000000060 /* ThumbnailLoader.swift */,
 				A00000000000000000000070 /* ThumbnailDiskCache.swift */,
+				A00000000000000000000084 /* ImageWriter.swift */,
 			);
 			path = ImageLoading;
 			sourceTree = "<group>";
@@ -280,6 +299,15 @@
 				A00000000000000000000059 /* SettingsView.swift */,
 			);
 			path = Settings;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000087 /* Export */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000086 /* ExportView.swift */,
+				A00000000000000000000088 /* BatchConvertView.swift */,
+			);
+			path = Export;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -402,6 +430,10 @@
 				A00000000000000000000071 /* ThumbnailDiskCache.swift in Sources */,
 				A00000000000000000000073 /* FrameStripView.swift in Sources */,
 				A00000000000000000000075 /* ZoomGeometry.swift in Sources */,
+				A00000000000000000000080 /* FavoritesManager.swift in Sources */,
+				A00000000000000000000083 /* ImageWriter.swift in Sources */,
+				A00000000000000000000085 /* ExportView.swift in Sources */,
+				A00000000000000000000089 /* BatchConvertView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -117,6 +117,8 @@ Readpic/
 │   │   ├── ViewerView.swift
 │   │   ├── ViewerNSView.swift
 │   │   ├── ViewerRepresentable.swift
+│   │   ├── CropOverlayView.swift
+│   │   ├── NativeHScroll.swift
 │   │   ├── ThumbnailStripView.swift
 │   │   └── GridView.swift
 │   ├── InfoPanel/

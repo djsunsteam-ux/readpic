@@ -215,22 +215,21 @@
 ### 5.2 基础编辑
 
 - [ ] 裁剪。
-- [ ] Resize。
-- [ ] 旋转/翻转保存。
-- [ ] 另存为。
+- [x] 格式转换导出（替代另存为）：支持 6 种格式 (JPEG/PNG/TIFF/BMP/HEIC)、质量滑块 (JPEG/HEIC)、自定义宽高、比例锁定与预设、输出文件夹选择。菜单栏 File > Export Image… (⌘⇧S)。
+- [x] 旋转/翻转保存 + 旋转方向修正。
 - [ ] 文件大小优化 / 重新压缩。
 
 注意：JPEG 重新编码不能称为严格无损优化。
 
 ### 5.3 文件管理
 
-- [ ] 多选（⌘+click、Shift+click）。
+- [x] 多选（⌘+click、Shift+click）+ 全选/反选（⌘A / ⌘⇧A）。
 - [ ] 批量重命名。
-- [ ] 批量格式转换。
+- [x] 批量格式转换（多选 → Batch Convert / Export，与单图导出共享 ImageWriter）。
 - [ ] 搜索文件名。
 - [ ] 格式过滤。
 - [ ] 日期过滤。
-- [ ] 收藏 / 评分 / 标签。
+- [x] 收藏 / 评分：心形收藏 + 1-5 星评分，信息面板/网格/缩略图条可见，UserDefaults 持久化。
 - [ ] SQLite 元数据存储。
 
 ### 5.4 体验增强
@@ -238,14 +237,14 @@
 - [ ] 幻灯片。
 - [ ] 快捷键自定义。
 - [ ] 最近文件夹管理。
-- [ ] **菜单栏重构**：按 macOS 惯例重组菜单栏结构，确保所有功能入口在菜单中可用。
+- [x] **菜单栏重构**：按 macOS 惯例重组菜单栏结构，确保所有功能入口在菜单中可用。
   - File 菜单：Open Image…、Open Folder…、Close Window、Move to Trash、Reveal in Finder、Open Externally
   - Edit 菜单：Copy Image、Copy File、Copy File Path
   - View 菜单：Grid View、Fit Window / Fit Width / Actual Size、Zoom In / Out / Reset、Thumbnail Strip、Info Panel、Sort By、Show Status Bar、Fullscreen
   - Image 菜单：Rotate Left / Right、Flip Horizontal
   - Help 菜单：Keyboard Shortcuts
 - [ ] **Phase 2+ 菜单扩展**：后续新增功能模块均需同时在菜单栏中提供入口，保持「功能-菜单」一一映射。
-  - File：Export / Save As…、Batch Convert…、Batch Rename…、Open Recent ▸
+  - File：Export Image…、Batch Convert…、Batch Rename…、Open Recent ▸
   - Edit：Select All、Copy Metadata
   - View：Filter By ▸ (Format / Date)、Search Files…、Start Slideshow、Metadata Panel
   - Image：Crop…、Resize…、Save Changes…、Optimize File Size…、Rate ▸、Favorite / Tag…

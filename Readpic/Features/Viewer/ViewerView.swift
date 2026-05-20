@@ -34,8 +34,16 @@ struct ViewerView: View {
                     GridView(
                         files: model.files,
                         currentIndex: model.currentIndex,
-                        selectedIndex: model.selectedGridIndex,
-                        select: { model.selectInGrid(at: $0) },
+                        selectedIndices: model.selectedGridIndices,
+                        handleClick: { index, isCmd, isShift in
+                            if isCmd {
+                                model.toggleGridSelection(at: index)
+                            } else if isShift {
+                                model.selectGridRange(from: model.lastGridClickedIndex, to: index)
+                            } else {
+                                model.selectInGrid(at: index)
+                            }
+                        },
                         open: { model.openFromGrid(at: $0) },
                         topInset: gridTopInset,
                         bottomInset: gridBottomInset,
@@ -75,7 +83,7 @@ struct ViewerView: View {
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
                     .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10))
-                    .padding(.bottom, 16)
+                    .frame(maxHeight: .infinity, alignment: .center)
                 }
 
                 if model.showShortcutsHelp {
@@ -270,6 +278,24 @@ struct ViewerView: View {
             if let monitor = keyMonitor as? NSObjectProtocol {
                 NSEvent.removeMonitor(monitor)
             }
+        }
+        .sheet(isPresented: $model.showExportPanel) {
+            if let url = model.exportFileURL {
+                ExportView(
+                    fileURL: url,
+                    sourceWidth: Int(model.metadata?.pixelSize.width ?? 0),
+                    sourceHeight: Int(model.metadata?.pixelSize.height ?? 0),
+                    rotation: model.rotation,
+                    isFlipped: model.isFlippedHorizontally,
+                    onComplete: { model.showExportPanel = false }
+                )
+            }
+        }
+        .sheet(isPresented: $model.showBatchExportPanel) {
+            BatchConvertView(
+                files: Array(model.selectedFiles),
+                onComplete: { model.showBatchExportPanel = false }
+            )
         }
     }
 }

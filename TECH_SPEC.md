@@ -95,6 +95,7 @@ Readpic/
 │   ├── ImageLoading/
 │   │   ├── ImageDecoder.swift
 │   │   ├── ImageCache.swift
+│   │   ├── ImageWriter.swift
 │   │   └── ThumbnailLoader.swift
 │   ├── FileSystem/
 │   │   ├── FolderScanner.swift
@@ -102,12 +103,16 @@ Readpic/
 │   │   └── FileSorter.swift
 │   ├── Metadata/
 │   │   └── MetadataReader.swift
+│   ├── Favorites/
+│   │   └── FavoritesManager.swift
 │   ├── Settings/
 │   │   └── AppSettings.swift
 │   └── WindowAccessor.swift
 ├── ViewModels/
 │   └── ViewerModel.swift
 ├── Features/
+│   ├── Export/
+│   │   └── ExportView.swift
 │   ├── Viewer/
 │   │   ├── ViewerView.swift
 │   │   ├── ViewerNSView.swift
@@ -339,13 +344,13 @@ v1 使用三级队列（`ThumbnailQueueManager`）：
 v1 可延后。实现时必须遵守：
 
 - 修改扩展名默认只重命名，不自动转换格式。
-- 如果用户希望转换格式，必须走「导出/另存为」流程。
+- 如果用户希望转换格式，必须走「Export Image…」格式转换导出流程。
 
 ### 9.3 旋转 / 翻转保存
 
 - v1 默认先做显示层变换。
 - 保存到文件必须显式确认。
-- 覆盖原图前创建备份或使用另存为。
+- 覆盖原图前创建备份或使用 Export Image… 导出副本。
 
 ---
 
@@ -422,7 +427,38 @@ CREATE INDEX idx_assets_favorite ON assets(is_favorite) WHERE is_favorite = 1;
 
 ---
 
-## 13. 签名与分发
+## 13. 格式转换导出 (Export / ImageWriter)
+
+### 13.1 功能定位
+
+替代传统的「另存为」，将旋转/翻转后的图片导出为新文件，同时提供格式转换和尺寸调整能力。
+
+### 13.2 入口
+
+File > **Export Image…** (⌘⇧S)，打开 SwiftUI Sheet 面板。
+
+### 13.3 导出面板 (`ExportView.swift`)
+
+| 分区 | 功能 |
+|---|---|
+| **Format** | 格式选择 (JPEG/PNG/TIFF/BMP/HEIC)，JPEG/HEIC 带质量滑块 |
+| **Resize** | 自定义宽高 (px)，锁定比例自动联动，解锁后显示 8 种预设比例 (1:1~21:9) |
+| **Output** | 自定义文件名，选择输出文件夹 |
+
+### 13.4 图像变换 (`ImageWriter.swift`)
+
+- `applyTransform(to:rotation:isFlipped:)` — 将旋转/翻转烘焙到像素数据中
+- `write(_:to:format:compressionQuality:)` — 通过 `CGImageDestination` 编码写入文件
+- `resize(_:to:targetHeight:)` — 高质量重采样缩放
+- CATransform3D 与 CGContext 的坐标系一致 (Y 轴向上)，旋转方向无需取反
+
+### 13.5 Save Changes
+
+Image > **Save Changes**，将旋转/翻转结果直接写回原文件（弹出确认警告）。写回后自动清除 ImageCache + ThumbnailCache，强制重新解码和缩略图更新。
+
+---
+
+## 14. 签名与分发
 
 ### 13.1 v1 分发前提
 

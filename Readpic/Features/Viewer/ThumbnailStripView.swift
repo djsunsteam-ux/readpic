@@ -55,14 +55,24 @@ struct ThumbnailStripView: View {
 
     @ViewBuilder
     private func thumbnailView(for file: FileItem, isSelected: Bool) -> some View {
-        if let cgImage = thumbnails[file.url] {
-            Image(cgImage, scale: 1, label: Text(file.name))
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(maxWidth: 80, maxHeight: 56)
-        } else {
-            Color.clear
-                .frame(maxWidth: 80, maxHeight: 56)
+        ZStack(alignment: .topTrailing) {
+            if let cgImage = thumbnails[file.url] {
+                Image(cgImage, scale: 1, label: Text(file.name))
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(maxWidth: 80, maxHeight: 56)
+            } else {
+                Color.clear
+                    .frame(maxWidth: 80, maxHeight: 56)
+            }
+
+            if FavoritesManager.shared.isFavorite(file.url) {
+                Image(systemName: "heart.fill")
+                    .font(.system(size: 9))
+                    .foregroundStyle(.red)
+                    .shadow(color: .black.opacity(0.5), radius: 1, x: 0, y: 0.5)
+                    .padding(3)
+            }
         }
     }
 

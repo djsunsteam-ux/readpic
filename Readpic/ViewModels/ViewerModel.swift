@@ -35,7 +35,11 @@ final class ViewerModel {
     var isInfoPanelVisible = false
     var showThumbnailStrip = true
     var isGridView = false
-    var selectedGridIndex: Int?
+    var selectedGridIndices: Set<Int> = []
+    var lastGridClickedIndex: Int = 0
+    /// Saved before bulk operations (Select All / Invert) so we can restore
+    /// the scroll anchor when deselected.
+    private var selectionAnchorIndex: Int = 0
     var showShortcutsHelp = false
     var currentFrameIndex = 0
     var isAnimating = false
@@ -54,6 +58,8 @@ final class ViewerModel {
     var isFlippedHorizontally = false
     var needsCanvasFocus = false
     var showFrameStrip = false
+    var showExportPanel = false
+    var showBatchExportPanel = false
 
     weak var window: NSWindow?
 
@@ -178,7 +184,29 @@ final class ViewerModel {
         return files[currentIndex]
     }
 
+    /// Whether the current file is marked as a favorite.
+    var isCurrentFileFavorite: Bool {
+        guard let url = currentFile?.url else { return false }
+        return FavoritesManager.shared.isFavorite(url)
+    }
+
+    /// Current file's rating (0 = unrated, 1-5 = stars).
+    var currentFileRating: Int {
+        guard let url = currentFile?.url else { return 0 }
+        return FavoritesManager.shared.rating(for: url)
+    }
+
+    /// Status text shown in the bottom status bar.
+    /// - Grid mode with selection: shows selection count.
+    /// - Viewer mode: shows file info as before.
     var statusText: String {
+        if isGridView {
+            if selectedGridIndices.isEmpty {
+                return "\(files.count) images"
+            } else {
+                return "\(selectedGridIndices.count) of \(files.count) selected"
+            }
+        }
         guard let currentFile else { return "" }
         let count = files.isEmpty ? 1 : files.count
         let dimensions: String
@@ -423,11 +451,11 @@ final class ViewerModel {
     func resetZoom() { zoomAction = .resetZoom }
 
     func rotateLeft() {
-        rotation = (rotation - 90 + 360) % 360
+        rotation = (rotation + 90) % 360
     }
 
     func rotateRight() {
-        rotation = (rotation + 90) % 360
+        rotation = (rotation - 90 + 360) % 360
     }
 
     func flipHorizontal() {
@@ -510,10 +538,10 @@ final class ViewerModel {
     func toggleGridView() {
         isGridView.toggle()
         if isGridView {
-            selectedGridIndex = nil
+            selectedGridIndices.removeAll()
             stopAnimation()
         } else {
-            selectedGridIndex = nil
+            selectedGridIndices.removeAll()
             startAnimation()
         }
     }
@@ -524,32 +552,33 @@ final class ViewerModel {
 
     func selectInGrid(at index: Int) {
         guard files.indices.contains(index) else { return }
-        selectedGridIndex = index
+        selectedGridIndices = [index]
+        lastGridClickedIndex = index
         let file = files[index]
         Task.detached(priority: .userInitiated) { [weak self] in
             guard let self else { return }
             let meta = self.metadataReader.read(url: file.url, pixelSize: .zero)
             await MainActor.run {
-                guard self.selectedGridIndex == index else { return }
+                guard self.selectedGridIndices.contains(index) else { return }
                 self.metadata = meta
             }
         }
     }
 
     func gridSelectPrevious() {
-        let idx = selectedGridIndex ?? currentIndex
+        let idx = selectedGridIndices.first ?? currentIndex
         guard idx > 0 else { return }
         selectInGrid(at: idx - 1)
     }
 
     func gridSelectNext() {
-        let idx = selectedGridIndex ?? currentIndex
+        let idx = selectedGridIndices.first ?? currentIndex
         guard idx < files.count - 1 else { return }
         selectInGrid(at: idx + 1)
     }
 
     func gridSelectUp(columns: Int) {
-        let idx = selectedGridIndex ?? currentIndex
+        let idx = selectedGridIndices.first ?? currentIndex
         let target = idx - columns
         if files.indices.contains(target) {
             selectInGrid(at: target)
@@ -557,7 +586,7 @@ final class ViewerModel {
     }
 
     func gridSelectDown(columns: Int) {
-        let idx = selectedGridIndex ?? currentIndex
+        let idx = selectedGridIndices.first ?? currentIndex
         let target = idx + columns
         if files.indices.contains(target) {
             selectInGrid(at: target)
@@ -566,7 +595,7 @@ final class ViewerModel {
 
     func openFromGrid(at index: Int) {
         guard files.indices.contains(index) else { return }
-        selectedGridIndex = nil
+        selectedGridIndices.removeAll()
         isGridView = false
         currentIndex = index
         resetRotation()
@@ -574,11 +603,107 @@ final class ViewerModel {
         needsCanvasFocus = true
     }
 
+    // MARK: - Multi-Select
+
+    func toggleGridSelection(at index: Int) {
+        guard files.indices.contains(index) else { return }
+        if selectedGridIndices.contains(index) {
+            selectedGridIndices.remove(index)
+        } else {
+            selectedGridIndices.insert(index)
+        }
+        lastGridClickedIndex = index
+        // Update metadata preview for the last interacted item
+        updateMetadataForLastSelection()
+    }
+
+    func selectGridRange(from: Int, to: Int) {
+        let lower = min(from, to)
+        let upper = max(from, to)
+        let range = (lower...upper).filter { files.indices.contains($0) }
+        selectedGridIndices.formUnion(range)
+        lastGridClickedIndex = to
+        updateMetadataForLastSelection()
+    }
+
+    /// Toggle select all / deselect all.
+    /// If all files are already selected -> deselect all (restoring the scroll
+    /// anchor to the last single-selected index before the bulk operation).
+    /// Otherwise -> select all.
+    func selectAllGrid() {
+        if selectedGridIndices.count == files.count {
+            selectedGridIndices.removeAll()
+            // Restore selection to the anchor so the grid scrolls back
+            selectedGridIndices.insert(selectionAnchorIndex)
+            lastGridClickedIndex = selectionAnchorIndex
+            updateMetadataForLastSelection()
+        } else {
+            // Save anchor before bulk-selecting
+            selectionAnchorIndex = selectedGridIndices.sorted().first ?? currentIndex
+            selectedGridIndices = Set(files.indices)
+            if let last = files.indices.last {
+                lastGridClickedIndex = last
+            }
+            updateMetadataForLastSelection()
+        }
+    }
+
+    func deselectAllGrid() {
+        selectedGridIndices.removeAll()
+        metadata = nil
+    }
+
+    /// Invert current selection.
+    func invertGridSelection() {
+        // Save anchor before inverting
+        if let first = selectedGridIndices.sorted().first {
+            selectionAnchorIndex = first
+        } else {
+            selectionAnchorIndex = currentIndex
+        }
+        let all = Set(files.indices)
+        selectedGridIndices = all.subtracting(selectedGridIndices)
+        if let first = selectedGridIndices.sorted().first {
+            lastGridClickedIndex = first
+            updateMetadataForLastSelection()
+        } else {
+            // Restore anchor if inversion left nothing selected
+            selectedGridIndices.insert(selectionAnchorIndex)
+            lastGridClickedIndex = selectionAnchorIndex
+            updateMetadataForLastSelection()
+        }
+    }
+
+    private func updateMetadataForLastSelection() {
+        guard let lastIdx = selectedGridIndices.sorted().last,
+              files.indices.contains(lastIdx) else {
+            metadata = nil
+            return
+        }
+        let file = files[lastIdx]
+        Task.detached(priority: .userInitiated) { [weak self] in
+            guard let self else { return }
+            let meta = self.metadataReader.read(url: file.url, pixelSize: .zero)
+            await MainActor.run {
+                guard self.selectedGridIndices.contains(lastIdx) else { return }
+                self.metadata = meta
+            }
+        }
+    }
+
     private var activeFile: FileItem? {
-        if isGridView, let idx = selectedGridIndex, files.indices.contains(idx) {
-            return files[idx]
+        if isGridView, let first = selectedGridIndices.sorted().first, files.indices.contains(first) {
+            return files[first]
         }
         return currentFile
+    }
+
+    /// All selected files in grid mode (for multi-select operations).
+    var selectedFiles: [FileItem] {
+        guard isGridView else {
+            return currentFile.map { [$0] } ?? []
+        }
+        return selectedGridIndices.sorted().compactMap { files.indices.contains($0) ? files[$0] : nil }
     }
 
     func copyFilePath() {
@@ -606,6 +731,114 @@ final class ViewerModel {
             showToast("Failed to export")
         }
     }
+
+    // MARK: - Favorites & Ratings
+
+    func toggleFavorite() {
+        guard let url = currentFile?.url else { return }
+        FavoritesManager.shared.toggleFavorite(url)
+        // Trigger Observation update by notifying all key paths
+        // that depend on the current file's favorite status.
+        showToast(FavoritesManager.shared.isFavorite(url) ? "Added to Favorites" : "Removed from Favorites")
+    }
+
+    func rateCurrentFile(_ rating: Int) {
+        guard let url = currentFile?.url else { return }
+        FavoritesManager.shared.setRating(rating, for: url)
+        if rating > 0 {
+            showToast("Rated \(rating) ★")
+        } else {
+            showToast("Rating cleared")
+        }
+    }
+
+    // MARK: - Export / Save Changes
+
+    /// URL of the file to export — respects grid selection, falls back to current file.
+    var exportFileURL: URL? {
+        if isGridView {
+            if let first = selectedGridIndices.sorted().first,
+               files.indices.contains(first) {
+                return files[first].url
+            }
+            // No explicit selection — use the current file (highlighted in grid)
+            return currentFile?.url
+        }
+        return currentFile?.url
+    }
+
+    func showExport() {
+        guard exportFileURL != nil else {
+            showToast("No image to export")
+            return
+        }
+        showExportPanel = true
+    }
+
+    func showBatchExport() {
+        guard isGridView, selectedGridIndices.count >= 2 else {
+            showToast("Select at least 2 files")
+            return
+        }
+        showBatchExportPanel = true
+    }
+
+    func saveChanges() {
+        guard let decodedImage, let currentFile else {
+            showToast("No image to save")
+            return
+        }
+
+        guard rotation != 0 || isFlippedHorizontally else {
+            showToast("No changes to save")
+            return
+        }
+
+        let alert = NSAlert()
+        alert.messageText = "Save changes to original file?"
+        alert.informativeText = "This will overwrite \"\(currentFile.name)\" with the rotated/flipped version."
+        alert.addButton(withTitle: "Save")
+        alert.addButton(withTitle: "Cancel")
+        alert.alertStyle = .warning
+
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+
+        Task.detached(priority: .userInitiated) { [weak self] in
+            guard let self else { return }
+            let image = await MainActor.run { decodedImage.image }
+            let rot = await MainActor.run { self.rotation }
+            let flip = await MainActor.run { self.isFlippedHorizontally }
+            let url = await MainActor.run { currentFile.url }
+            let fmt = ImageWriter.SaveFormat.from(url: url)
+
+            guard let transformed = ImageWriter.applyTransform(
+                to: image, rotation: rot, isFlipped: flip
+            ) else {
+                await MainActor.run { self.showToast("Failed to process image") }
+                return
+            }
+
+            guard ImageWriter.write(transformed, to: url, format: fmt) else {
+                await MainActor.run { self.showToast("Failed to save changes") }
+                return
+            }
+
+            await MainActor.run {
+                // Invalidate all caches so the rewritten file is re-decoded fresh
+                ImageCache.shared.remove(url)
+                ThumbnailCache.shared.remove(url)
+                ThumbnailDiskCache.shared.remove(key: ThumbnailCacheKey(url: url))
+
+                self.rotation = 0
+                self.isFlippedHorizontally = false
+                self.fileListVersion &+= 1  // force grid / strip rebuild
+                self.loadCurrentImage()
+                self.showToast("Changes saved")
+            }
+        }
+    }
+
+    // MARK: - Clipboard
 
     func copyImage() {
         guard let image = decodedImage?.image else { return }
@@ -641,12 +874,17 @@ final class ViewerModel {
 
             if isGridView {
                 if files.isEmpty {
-                    selectedGridIndex = nil
+                    selectedGridIndices.removeAll()
                     metadata = nil
                 } else {
-                    selectedGridIndex = min(selectedGridIndex ?? 0, files.count - 1)
-                    if let newIdx = selectedGridIndex {
-                        selectInGrid(at: newIdx)
+                    // Adjust selection after deletion
+                    if !selectedGridIndices.isEmpty {
+                        let sorted = selectedGridIndices.sorted()
+                        let newSet = Set(sorted.map { min($0, files.count - 1) }.filter { files.indices.contains($0) })
+                        selectedGridIndices = newSet
+                        if let first = selectedGridIndices.sorted().first {
+                            selectInGrid(at: first)
+                        }
                     }
                 }
             } else {

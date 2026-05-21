@@ -42,6 +42,14 @@ struct ImageWriter {
             }
         }
 
+        /// Whether this format supports a quality slider (JPEG / HEIC).
+        var supportsQuality: Bool {
+            switch self {
+            case .jpeg, .heic: true
+            case .png, .tiff, .bmp: false
+            }
+        }
+
         /// Infer save format from a file extension string.
         static func from(extension ext: String) -> SaveFormat? {
             switch ext.lowercased() {

@@ -8,10 +8,6 @@ public struct FolderScanner: Sendable {
 
     public init() {}
 
-    public func scanContainingFolder(for imageURL: URL, sortMode: SortMode = .name) async throws -> [FileItem] {
-        try await scanFolder(imageURL.deletingLastPathComponent(), sortMode: sortMode)
-    }
-
     public func scanFolder(_ folderURL: URL, sortMode: SortMode = .name) async throws -> [FileItem] {
         let urls = try FileManager.default.contentsOfDirectory(
             at: folderURL,

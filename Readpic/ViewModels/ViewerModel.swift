@@ -20,6 +20,40 @@ final class ViewerModel {
         case resetZoom
     }
 
+    enum FileFormatFilter: String, CaseIterable, Sendable {
+        case all = "All"
+        case jpeg = "JPEG"
+        case png  = "PNG"
+        case heic = "HEIC"
+        case webp = "WebP"
+        case gif  = "GIF"
+        case tiff = "TIFF"
+        case bmp  = "BMP"
+        case ico  = "ICO"
+        case raw  = "RAW"
+        case avif = "AVIF"
+        case jxl  = "JPEG XL"
+        case svg  = "SVG"
+        case psd  = "PSD"
+
+        func matches(_ url: URL) -> Bool {
+            guard self != .all else { return true }
+            let ext = url.pathExtension.lowercased()
+            switch self {
+            case .jpeg: return ["jpg", "jpeg"].contains(ext)
+            case .tiff: return ["tif", "tiff"].contains(ext)
+            case .heic: return ["heic", "heif"].contains(ext)
+            case .ico:  return ext == "ico"
+            case .raw:  return ["cr2", "cr3", "nef", "arw", "dng", "orf", "rw2", "raf", "srw", "pef", "srf", "sr2", "3fr", "fff", "x3f", "mef", "mos"].contains(ext)
+            case .avif: return ext == "avif"
+            case .jxl:  return ext == "jxl"
+            case .svg:  return ext == "svg"
+            case .psd:  return ["psd", "psb"].contains(ext)
+            default:    return ext == rawValue.lowercased()
+            }
+        }
+    }
+
     var files: [FileItem] = []
     var currentIndex: Int = 0
     var decodedImage: DecodedImage? {
@@ -70,6 +104,40 @@ final class ViewerModel {
     var needsCanvasFocus = false
     var needsGridScroll: UInt = 0
     var showFrameStrip = false
+    var searchText = ""
+    var formatFilter: FileFormatFilter = .all
+    /// Files matching current search text and format filter.
+    var filteredFiles: [FileItem] {
+        var result = files
+        if !searchText.isEmpty {
+            result = result.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+        }
+        if formatFilter != .all {
+            result = result.filter { formatFilter.matches($0.url) }
+        }
+        return result
+    }
+    var isFilterActive: Bool {
+        !searchText.isEmpty || formatFilter != .all
+    }
+    /// Indices into `files` that match the current filter.
+    var filteredIndices: [Int] {
+        files.indices.filter { i in
+            let f = files[i]
+            if !searchText.isEmpty, !f.name.localizedCaseInsensitiveContains(searchText) { return false }
+            if formatFilter != .all, !formatFilter.matches(f.url) { return false }
+            return true
+        }
+    }
+    /// Files available for navigation — filtered list when filter active, full list otherwise.
+    var navigableFiles: [FileItem] {
+        isFilterActive ? filteredFiles : files
+    }
+    /// Current index within `navigableFiles`.
+    var navigableIndex: Int {
+        guard let url = currentFile?.url else { return 0 }
+        return navigableFiles.firstIndex(where: { $0.url == url }) ?? 0
+    }
     var showExportPanel = false
     var showBatchExportPanel = false
     var showBatchRenamePanel = false
@@ -225,14 +293,18 @@ final class ViewerModel {
     /// - Viewer mode: shows file info as before.
     var statusText: String {
         if isGridView {
+            let filteredCount = filteredIndices.count
+            let totalCount = files.count
+            let filterSuffix = isFilterActive ? " (filtered from \(totalCount))" : ""
             if selectedGridIndices.isEmpty {
-                return "\(files.count) images"
+                return "\(filteredCount) images\(filterSuffix)"
             } else {
-                return "\(selectedGridIndices.count) of \(files.count) selected"
+                return "\(selectedGridIndices.count) of \(filteredCount) selected\(filterSuffix)"
             }
         }
         guard let currentFile else { return "" }
-        let count = files.isEmpty ? 1 : files.count
+        let nav = navigableFiles
+        let count = nav.isEmpty ? 1 : nav.count
         let dimensions: String
         if let decodedImage {
             dimensions = "\(Int(decodedImage.pixelSize.width)) × \(Int(decodedImage.pixelSize.height))"
@@ -417,15 +489,21 @@ final class ViewerModel {
     }
 
     func showPrevious() {
-        guard files.count > 1 else { return }
-        currentIndex = max(currentIndex - 1, 0)
+        let nav = navigableFiles
+        guard nav.count > 1, let url = currentFile?.url,
+              let idx = nav.firstIndex(where: { $0.url == url }), idx > 0 else { return }
+        guard let targetIdx = files.firstIndex(where: { $0.url == nav[idx - 1].url }) else { return }
+        currentIndex = targetIdx
         resetRotation()
         loadCurrentImage()
     }
 
     func showNext() {
-        guard files.count > 1 else { return }
-        currentIndex = min(currentIndex + 1, files.count - 1)
+        let nav = navigableFiles
+        guard nav.count > 1, let url = currentFile?.url,
+              let idx = nav.firstIndex(where: { $0.url == url }), idx < nav.count - 1 else { return }
+        guard let targetIdx = files.firstIndex(where: { $0.url == nav[idx + 1].url }) else { return }
+        currentIndex = targetIdx
         resetRotation()
         loadCurrentImage()
         needsCanvasFocus = true
@@ -499,8 +577,11 @@ final class ViewerModel {
     }
 
     func selectFile(at index: Int) {
-        guard files.indices.contains(index), index != currentIndex else { return }
-        currentIndex = index
+        let nav = navigableFiles
+        guard nav.indices.contains(index) else { return }
+        let targetFile = nav[index]
+        guard let targetIdx = files.firstIndex(where: { $0.url == targetFile.url }), targetIdx != currentIndex else { return }
+        currentIndex = targetIdx
         resetRotation()
         loadCurrentImage()
         needsCanvasFocus = true
@@ -665,30 +746,34 @@ final class ViewerModel {
 
     func gridSelectPrevious() {
         let idx = selectedGridIndices.first ?? currentIndex
-        guard idx > 0 else { return }
-        selectInGrid(at: idx - 1)
+        let filtered = filteredIndices
+        guard let pos = filtered.firstIndex(of: idx), pos > 0 else { return }
+        selectInGrid(at: filtered[pos - 1])
     }
 
     func gridSelectNext() {
         let idx = selectedGridIndices.first ?? currentIndex
-        guard idx < files.count - 1 else { return }
-        selectInGrid(at: idx + 1)
+        let filtered = filteredIndices
+        guard let pos = filtered.firstIndex(of: idx), pos < filtered.count - 1 else { return }
+        selectInGrid(at: filtered[pos + 1])
     }
 
     func gridSelectUp(columns: Int) {
         let idx = selectedGridIndices.first ?? currentIndex
-        let target = idx - columns
-        if files.indices.contains(target) {
-            selectInGrid(at: target)
-        }
+        let filtered = filteredIndices
+        guard let pos = filtered.firstIndex(of: idx) else { return }
+        let targetPos = pos - columns
+        guard filtered.indices.contains(targetPos) else { return }
+        selectInGrid(at: filtered[targetPos])
     }
 
     func gridSelectDown(columns: Int) {
         let idx = selectedGridIndices.first ?? currentIndex
-        let target = idx + columns
-        if files.indices.contains(target) {
-            selectInGrid(at: target)
-        }
+        let filtered = filteredIndices
+        guard let pos = filtered.firstIndex(of: idx) else { return }
+        let targetPos = pos + columns
+        guard filtered.indices.contains(targetPos) else { return }
+        selectInGrid(at: filtered[targetPos])
     }
 
     func openFromGrid(at index: Int) {
@@ -1332,9 +1417,11 @@ final class ViewerModel {
 
     private func preloadAdjacent() {
         let decoder = self.decoder
-        let indices = [currentIndex - 1, currentIndex + 1].filter { files.indices.contains($0) }
-        for i in indices {
-            let file = files[i]
+        let nav = navigableFiles
+        guard let url = currentFile?.url, let pos = nav.firstIndex(where: { $0.url == url }) else { return }
+        let adjPositions = [pos - 1, pos + 1].filter { nav.indices.contains($0) }
+        for p in adjPositions {
+            let file = nav[p]
             guard ImageCache.shared.get(file.url) == nil else { continue }
             Task.detached(priority: .low) {
                 guard let image = try? decoder.decode(url: file.url) else { return }

@@ -100,7 +100,7 @@ struct ViewerRepresentable: NSViewRepresentable {
                 showFrameStrip: model.showFrameStrip,
                 frameStripVisible: model.showFrameStrip && model.hasAnimatedFrames,
                 showThumbnailStrip: model.showThumbnailStrip,
-                thumbnailStripVisible: model.files.count > 1 && model.showThumbnailStrip && !model.isGridView,
+                thumbnailStripVisible: model.navigableFiles.count > 1 && model.showThumbnailStrip && !model.isGridView,
                 showStatusBar: model.settings.showStatusBar,
                 statusBarVisible: model.settings.showStatusBar && !model.statusText.isEmpty,
                 infoPanelWidth: model.isInfoPanelVisible ? 300 : 0
@@ -163,7 +163,7 @@ struct ViewerRepresentable: NSViewRepresentable {
             showFrameStrip: model.showFrameStrip,
             frameStripVisible: model.showFrameStrip && model.hasAnimatedFrames,
             showThumbnailStrip: model.showThumbnailStrip,
-            thumbnailStripVisible: model.files.count > 1 && model.showThumbnailStrip && !model.isGridView,
+            thumbnailStripVisible: model.navigableFiles.count > 1 && model.showThumbnailStrip && !model.isGridView,
             showStatusBar: model.settings.showStatusBar,
             statusBarVisible: model.settings.showStatusBar && !model.statusText.isEmpty,
             infoPanelWidth: model.isInfoPanelVisible ? 300 : 0

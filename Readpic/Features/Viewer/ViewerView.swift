@@ -35,6 +35,7 @@ struct ViewerView: View {
                     // and state are preserved when switching between them.
                     GridView(
                         files: model.files,
+                        filteredIndices: model.filteredIndices,
                         currentIndex: model.currentIndex,
                         selectedIndices: model.selectedGridIndices,
                         handleClick: { index, isCmd, isShift in
@@ -151,10 +152,10 @@ struct ViewerView: View {
                     .transition(.move(edge: .bottom))
                 }
 
-                if model.files.count > 1 && model.showThumbnailStrip && !model.isGridView {
+                if model.navigableFiles.count > 1 && model.showThumbnailStrip && !model.isGridView {
                     ThumbnailStripView(
-                        files: model.files,
-                        currentIndex: model.currentIndex,
+                        files: model.navigableFiles,
+                        currentIndex: model.navigableIndex,
                         select: { model.selectFile(at: $0) },
                         onScrollStart: { if model.hasAnimatedFrames { model.isAnimationPaused = true } },
                         onScrollEnd: { if model.hasAnimatedFrames { model.isAnimationPaused = false } }
@@ -206,8 +207,9 @@ struct ViewerView: View {
         .onAppear {
             keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak model] event in
                 guard let model else { return event }
-                // When a sheet is open, pass all keys through so TextFields work correctly
+                // When a sheet or text field is active, pass all keys through so TextFields work correctly
                 if model.showExportPanel || model.showBatchExportPanel || model.showBatchRenamePanel { return event }
+                if let responder = NSApp.keyWindow?.firstResponder, responder.isKind(of: NSTextView.self) { return event }
                 let chars = event.characters
 
                 if model.isGridView {
@@ -334,7 +336,7 @@ struct ViewerView: View {
 }
 
 private struct ViewerToolbar: View {
-    let model: ViewerModel
+    @Bindable var model: ViewerModel
 
     private var disabled: Bool {
         model.currentFile == nil || model.isGridView
@@ -351,52 +353,87 @@ private struct ViewerToolbar: View {
     // ── Normal viewer toolbar ──
 
     private var normalToolbar: some View {
-        HStack(spacing: 8) {
-            ToolbarButton(title: model.isGridView ? "Viewer" : "Grid", systemImage: model.isGridView ? "photo" : "square.grid.3x3", action: model.toggleGridView)
-                .disabled(model.currentFile == nil)
+        VStack(spacing: 0) {
+            HStack(spacing: 8) {
+                ToolbarButton(title: model.isGridView ? "Viewer" : "Grid", systemImage: model.isGridView ? "photo" : "square.grid.3x3", action: model.toggleGridView)
+                    .disabled(model.currentFile == nil)
 
-            Divider()
-                .frame(height: 18)
+                Divider()
+                    .frame(height: 18)
 
-            ToolbarButton(title: "Zoom Out", systemImage: "minus.magnifyingglass", action: model.zoomOut)
-                .disabled(disabled)
-            ToolbarButton(title: "Fit", systemImage: "1.magnifyingglass", action: model.setFitMode)
-                .disabled(disabled)
-            ToolbarButton(title: "Zoom In", systemImage: "plus.magnifyingglass", action: model.zoomIn)
-                .disabled(disabled)
+                ToolbarButton(title: "Zoom Out", systemImage: "minus.magnifyingglass", action: model.zoomOut)
+                    .disabled(disabled)
+                ToolbarButton(title: "Fit", systemImage: "1.magnifyingglass", action: model.setFitMode)
+                    .disabled(disabled)
+                ToolbarButton(title: "Zoom In", systemImage: "plus.magnifyingglass", action: model.zoomIn)
+                    .disabled(disabled)
 
-            Divider()
-                .frame(height: 18)
+                Divider()
+                    .frame(height: 18)
 
-            ToolbarButton(title: "Rotate Left", systemImage: "rotate.left", action: model.rotateLeft)
-                .disabled(disabled)
-            ToolbarButton(title: "Rotate Right", systemImage: "rotate.right", action: model.rotateRight)
-                .disabled(disabled)
-            ToolbarButton(title: "Mirror", systemImage: "flip.horizontal", action: model.flipHorizontal)
-                .disabled(disabled)
+                ToolbarButton(title: "Rotate Left", systemImage: "rotate.left", action: model.rotateLeft)
+                    .disabled(disabled)
+                ToolbarButton(title: "Rotate Right", systemImage: "rotate.right", action: model.rotateRight)
+                    .disabled(disabled)
+                ToolbarButton(title: "Mirror", systemImage: "flip.horizontal", action: model.flipHorizontal)
+                    .disabled(disabled)
 
-            ToolbarButton(title: "Crop", systemImage: "crop", action: model.enterCropMode)
-                .disabled(model.currentFile == nil)
+                ToolbarButton(title: "Crop", systemImage: "crop", action: model.enterCropMode)
+                    .disabled(model.currentFile == nil)
 
-            Divider()
-                .frame(height: 18)
+                Divider()
+                    .frame(height: 18)
 
-            ToolbarButton(title: "Thumbnails", systemImage: "rectangle.split.3x1") {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    model.toggleThumbnailStrip()
+                ToolbarButton(title: "Thumbnails", systemImage: "rectangle.split.3x1") {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        model.toggleThumbnailStrip()
+                    }
                 }
-            }
-            .disabled(disabled)
+                .disabled(disabled)
 
-            ToolbarButton(title: "Info", systemImage: "info.circle") {
-                withAnimation(.easeInOut(duration: 0.2)) { model.toggleInfoPanel() }
-            }
-            .disabled(!model.isGridView && model.currentFile == nil)
+                ToolbarButton(title: "Info", systemImage: "info.circle") {
+                    withAnimation(.easeInOut(duration: 0.2)) { model.toggleInfoPanel() }
+                }
+                .disabled(!model.isGridView && model.currentFile == nil)
 
-            Spacer()
+                if model.isGridView {
+                    HStack(spacing: 6) {
+                        Image(systemName: "magnifyingglass")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                        TextField("Search", text: $model.searchText)
+                            .textFieldStyle(.plain)
+                            .font(.system(size: 11))
+                            .frame(maxWidth: 140)
+                        if !model.searchText.isEmpty {
+                            Button { model.searchText = "" } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .font(.system(size: 10))
+                            }
+                            .buttonStyle(.plain)
+                            .foregroundStyle(.secondary)
+                        }
+                    }
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 3)
+                    .background(Color.secondary.opacity(0.12), in: RoundedRectangle(cornerRadius: 5))
+
+                    Picker(selection: $model.formatFilter) {
+                        ForEach(ViewerModel.FileFormatFilter.allCases, id: \.rawValue) { fmt in
+                            Text(fmt.rawValue).tag(fmt)
+                        }
+                    } label: {
+                        Label("Format", systemImage: "line.3.horizontal.decrease.circle")
+                    }
+                    .pickerStyle(.menu)
+                    .menuIndicator(.visible)
+                }
+
+                Spacer()
+            }
+            .padding(.horizontal, 10)
+            .frame(height: 40)
         }
-        .padding(.horizontal, 10)
-        .frame(maxHeight: .infinity)
         .background(.ultraThinMaterial)
     }
 

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct GridView: View {
     let files: [FileItem]
+    let filteredIndices: [Int]
     let currentIndex: Int
     let selectedIndices: Set<Int>
     let handleClick: (Int, _ isCommand: Bool, _ isShift: Bool) -> Void
@@ -22,12 +23,25 @@ struct GridView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVGrid(columns: columns, spacing: 12) {
-                    ForEach(files.indices, id: \.self) { index in
-                        gridCell(for: index)
-                            .id(index)
+                    ForEach(Array(filteredIndices.enumerated()), id: \.element) { _, fileIndex in
+                        gridCell(for: fileIndex)
+                            .id(fileIndex)
                     }
                 }
                 .padding(16)
+                .overlay {
+                    if filteredIndices.isEmpty {
+                        VStack(spacing: 8) {
+                            Image(systemName: "magnifyingglass")
+                                .font(.system(size: 28))
+                                .foregroundStyle(.tertiary)
+                            Text("No matching files")
+                                .font(.system(size: 13))
+                                .foregroundStyle(.secondary)
+                        }
+                        .offset(y: -20)
+                    }
+                }
             }
             .contentMargins(.top, topInset, for: .scrollContent)
             .contentMargins(.bottom, bottomInset, for: .scrollContent)
@@ -61,7 +75,7 @@ struct GridView: View {
         // Don't auto-scroll during multi-select to avoid view jumping
         guard selectedIndices.count <= 1 else { return }
         let target = selectedIndices.sorted().first ?? currentIndex
-        guard files.indices.contains(target) else { return }
+        guard files.indices.contains(target), filteredIndices.contains(target) else { return }
         withAnimation(.easeOut(duration: 0.2)) {
             proxy.scrollTo(target, anchor: .center)
         }

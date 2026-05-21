@@ -1133,6 +1133,13 @@ final class ViewerModel {
         showToast("Path copied")
     }
 
+    func copyMetadata() {
+        guard let meta = metadata else { return }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(meta.exportText, forType: .string)
+        showToast("Metadata copied")
+    }
+
     func exportMetadata() {
         guard let meta = metadata else { return }
         let content = meta.exportText

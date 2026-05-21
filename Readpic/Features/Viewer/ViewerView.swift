@@ -549,9 +549,13 @@ private struct EmptyStateView: View {
                     }
                 }
 
-                if model.settings.rememberLastFolder, let lastURL = model.settings.lastFolderURL {
-                    Button {
-                        model.openFolder(lastURL)
+                if !model.settings.recentFolders.isEmpty {
+                    Menu {
+                        ForEach(model.settings.recentFolders, id: \.self) { url in
+                            Button(url.lastPathComponent) { model.openFolder(url) }
+                        }
+                        Divider()
+                        Button("Clear Recent") { model.settings.clearRecentFolders() }
                     } label: {
                         HStack(spacing: 4) {
                             Image(systemName: "clock.arrow.circlepath")
@@ -561,7 +565,6 @@ private struct EmptyStateView: View {
                     }
                     .buttonStyle(.plain)
                     .foregroundStyle(.secondary)
-                    .help(lastURL.path)
                 }
 
                 Text("Supports JPEG, PNG, HEIC, WebP, GIF, TIFF, BMP, ICO")

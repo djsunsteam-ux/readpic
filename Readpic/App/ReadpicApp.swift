@@ -24,6 +24,20 @@ struct ReadpicApp: App {
             }
 
             CommandGroup(after: .newItem) {
+                Menu("Open Recent") {
+                    let recents = model.settings.recentFolders
+                    if recents.isEmpty {
+                        Text("No Recent Folders")
+                    }
+                    ForEach(recents, id: \.self) { url in
+                        Button(url.lastPathComponent) { model.openFolder(url) }
+                    }
+                    if !recents.isEmpty {
+                        Divider()
+                        Button("Clear Recent") { model.settings.clearRecentFolders() }
+                    }
+                }
+
                 Button("Export / Convert\u{2026}") { model.showExport() }
                     .keyboardShortcut("s", modifiers: [.command, .shift])
                     .disabled(model.currentFile == nil || model.selectedGridIndices.count >= 2)

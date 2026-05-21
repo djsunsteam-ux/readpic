@@ -58,6 +58,8 @@ struct GridView: View {
     }
 
     private func scrollToCurrent(proxy: ScrollViewProxy) {
+        // Don't auto-scroll during multi-select to avoid view jumping
+        guard selectedIndices.count <= 1 else { return }
         let target = selectedIndices.sorted().first ?? currentIndex
         guard files.indices.contains(target) else { return }
         withAnimation(.easeOut(duration: 0.2)) {

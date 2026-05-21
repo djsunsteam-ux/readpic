@@ -224,7 +224,7 @@
 ### 5.3 文件管理
 
 - [x] 多选（⌘+click、Shift+click）+ 全选/反选（⌘A / ⌘⇧A）。
-- [ ] 批量重命名。
+- [x] 批量重命名（Sequential 模式 + Find & Replace 模式，预设项快捷填充，实时预览冲突检测）。
 - [x] 批量格式转换（多选 → Batch Convert / Export，与单图导出共享 ImageWriter）。
 - [ ] 搜索文件名。
 - [ ] 格式过滤。

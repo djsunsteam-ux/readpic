@@ -791,8 +791,10 @@ final class ViewerModel {
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(self?.slideshowInterval ?? 3))
                 guard let self, !Task.isCancelled, isSlideshowActive else { break }
+                // When paused, skip advance but keep the loop alive
+                if isAnimationPaused { continue }
                 await MainActor.run {
-                    guard !Task.isCancelled, isSlideshowActive else { return }
+                    guard !Task.isCancelled, isSlideshowActive, !isAnimationPaused else { return }
                     slideshowNext()
                 }
             }

@@ -226,8 +226,8 @@
 - [x] 多选（⌘+click、Shift+click）+ 全选/反选（⌘A / ⌘⇧A）。
 - [x] 批量重命名（Sequential 模式 + Find & Replace 模式，预设项快捷填充，实时预览冲突检测）。
 - [x] 批量格式转换（多选 → Batch Convert / Export，与单图导出共享 ImageWriter）。
-- [ ] 搜索文件名。
-- [ ] 格式过滤。
+- [x] 搜索文件名。
+- [x] 格式过滤。
 - [ ] 日期过滤。
 - [x] 收藏 / 评分：心形收藏 + 1-5 星评分，信息面板/网格/缩略图条可见，UserDefaults 持久化。
 - [ ] SQLite 元数据存储。

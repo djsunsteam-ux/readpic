@@ -52,6 +52,9 @@ struct SettingsView: View {
                         Text("简体中文").tag(LanguageMode.chinese)
                     }
                     .pickerStyle(.radioGroup)
+                    Text("Changes will take effect after restarting the app.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.tertiary)
                 }
 
                 Section("Session") {

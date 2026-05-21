@@ -43,7 +43,6 @@
 		A00000000000000000000090 /* CropOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000091 /* CropOverlayView.swift */; };
 		A00000000000000000000092 /* NativeHScroll.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000093 /* NativeHScroll.swift */; };
 		A00000000000000000000094 /* BatchRenameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000095 /* BatchRenameView.swift */; };
-				A00000000000000000000096 /* SlideshowView.swift in Sources */,
 		A00000000000000000000096 /* SlideshowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000097 /* SlideshowView.swift */; };
 /* End PBXBuildFile section */
 
@@ -244,6 +243,7 @@
 				A00000000000000000000018 /* ViewerView.swift */,
 				A00000000000000000000019 /* ViewerRepresentable.swift */,
 				A0000000000000000000001A /* ViewerNSView.swift */,
+				A00000000000000000000097 /* SlideshowView.swift */,
 				A00000000000000000000062 /* ThumbnailStripView.swift */,
 				A00000000000000000000064 /* GridView.swift */,
 				A00000000000000000000072 /* FrameStripView.swift */,
@@ -449,6 +449,7 @@
 				A00000000000000000000090 /* CropOverlayView.swift in Sources */,
 				A00000000000000000000092 /* NativeHScroll.swift in Sources */,
 				A00000000000000000000094 /* BatchRenameView.swift in Sources */,
+				A00000000000000000000096 /* SlideshowView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

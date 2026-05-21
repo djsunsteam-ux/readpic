@@ -821,8 +821,27 @@ final class ViewerModel {
         else { startSlideshow() }
     }
 
-    /// Internal: navigate next, skipping animated formats like GIF.
-    /// Resets the auto-advance timer so manual nav doesn't trigger immediate advance.
+    /// Navigate previous (for manual override), skipping GIFs and resetting timer.
+    func slideshowPrevious() {
+        let nav = navigableFiles
+        guard nav.count > 1, let currentURL = currentFile?.url,
+              var idx = nav.firstIndex(where: { $0.url == currentURL })
+        else { return }
+        let startIdx = idx
+        repeat {
+            idx = (idx - 1 + nav.count) % nav.count
+            let ext = nav[idx].url.pathExtension.lowercased()
+            if ext != "gif" { break }
+        } while idx != startIdx
+        guard idx != startIdx, let targetIdx = files.firstIndex(where: { $0.url == nav[idx].url }) else { return }
+        currentIndex = targetIdx
+        resetRotation()
+        loadCurrentImage()
+        needsCanvasFocus = true
+        startSlideshowTimer()
+    }
+
+    /// Navigate next (for auto-advance and manual override), skipping GIFs and resetting timer.
     func slideshowNext() {
         let nav = navigableFiles
         guard nav.count > 1, let currentURL = currentFile?.url,

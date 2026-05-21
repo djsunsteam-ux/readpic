@@ -43,6 +43,8 @@
 		A00000000000000000000090 /* CropOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000091 /* CropOverlayView.swift */; };
 		A00000000000000000000092 /* NativeHScroll.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000093 /* NativeHScroll.swift */; };
 		A00000000000000000000094 /* BatchRenameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000095 /* BatchRenameView.swift */; };
+				A00000000000000000000096 /* SlideshowView.swift in Sources */,
+		A00000000000000000000096 /* SlideshowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000097 /* SlideshowView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -85,6 +87,7 @@
 		A00000000000000000000091 /* CropOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CropOverlayView.swift; sourceTree = "<group>"; };
 		A00000000000000000000093 /* NativeHScroll.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeHScroll.swift; sourceTree = "<group>"; };
 		A00000000000000000000095 /* BatchRenameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatchRenameView.swift; sourceTree = "<group>"; };
+		A00000000000000000000097 /* SlideshowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideshowView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXContainerItemProxy section */

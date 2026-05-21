@@ -173,7 +173,9 @@ final class ViewerModel {
     var showBatchRenamePanel = false
     var isSlideshowActive = false
     var slideshowInterval: TimeInterval = 3.0
+    var slideshowTransition: SlideshowTransition = .dissolve
     private var slideshowTask: Task<Void, Never>?
+    private var wasThumbnailStripVisibleBeforeSlideshow = true
     var isCropMode = false
     /// Normalized crop rect in image pixel space (0…1).
     var cropRect: CGRect = .init(x: 0, y: 0, width: 1, height: 1)
@@ -770,8 +772,12 @@ final class ViewerModel {
             showToast("Need at least 2 images for slideshow")
             return
         }
+        // Save thumbnail strip state, then hide it
+        wasThumbnailStripVisibleBeforeSlideshow = showThumbnailStrip
+        showThumbnailStrip = false
+        if isInfoPanelVisible { isInfoPanelVisible = false }
+
         isSlideshowActive = true
-        if !isFullScreen { toggleFullScreen() }
         slideshowTask?.cancel()
         slideshowTask = Task { [weak self] in
             while !Task.isCancelled {
@@ -789,6 +795,8 @@ final class ViewerModel {
         isSlideshowActive = false
         slideshowTask?.cancel()
         slideshowTask = nil
+        // Restore thumbnail strip if it was visible before
+        if wasThumbnailStripVisibleBeforeSlideshow { showThumbnailStrip = true }
         showToast("Slideshow stopped")
     }
 
@@ -1453,7 +1461,7 @@ final class ViewerModel {
         }
     }
 
-    private func loadCurrentImage() {
+    func loadCurrentImage() {
         guard let currentFile else { return }
         loadTask?.cancel()
         preloadTask?.cancel()

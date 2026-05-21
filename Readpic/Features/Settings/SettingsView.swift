@@ -52,16 +52,6 @@ struct SettingsView: View {
                         Text("简体中文").tag(LanguageMode.chinese)
                     }
                     .pickerStyle(.radioGroup)
-                    .onChange(of: settings.language) { _, newValue in
-                        var langs: [String]
-                        switch newValue {
-                        case .system:  langs = []
-                        case .english: langs = ["en"]
-                        case .chinese: langs = ["zh-Hans"]
-                        }
-                        UserDefaults.standard.set(langs, forKey: "AppleLanguages")
-                        UserDefaults.standard.set(newValue.rawValue, forKey: "LanguageMode")
-                    }
                 }
 
                 Section("Session") {

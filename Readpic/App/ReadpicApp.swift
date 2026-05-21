@@ -4,16 +4,11 @@ import SwiftUI
 struct ReadpicApp: App {
     @State private var model = ViewerModel()
 
-    init() {
-        let lang = UserDefaults.standard.string(forKey: "LanguageMode")
-        let langs: [String]
-        switch lang {
-        case "English":     langs = ["en"]
-        case "简体中文":    langs = ["zh-Hans"]
-        default:            langs = []
-        }
-        if !langs.isEmpty {
-            UserDefaults.standard.set(langs, forKey: "AppleLanguages")
+    var currentLocale: Locale {
+        switch model.settings.language {
+        case .english: Locale(identifier: "en")
+        case .chinese: Locale(identifier: "zh-Hans")
+        case .system:  .current
         }
     }
 
@@ -21,6 +16,16 @@ struct ReadpicApp: App {
         WindowGroup {
             ViewerView(model: model)
                 .frame(minWidth: 720, minHeight: 480)
+                .environment(\.locale, currentLocale)
+                .onChange(of: model.settings.language) { _, newValue in
+                    let langs: [String]
+                    switch newValue {
+                    case .english: langs = ["en"]
+                    case .chinese: langs = ["zh-Hans"]
+                    case .system:  langs = []
+                    }
+                    UserDefaults.standard.set(langs, forKey: "AppleLanguages")
+                }
                 .preferredColorScheme(model.settings.theme == .dark ? .dark : model.settings.theme == .light ? .light : nil)
                 .onOpenURL { url in
                     model.open(url)

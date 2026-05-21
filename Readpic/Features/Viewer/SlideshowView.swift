@@ -1,4 +1,3 @@
-import AppKit
 import SwiftUI
 
 // MARK: - Transition type
@@ -64,7 +63,6 @@ struct SlideshowView: View {
                     .onTapGesture { }  // swallow taps on controls
                 }
             }
-            .overlay(ScrollWheelHandler(onPrevious: { slideshowPrevious() }, onNext: { slideshowNext() }))
         }
         .focusEffectDisabled()
         .onAppear { scheduleHideControls() }
@@ -228,43 +226,4 @@ struct SlideshowView: View {
     }
 }
 
-// MARK: - Scroll wheel handler for slideshow navigation
 
-private struct ScrollWheelHandler: NSViewRepresentable {
-    let onPrevious: () -> Void
-    let onNext: () -> Void
-
-    func makeNSView(context: Context) -> NSView {
-        let view = ScrollWheelCaptureView()
-        view.onPrevious = onPrevious
-        view.onNext = onNext
-        return view
-    }
-
-    func updateNSView(_ nsView: NSView, context: Context) {
-        guard let view = nsView as? ScrollWheelCaptureView else { return }
-        view.onPrevious = onPrevious
-        view.onNext = onNext
-    }
-}
-
-private class ScrollWheelCaptureView: NSView {
-    var onPrevious: (() -> Void)?
-    var onNext: (() -> Void)?
-    private var horizontalAccumulator: CGFloat = 0
-
-    override var acceptsFirstResponder: Bool { false }
-    override func hitTest(_ point: NSPoint) -> NSView? { nil }  // pass taps through
-
-    override func scrollWheel(with event: NSEvent) {
-        // Horizontal scroll only
-        if abs(event.scrollingDeltaX) > abs(event.scrollingDeltaY) {
-            horizontalAccumulator += event.scrollingDeltaX
-            let threshold: CGFloat = 45
-            if abs(horizontalAccumulator) >= threshold {
-                if horizontalAccumulator > 0 { onPrevious?() } else { onNext?() }
-                horizontalAccumulator = 0
-            }
-        }
-    }
-}

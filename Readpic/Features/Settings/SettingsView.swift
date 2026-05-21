@@ -45,6 +45,25 @@ struct SettingsView: View {
                     }
                 }
 
+                Section("Language") {
+                    Picker("Language", selection: $settings.language) {
+                        Text("System").tag(LanguageMode.system)
+                        Text("English").tag(LanguageMode.english)
+                        Text("简体中文").tag(LanguageMode.chinese)
+                    }
+                    .pickerStyle(.radioGroup)
+                    .onChange(of: settings.language) { _, newValue in
+                        var langs: [String]
+                        switch newValue {
+                        case .system:  langs = []
+                        case .english: langs = ["en"]
+                        case .chinese: langs = ["zh-Hans"]
+                        }
+                        UserDefaults.standard.set(langs, forKey: "AppleLanguages")
+                        UserDefaults.standard.set(newValue.rawValue, forKey: "LanguageMode")
+                    }
+                }
+
                 Section("Session") {
                     Toggle("Remember Last Folder", isOn: $settings.rememberLastFolder)
                 }

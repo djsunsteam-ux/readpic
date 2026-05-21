@@ -44,7 +44,7 @@ struct BatchConvertView: View {
                 Text("Batch Convert / Export")
                     .font(.system(size: 15, weight: .semibold))
                 Spacer()
-                Text("\(totalCount) files")
+                Text(String(localized: "%d files").replacingOccurrences(of: "%d", with: "\(totalCount)"))
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
             }
@@ -77,7 +77,7 @@ struct BatchConvertView: View {
                 Button(action: convert) {
                     HStack(spacing: 6) {
                         if isConverting { ProgressView().controlSize(.mini) }
-                        Text(isConverting ? "Converting..." : "Export \(totalCount) Files")
+                        Text(isConverting ? String(localized: "Converting...") : String(format: String(localized: "Export %d Files"), totalCount))
                     }
                     .frame(minWidth: 120)
                 }

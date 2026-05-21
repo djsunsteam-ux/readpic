@@ -86,6 +86,9 @@
 "Session" = "Session";
 "Remember Last Folder" = "Remember Last Folder";
 
+/* ---------- Language ---------- */
+"Language" = "Language";
+
 /* ---------- Status Bar ---------- */
 "images" = "images";
 "selected" = "selected";

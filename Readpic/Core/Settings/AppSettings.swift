@@ -20,6 +20,12 @@ enum ThemeMode: String, CaseIterable, Sendable {
     case dark
 }
 
+enum LanguageMode: String, CaseIterable, Sendable {
+    case system = "System"
+    case english = "English"
+    case chinese = "简体中文"
+}
+
 enum BackgroundColor: String, CaseIterable, Sendable {
     case theme
     case black
@@ -106,6 +112,10 @@ final class AppSettings {
         }
     }
 
+    var language: LanguageMode {
+        didSet { UserDefaults.standard.set(language.rawValue, forKey: Self.languageKey) }
+    }
+
     var lastFolderURL: URL? {
         get {
             UserDefaults.standard.data(forKey: Self.lastFolderURLKey)
@@ -158,6 +168,7 @@ final class AppSettings {
         backgroundColor = Self.read(key: Self.bgColorKey, fallback: BackgroundColor.black)
         sortMode = Self.read(key: Self.sortModeKey, fallback: SortMode.name)
         rememberLastFolder = UserDefaults.standard.object(forKey: Self.rememberFolderKey) as? Bool ?? false
+        language = Self.read(key: Self.languageKey, fallback: LanguageMode.system)
     }
 
     private static func read<T: RawRepresentable>(key: String, fallback: T) -> T where T.RawValue == String {
@@ -182,6 +193,7 @@ final class AppSettings {
     private static let lastFolderURLKey = "lastFolderURL"
     private static let recentFoldersKey = "recentFolders"
     private static let sortModeKey = "sortMode"
+    private static let languageKey = "LanguageMode"
 
 
 }

@@ -4,6 +4,19 @@ import SwiftUI
 struct ReadpicApp: App {
     @State private var model = ViewerModel()
 
+    init() {
+        let lang = UserDefaults.standard.string(forKey: "LanguageMode")
+        let langs: [String]
+        switch lang {
+        case "English":     langs = ["en"]
+        case "简体中文":    langs = ["zh-Hans"]
+        default:            langs = []
+        }
+        if !langs.isEmpty {
+            UserDefaults.standard.set(langs, forKey: "AppleLanguages")
+        }
+    }
+
     var body: some Scene {
         WindowGroup {
             ViewerView(model: model)

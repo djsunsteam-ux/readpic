@@ -86,6 +86,9 @@
 "Session" = "会话";
 "Remember Last Folder" = "记住上次打开的文件夹";
 
+/* ---------- Language ---------- */
+"Language" = "语言";
+
 /* ---------- Status Bar ---------- */
 "images" = "张图片";
 "selected" = "已选";

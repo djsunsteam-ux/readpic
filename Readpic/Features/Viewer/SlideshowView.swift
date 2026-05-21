@@ -59,7 +59,7 @@ struct SlideshowView: View {
             }
             .contentShape(Rectangle())
             .onTapGesture { toggleControls() }
-            .background(ScrollWheelHandler(onPrevious: { slideshowPrevious() }, onNext: { slideshowNext() }))
+            .overlay(ScrollWheelHandler(onPrevious: { slideshowPrevious() }, onNext: { slideshowNext() }))
         }
         .focusEffectDisabled()
         .onAppear {
@@ -282,6 +282,7 @@ private class ScrollWheelCaptureView: NSView {
     private var horizontalAccumulator: CGFloat = 0
 
     override var acceptsFirstResponder: Bool { false }
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }  // pass taps through
 
     override func scrollWheel(with event: NSEvent) {
         // Horizontal scroll only

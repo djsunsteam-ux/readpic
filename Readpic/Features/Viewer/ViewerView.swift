@@ -333,6 +333,13 @@ struct ViewerView: View {
                 }
             )
         }
+        .overlay {
+            if model.isSlideshowActive {
+                SlideshowView(model: model)
+                    .transition(.opacity)
+                    .zIndex(100)
+            }
+        }
     }
 }
 

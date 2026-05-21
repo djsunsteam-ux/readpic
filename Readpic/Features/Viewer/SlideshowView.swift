@@ -207,21 +207,13 @@ struct SlideshowView: View {
     }
 
     private func slideshowPrevious() {
-        navigateSlideshow(direction: -1)
-    }
-
-    private func slideshowNext() {
-        navigateSlideshow(direction: 1)
-    }
-
-    private func navigateSlideshow(direction: Int) {
         let nav = model.navigableFiles
         guard nav.count > 1, let url = model.currentFile?.url,
               var idx = nav.firstIndex(where: { $0.url == url })
         else { return }
         let startIdx = idx
         repeat {
-            idx = (idx + direction + nav.count) % nav.count
+            idx = (idx - 1 + nav.count) % nav.count
             let ext = nav[idx].url.pathExtension.lowercased()
             if ext != "gif" { break }
         } while idx != startIdx
@@ -229,7 +221,11 @@ struct SlideshowView: View {
         model.currentIndex = targetIdx
         model.resetRotation()
         model.loadCurrentImage()
-        resetAutoAdvance()
+        model.startSlideshowTimer()
+    }
+
+    private func slideshowNext() {
+        model.slideshowNext()  // model's version handles GIF skip + timer reset
     }
 
     // MARK: - Controls visibility

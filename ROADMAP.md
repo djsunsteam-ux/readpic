@@ -236,7 +236,7 @@
   - View 菜单：Grid View、Fit Window / Fit Width / Actual Size、Zoom In / Out / Reset、Thumbnail Strip、Info Panel、Sort By、Show Status Bar、Fullscreen
   - Image 菜单：Rotate Left / Right、Flip Horizontal
   - Help 菜单：Keyboard Shortcuts
-- [ ] **Phase 2+ 菜单扩展**：后续新增功能模块均需同时在菜单栏中提供入口，保持「功能-菜单」一一映射。
+- [x] **Phase 2+ 菜单扩展**：后续新增功能模块均需同时在菜单栏中提供入口，保持「功能-菜单」一一映射。
   - File：Export Image…、Batch Convert…、Batch Rename…、Open Recent ▸
   - Edit：Select All、Copy Metadata
   - View：Filter By ▸ (Format / Date)、Search Files…、Start Slideshow、Metadata Panel

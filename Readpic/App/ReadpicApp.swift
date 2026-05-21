@@ -56,6 +56,14 @@ struct ReadpicApp: App {
                 Button("Open Externally") { model.openExternally() }
                     .keyboardShortcut("e", modifiers: .command)
                     .disabled(model.currentFile == nil)
+
+                Divider()
+
+                Button("Batch Convert / Export\u{2026}") { model.showBatchExport() }
+                    .disabled(!model.isGridView || model.selectedGridIndices.count < 2)
+
+                Button("Batch Rename\u{2026}") { model.showBatchRename() }
+                    .disabled(!model.isGridView || model.selectedGridIndices.count < 2)
             }
 
             // MARK: - App Info
@@ -86,6 +94,11 @@ struct ReadpicApp: App {
                 Button("Invert Selection") { model.invertGridSelection() }
                     .keyboardShortcut("a", modifiers: [.command, .shift])
                     .disabled(!model.isGridView || model.files.isEmpty)
+
+                Divider()
+
+                Button("Copy Metadata") { model.copyMetadata() }
+                    .disabled(model.metadata == nil)
             }
 
             // MARK: - View
@@ -148,6 +161,22 @@ struct ReadpicApp: App {
                 Menu("Sort By") {
                     Button("Name") { model.setSortMode(.name) }
                     Button("Date") { model.setSortMode(.date) }
+                }
+
+                if model.isGridView {
+                    Menu("Filter By") {
+                        Menu("Format") {
+                            ForEach(ViewerModel.FileFormatFilter.allCases, id: \.rawValue) { fmt in
+                                Button(fmt.rawValue) { model.formatFilter = fmt }
+                            }
+                        }
+                        Menu("Date") {
+                            ForEach(ViewerModel.DateFilter.allCases, id: \.rawValue) { d in
+                                Button(d.rawValue) { model.dateFilter = d }
+                            }
+                        }
+                    }
+
                 }
 
                 Divider()

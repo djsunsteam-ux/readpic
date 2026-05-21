@@ -141,6 +141,9 @@ final class ViewerModel {
         if formatFilter != .all {
             result = result.filter { formatFilter.matches($0.url) }
         }
+        if dateFilter != .all {
+            result = result.filter { dateFilter.matches($0.modificationDate) }
+        }
         return result
     }
     var isFilterActive: Bool {

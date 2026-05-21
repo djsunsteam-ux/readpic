@@ -450,6 +450,7 @@ final class ViewerModel {
     }
 
     func openFolder(_ url: URL) {
+        settings.addRecentFolder(url)
         if settings.rememberLastFolder {
             settings.lastFolderURL = url
         }

@@ -228,7 +228,7 @@
 - [x] 批量格式转换（多选 → Batch Convert / Export，与单图导出共享 ImageWriter）。
 - [x] 搜索文件名。
 - [x] 格式过滤。
-- [ ] 日期过滤。
+- [x] 日期过滤。
 - [x] 收藏 / 评分：心形收藏 + 1-5 星评分，信息面板/网格/缩略图条可见，UserDefaults 持久化。
 - [ ] SQLite 元数据存储。
 
@@ -236,7 +236,7 @@
 
 - [ ] 幻灯片。
 - [ ] 快捷键自定义。
-- [ ] 最近文件夹管理。
+- [x] 最近文件夹管理（最近 10 个，自动清理不存在的路径）。
 - [x] **菜单栏重构**：按 macOS 惯例重组菜单栏结构，确保所有功能入口在菜单中可用。
   - File 菜单：Open Image…、Open Folder…、Close Window、Move to Trash、Reveal in Finder、Open Externally
   - Edit 菜单：Copy Image、Copy File、Copy File Path

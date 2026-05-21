@@ -121,6 +121,27 @@ final class AppSettings {
         }
     }
 
+    var recentFolders: [URL] {
+        get { Self.readRecentFolders() }
+        set {
+            let data = try? NSKeyedArchiver.archivedData(withRootObject: newValue as NSArray, requiringSecureCoding: true)
+            UserDefaults.standard.set(data, forKey: Self.recentFoldersKey)
+        }
+    }
+
+    func addRecentFolder(_ url: URL) {
+        var list = recentFolders
+        list.removeAll { $0 == url }
+        list.insert(url, at: 0)
+        if list.count > 10 { list = Array(list.prefix(10)) }
+        recentFolders = list
+        lastFolderURL = url
+    }
+
+    func clearRecentFolders() {
+        recentFolders = []
+    }
+
     init() {
         scrollBehavior = Self.read(key: Self.scrollBehaviorKey, fallback: ScrollBehavior.zoom)
         defaultZoomMode = Self.read(key: Self.defaultZoomModeKey, fallback: DefaultZoomMode.fitWindow)
@@ -151,5 +172,17 @@ final class AppSettings {
     private static let customBgColorKey = "customBackgroundColor"
     private static let rememberFolderKey = "rememberLastFolder"
     private static let lastFolderURLKey = "lastFolderURL"
+    private static let recentFoldersKey = "recentFolders"
     private static let sortModeKey = "sortMode"
+
+    private static func readRecentFolders() -> [URL] {
+        guard let data = UserDefaults.standard.data(forKey: Self.recentFoldersKey),
+              let array = try? NSKeyedUnarchiver.unarchivedObject(ofClass: NSArray.self, from: data) as? [URL]
+        else { return [] }
+        // Filter out folders that no longer exist
+        return array.filter { path in
+            var isDir: ObjCBool = false
+            return FileManager.default.fileExists(atPath: path.path, isDirectory: &isDir) && isDir.boolValue
+        }
+    }
 }

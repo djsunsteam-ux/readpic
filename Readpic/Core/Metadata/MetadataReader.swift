@@ -18,6 +18,26 @@ public struct ImageMetadata: Equatable, Sendable {
     public let iso: Int?
     public let aperture: Double?
     public let shutterSpeed: Double?
+    // Additional EXIF
+    public let focalLength: Double?
+    public let exposureCompensation: Double?
+    public let flash: String?
+    public let meteringMode: String?
+    public let whiteBalance: String?
+    public let exposureMode: String?
+    public let subjectDistance: Double?
+    public let digitalZoomRatio: Double?
+    // IPTC
+    public let caption: String?
+    public let keywords: [String]
+    public let copyright: String?
+    public let credit: String?
+    public let byline: String?
+    public let city: String?
+    public let country: String?
+    public let headline: String?
+    public let objectName: String?
+
     public let latitude: Double?
     public let longitude: Double?
     public let altitude: Double?
@@ -127,6 +147,7 @@ public struct MetadataReader: Sendable {
         let source = CGImageSourceCreateWithURL(url as CFURL, [kCGImageSourceShouldCache: false] as CFDictionary)
         let exif = readEXIF(source: source)
         let gps = readGPS(source: source)
+        let iptc = readIPTC(source: source)
 
         let actualPixelSize: CGSize
         if pixelSize == .zero, let source,
@@ -154,16 +175,100 @@ public struct MetadataReader: Sendable {
             iso: exif.iso,
             aperture: exif.aperture,
             shutterSpeed: exif.shutterSpeed,
+            focalLength: exif.focalLength,
+            exposureCompensation: exif.exposureCompensation,
+            flash: exif.flash,
+            meteringMode: exif.meteringMode,
+            whiteBalance: exif.whiteBalance,
+            exposureMode: exif.exposureMode,
+            subjectDistance: exif.subjectDistance,
+            digitalZoomRatio: exif.digitalZoomRatio,
+            caption: iptc.caption,
+            keywords: iptc.keywords,
+            copyright: iptc.copyright,
+            credit: iptc.credit,
+            byline: iptc.byline,
+            city: iptc.city,
+            country: iptc.country,
+            headline: iptc.headline,
+            objectName: iptc.objectName,
             latitude: gps.latitude,
             longitude: gps.longitude,
             altitude: gps.altitude
         )
     }
 
-    private func readEXIF(source: CGImageSource?) -> (dateTaken: Date?, camera: String?, lens: String?, iso: Int?, aperture: Double?, shutterSpeed: Double?) {
+    private func readFlash(_ flashValue: Int?) -> String? {
+        guard let v = flashValue else { return nil }
+        let fired = (v & 0x1) != 0
+        let strobeReturn = (v >> 1) & 0x3
+        let mode = (v >> 3) & 0x3
+        let function = (v >> 5) & 0x1
+        let redEye = (v >> 6) & 0x1
+
+        var parts: [String] = []
+        parts.append(fired ? "Fired" : "Did not fire")
+        if fired {
+            switch strobeReturn {
+            case 0: break
+            case 2: parts.append("Strobe return light not detected")
+            case 3: parts.append("Strobe return light detected")
+            default: break
+            }
+            switch mode {
+            case 1: parts.append("Compulsory flash firing")
+            case 2: parts.append("Compulsory flash suppression")
+            case 3: parts.append("Auto mode")
+            default: break
+            }
+        }
+        if function == 1 { parts.append("Flash function present") }
+        switch redEye {
+        case 1: parts.append("No red-eye reduction")
+        case 2: parts.append("Red-eye reduction")
+        default: break
+        }
+        return parts.joined(separator: ", ")
+    }
+
+    private func readMeteringMode(_ v: Int?) -> String? {
+        guard let v else { return nil }
+        switch v {
+        case 1: return "Average"
+        case 2: return "Center-weighted average"
+        case 3: return "Spot"
+        case 4: return "Multi-spot"
+        case 5: return "Multi-segment"
+        case 6: return "Partial"
+        case 255: return "Other"
+        default: return nil
+        }
+    }
+
+    private func readWhiteBalance(_ v: Int?) -> String? {
+        guard let v else { return nil }
+        switch v {
+        case 0: return "Auto"
+        case 1: return "Manual"
+        case 2: return "Custom"
+        default: return nil
+        }
+    }
+
+    private func readExposureMode(_ v: Int?) -> String? {
+        guard let v else { return nil }
+        switch v {
+        case 0: return "Auto"
+        case 1: return "Manual"
+        case 2: return "Auto bracket"
+        default: return nil
+        }
+    }
+
+    private func readEXIF(source: CGImageSource?) -> (dateTaken: Date?, camera: String?, lens: String?, iso: Int?, aperture: Double?, shutterSpeed: Double?, focalLength: Double?, exposureCompensation: Double?, flash: String?, meteringMode: String?, whiteBalance: String?, exposureMode: String?, subjectDistance: Double?, digitalZoomRatio: Double?) {
         guard let source,
               let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any] else {
-            return (nil, nil, nil, nil, nil, nil)
+            return (nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
         }
 
         let exifDict = properties[kCGImagePropertyExifDictionary] as? [CFString: Any]
@@ -204,7 +309,35 @@ public struct MetadataReader: Sendable {
             shutterSpeed = nil
         }
 
-        return (dateTaken, camera, lens, iso, aperture, shutterSpeed)
+        let focalLength = exifDict?[kCGImagePropertyExifFocalLength] as? Double
+        let exposureCompensation = exifDict?[kCGImagePropertyExifExposureBiasValue] as? Double
+        let flash = readFlash(exifDict?[kCGImagePropertyExifFlash] as? Int)
+        let meteringMode = readMeteringMode(exifDict?[kCGImagePropertyExifMeteringMode] as? Int)
+        let whiteBalance = readWhiteBalance(exifDict?[kCGImagePropertyExifWhiteBalance] as? Int)
+        let exposureMode = readExposureMode(exifDict?[kCGImagePropertyExifExposureMode] as? Int)
+        let subjectDistance = exifDict?[kCGImagePropertyExifSubjectDistance] as? Double
+        let digitalZoomRatio = exifDict?[kCGImagePropertyExifDigitalZoomRatio] as? Double
+
+        return (dateTaken, camera, lens, iso, aperture, shutterSpeed, focalLength, exposureCompensation, flash, meteringMode, whiteBalance, exposureMode, subjectDistance, digitalZoomRatio)
+    }
+
+    private func readIPTC(source: CGImageSource?) -> (caption: String?, keywords: [String], copyright: String?, credit: String?, byline: String?, city: String?, country: String?, headline: String?, objectName: String?) {
+        guard let source,
+              let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+              let iptcDict = properties[kCGImagePropertyIPTCDictionary] as? [CFString: Any]
+        else { return (nil, [], nil, nil, nil, nil, nil, nil, nil) }
+
+        let caption = iptcDict["Caption" as CFString] as? String
+        let keywords = (iptcDict["Keywords" as CFString] as? [String]) ?? []
+        let copyright = iptcDict["CopyrightNotice" as CFString] as? String
+        let credit = iptcDict["Credit" as CFString] as? String
+        let byline = iptcDict["Byline" as CFString] as? String
+        let city = iptcDict["City" as CFString] as? String
+        let country = iptcDict["CountryName" as CFString] as? String
+        let headline = iptcDict["Headline" as CFString] as? String
+        let objectName = iptcDict["ObjectName" as CFString] as? String
+
+        return (caption, keywords, copyright, credit, byline, city, country, headline, objectName)
     }
 
     private func colorSpaceName(source: CGImageSource?) -> String {

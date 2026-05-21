@@ -549,59 +549,83 @@ private struct EmptyStateView: View {
                     }
                 }
 
-                if !model.settings.recentFolders.isEmpty {
-                    Menu {
-                        ForEach(model.settings.recentFolders, id: \.self) { url in
-                            Button(url.lastPathComponent) { model.openFolder(url) }
+                let recents = model.settings.recentFolders
+                if !recents.isEmpty {
+                    HStack(spacing: 10) {
+                        ForEach(recents.prefix(3), id: \.self) { url in
+                            Button {
+                                model.openFolder(url)
+                            } label: {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "clock.arrow.circlepath")
+                                        .font(.system(size: 11))
+                                    Text(url.lastPathComponent)
+                                        .font(.system(size: 12))
+                                        .lineLimit(1)
+                                        .truncationMode(.middle)
+                                }
+                                .frame(maxWidth: 160)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .foregroundStyle(.secondary)
+                            .help(url.lastPathComponent)
                         }
-                        Divider()
-                        Button("Clear Recent") { model.settings.clearRecentFolders() }
-                    } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: "clock.arrow.circlepath")
-                            Text("Open Recent Folder")
+                        if recents.count > 3 {
+                            Menu {
+                                ForEach(recents.dropFirst(3), id: \.self) { url in
+                                    Button(url.lastPathComponent) { model.openFolder(url) }
+                                }
+                                Divider()
+                                Button("Clear Recent") { model.settings.clearRecentFolders() }
+                            } label: {
+                                Text("More\u{2026}")
+                                    .font(.system(size: 11))
+                            }
+                            .buttonStyle(.plain)
+                            .foregroundStyle(.tertiary)
                         }
-                        .font(.system(size: 12))
                     }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(.secondary)
                 }
 
                 Text("Supports JPEG, PNG, HEIC, WebP, GIF, TIFF, BMP, ICO")
                     .font(.system(size: 12))
                     .foregroundStyle(.tertiary)
-            }
-
-            VStack(spacing: 10) {
-                Spacer()
 
                 Divider()
-                    .frame(width: 200)
+                    .frame(width: 240)
+                    .padding(.vertical, 4)
 
-                Text("Keyboard Shortcuts")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.secondary)
-
-                HStack(spacing: 40) {
+                HStack(spacing: 36) {
                     VStack(alignment: .leading, spacing: 5) {
                         shortcutItem("\u{2190} / \u{2192}", "Previous / Next")
                         shortcutItem("G", "Grid view")
                         shortcutItem("I", "Info panel")
+                        shortcutItem("T", "Thumbnail strip")
                         shortcutItem("Space", "Play / Pause")
                         shortcutItem("Esc", "Close overlay")
                     }
                     VStack(alignment: .leading, spacing: 5) {
                         shortcutItem("\u{2318}O", "Open file")
+                        shortcutItem("\u{2318}\u{21E7}O", "Open folder")
                         shortcutItem("\u{2318}\u{232B}", "Move to Trash")
                         shortcutItem("\u{2318}C", "Copy image")
-                        shortcutItem("+ / -", "Zoom in/out")
+                        shortcutItem("\u{2318}E", "Open externally")
                         shortcutItem("?", "Help")
+                    }
+                    VStack(alignment: .leading, spacing: 5) {
+                        shortcutItem("\u{2318}[ / \u{2318}]", "Rotate")
+                        shortcutItem("\u{2318}\u{21E7}H", "Flip")
+                        shortcutItem("+ / - / 0", "Zoom")
+                        shortcutItem("F", "Fullscreen")
+                        shortcutItem("C", "Crop")
+                        shortcutItem("S", "Frame strip")
                     }
                 }
             }
             .padding(.bottom, 40)
+            .padding(32)
         }
-        .padding(32)
     }
 
     private func shortcutItem(_ key: String, _ description: String) -> some View {

@@ -121,25 +121,33 @@ final class AppSettings {
         }
     }
 
+    /// Recent folder paths stored as path strings for reliable cross-launch persistence.
+    var recentFolderPaths: [String] {
+        get { UserDefaults.standard.stringArray(forKey: Self.recentFoldersKey) ?? [] }
+        set { UserDefaults.standard.set(newValue, forKey: Self.recentFoldersKey) }
+    }
+
     var recentFolders: [URL] {
-        get { Self.readRecentFolders() }
-        set {
-            let data = try? NSKeyedArchiver.archivedData(withRootObject: newValue as NSArray, requiringSecureCoding: true)
-            UserDefaults.standard.set(data, forKey: Self.recentFoldersKey)
+        recentFolderPaths.compactMap { path in
+            let url = URL(fileURLWithPath: path)
+            var isDir: ObjCBool = false
+            guard FileManager.default.fileExists(atPath: path, isDirectory: &isDir), isDir.boolValue else { return nil }
+            return url
         }
     }
 
     func addRecentFolder(_ url: URL) {
-        var list = recentFolders
-        list.removeAll { $0 == url }
-        list.insert(url, at: 0)
-        if list.count > 10 { list = Array(list.prefix(10)) }
-        recentFolders = list
+        var paths = recentFolderPaths
+        let path = url.path
+        paths.removeAll { $0 == path }
+        paths.insert(path, at: 0)
+        if paths.count > 10 { paths = Array(paths.prefix(10)) }
+        recentFolderPaths = paths
         lastFolderURL = url
     }
 
     func clearRecentFolders() {
-        recentFolders = []
+        recentFolderPaths = []
     }
 
     init() {
@@ -175,14 +183,5 @@ final class AppSettings {
     private static let recentFoldersKey = "recentFolders"
     private static let sortModeKey = "sortMode"
 
-    private static func readRecentFolders() -> [URL] {
-        guard let data = UserDefaults.standard.data(forKey: Self.recentFoldersKey),
-              let array = try? NSKeyedUnarchiver.unarchivedObject(ofClass: NSArray.self, from: data) as? [URL]
-        else { return [] }
-        // Filter out folders that no longer exist
-        return array.filter { path in
-            var isDir: ObjCBool = false
-            return FileManager.default.fileExists(atPath: path.path, isDirectory: &isDir) && isDir.boolValue
-        }
-    }
+
 }

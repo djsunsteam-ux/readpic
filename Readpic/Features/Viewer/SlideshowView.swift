@@ -57,7 +57,12 @@ struct SlideshowView: View {
             }
             .contentShape(Rectangle())
             .onTapGesture { toggleControls() }
+            .background(ScrollWheelHandler(onPrevious: { slideshowPrevious() }, onNext: { slideshowNext() }))
         }
+        .focusable()
+        .onKeyPress(.space) { togglePlayPause(); return .handled }
+        .onKeyPress(.leftArrow) { slideshowPrevious(); return .handled }
+        .onKeyPress(.rightArrow) { slideshowNext(); return .handled }
         .onAppear { scheduleHideControls() }
         .onDisappear { hideControlsTask?.cancel() }
         .onChange(of: showSettings) { _, _ in
@@ -239,5 +244,45 @@ struct SlideshowView: View {
 
     private func resetAutoAdvance() {
         if !hoveringControls, !showSettings { scheduleHideControls() }
+    }
+}
+
+// MARK: - Scroll wheel handler for slideshow navigation
+
+private struct ScrollWheelHandler: NSViewRepresentable {
+    let onPrevious: () -> Void
+    let onNext: () -> Void
+
+    func makeNSView(context: Context) -> NSView {
+        let view = ScrollWheelCaptureView()
+        view.onPrevious = onPrevious
+        view.onNext = onNext
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        guard let view = nsView as? ScrollWheelCaptureView else { return }
+        view.onPrevious = onPrevious
+        view.onNext = onNext
+    }
+}
+
+private class ScrollWheelCaptureView: NSView {
+    var onPrevious: (() -> Void)?
+    var onNext: (() -> Void)?
+    private var horizontalAccumulator: CGFloat = 0
+
+    override var acceptsFirstResponder: Bool { false }
+
+    override func scrollWheel(with event: NSEvent) {
+        // Horizontal scroll only
+        if abs(event.scrollingDeltaX) > abs(event.scrollingDeltaY) {
+            horizontalAccumulator += event.scrollingDeltaX
+            let threshold: CGFloat = 45
+            if abs(horizontalAccumulator) >= threshold {
+                if horizontalAccumulator > 0 { onPrevious?() } else { onNext?() }
+                horizontalAccumulator = 0
+            }
+        }
     }
 }

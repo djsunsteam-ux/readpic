@@ -786,12 +786,16 @@ final class ViewerModel {
         if isInfoPanelVisible { isInfoPanelVisible = false }
 
         isSlideshowActive = true
+        startSlideshowTimer()
+    }
+
+    /// (Re)start the auto-advance timer loop. Called on start and after every manual navigation.
+    func startSlideshowTimer() {
         slideshowTask?.cancel()
         slideshowTask = Task { [weak self] in
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(self?.slideshowInterval ?? 3))
                 guard let self, !Task.isCancelled, isSlideshowActive else { break }
-                // When paused, skip advance but keep the loop alive
                 if isAnimationPaused { continue }
                 await MainActor.run {
                     guard !Task.isCancelled, isSlideshowActive, !isAnimationPaused else { return }
@@ -818,7 +822,8 @@ final class ViewerModel {
     }
 
     /// Internal: navigate next, skipping animated formats like GIF.
-    private func slideshowNext() {
+    /// Resets the auto-advance timer so manual nav doesn't trigger immediate advance.
+    func slideshowNext() {
         let nav = navigableFiles
         guard nav.count > 1, let currentURL = currentFile?.url,
               var idx = nav.firstIndex(where: { $0.url == currentURL })
@@ -834,6 +839,7 @@ final class ViewerModel {
         resetRotation()
         loadCurrentImage()
         needsCanvasFocus = true
+        startSlideshowTimer()
     }
 
     func selectInGrid(at index: Int) {

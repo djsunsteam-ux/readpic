@@ -26,7 +26,7 @@ struct InfoPanelView: View {
                         }
                     }
 
-                    if metadata.dateTaken != nil || metadata.camera != nil || metadata.lens != nil || metadata.iso != nil || metadata.aperture != nil || metadata.shutterSpeed != nil {
+                    if metadata.dateTaken != nil || metadata.camera != nil || metadata.lens != nil || metadata.iso != nil || metadata.aperture != nil || metadata.shutterSpeed != nil || metadata.focalLength != nil || metadata.exposureCompensation != nil || metadata.flash != nil {
                         GroupSection(title: "Camera") {
                             if let dateTaken = metadata.dateTakenText {
                                 InfoRow(label: "Date Taken", value: dateTaken)
@@ -45,6 +45,66 @@ struct InfoPanelView: View {
                             }
                             if let shutter = metadata.shutterText {
                                 InfoRow(label: "Shutter", value: shutter)
+                            }
+                            if let fl = metadata.focalLength {
+                                InfoRow(label: "Focal Length", value: "\(String(format: "%.0f", fl)) mm")
+                            }
+                            if let ev = metadata.exposureCompensation {
+                                InfoRow(label: "Exposure Comp.", value: "\(String(format: "%+.1f", ev)) EV")
+                            }
+                            if let flash = metadata.flash {
+                                InfoRow(label: "Flash", value: flash)
+                            }
+                        }
+                    }
+                    if metadata.meteringMode != nil || metadata.whiteBalance != nil || metadata.exposureMode != nil || metadata.subjectDistance != nil || metadata.digitalZoomRatio != nil {
+                        GroupSection(title: "Advanced") {
+                            if let mode = metadata.meteringMode {
+                                InfoRow(label: "Metering Mode", value: mode)
+                            }
+                            if let wb = metadata.whiteBalance {
+                                InfoRow(label: "White Balance", value: wb)
+                            }
+                            if let em = metadata.exposureMode {
+                                InfoRow(label: "Exposure Mode", value: em)
+                            }
+                            if let dist = metadata.subjectDistance {
+                                InfoRow(label: "Subject Dist.", value: "\(String(format: "%.2f", dist)) m")
+                            }
+                            if let zoom = metadata.digitalZoomRatio {
+                                InfoRow(label: "Digital Zoom", value: "\(String(format: "%.1f", zoom))×")
+                            }
+                        }
+                    }
+
+                    if metadata.caption != nil || !metadata.keywords.isEmpty || metadata.copyright != nil || metadata.credit != nil || metadata.byline != nil || metadata.city != nil || metadata.country != nil || metadata.headline != nil || metadata.objectName != nil {
+                        GroupSection(title: "IPTC") {
+                            if let obj = metadata.objectName {
+                                InfoRow(label: "Title", value: obj)
+                            }
+                            if let headline = metadata.headline {
+                                InfoRow(label: "Headline", value: headline, lineLimit: 3)
+                            }
+                            if let caption = metadata.caption {
+                                InfoRow(label: "Caption", value: caption, lineLimit: 4)
+                            }
+                            if let byline = metadata.byline {
+                                InfoRow(label: "Byline", value: byline)
+                            }
+                            if let credit = metadata.credit {
+                                InfoRow(label: "Credit", value: credit)
+                            }
+                            if let copyright = metadata.copyright {
+                                InfoRow(label: "Copyright", value: copyright)
+                            }
+                            if !metadata.keywords.isEmpty {
+                                InfoRow(label: "Keywords", value: metadata.keywords.joined(separator: ", "))
+                            }
+                            if let city = metadata.city {
+                                InfoRow(label: "City", value: city)
+                            }
+                            if let country = metadata.country {
+                                InfoRow(label: "Country", value: country)
                             }
                         }
                     }

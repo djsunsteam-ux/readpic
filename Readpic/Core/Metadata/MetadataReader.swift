@@ -37,6 +37,12 @@ public struct ImageMetadata: Equatable, Sendable {
     public let country: String?
     public let headline: String?
     public let objectName: String?
+    // XMP
+    public let xmpRating: Int?
+    public let xmpLabel: String?
+    public let creatorTool: String?
+    public let xmpDescription: String?
+    public let xmpRights: String?
 
     public let latitude: Double?
     public let longitude: Double?
@@ -148,6 +154,7 @@ public struct MetadataReader: Sendable {
         let exif = readEXIF(source: source)
         let gps = readGPS(source: source)
         let iptc = readIPTC(source: source)
+        let xmp = readXMP(source: source)
 
         let actualPixelSize: CGSize
         if pixelSize == .zero, let source,
@@ -192,6 +199,11 @@ public struct MetadataReader: Sendable {
             country: iptc.country,
             headline: iptc.headline,
             objectName: iptc.objectName,
+            xmpRating: xmp.rating,
+            xmpLabel: xmp.label,
+            creatorTool: xmp.creatorTool,
+            xmpDescription: xmp.description,
+            xmpRights: xmp.rights,
             latitude: gps.latitude,
             longitude: gps.longitude,
             altitude: gps.altitude
@@ -355,6 +367,35 @@ public struct MetadataReader: Sendable {
         }
 
         return "Unknown"
+    }
+
+    private func readXMP(source: CGImageSource?) -> (rating: Int?, label: String?, creatorTool: String?, description: String?, rights: String?) {
+        guard let source,
+              let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any]
+        else { return (nil, nil, nil, nil, nil) }
+
+        // XMP data appears under the "{XMP}" key as a dictionary or XML string
+        guard let xmpDict = properties["{XMP}" as CFString] as? [CFString: Any]
+        else { return (nil, nil, nil, nil, nil) }
+
+        // Parse common XMP fields from the dictionary
+        let rating = xmpDict["xmp:Rating" as CFString] as? Int
+        ?? (xmpDict["Rating" as CFString] as? String).flatMap(Int.init)
+
+        let label = xmpDict["xmp:Label" as CFString] as? String
+        ?? xmpDict["Label" as CFString] as? String
+
+        let creatorTool = xmpDict["xmp:CreatorTool" as CFString] as? String
+        ?? xmpDict["CreatorTool" as CFString] as? String
+
+        let description = (xmpDict["dc:description" as CFString] as? [CFString: Any])?["_value" as CFString] as? String
+        ?? xmpDict["Description" as CFString] as? String
+
+        let rights = xmpDict["xmpRights:WebStatement" as CFString] as? String
+        ?? xmpDict["dc:rights" as CFString] as? String
+        ?? xmpDict["Copyright" as CFString] as? String
+
+        return (rating, label, creatorTool, description, rights)
     }
 
     private func readGPS(source: CGImageSource?) -> (latitude: Double?, longitude: Double?, altitude: Double?) {

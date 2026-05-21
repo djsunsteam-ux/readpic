@@ -77,6 +77,26 @@ struct InfoPanelView: View {
                         }
                     }
 
+                    if metadata.xmpRating != nil || metadata.xmpLabel != nil || metadata.creatorTool != nil || metadata.xmpDescription != nil || metadata.xmpRights != nil {
+                        GroupSection(title: "XMP") {
+                            if let rating = metadata.xmpRating {
+                                InfoRow(label: "Rating", value: String(repeating: "★", count: rating) + String(repeating: "☆", count: 5 - rating))
+                            }
+                            if let label = metadata.xmpLabel {
+                                InfoRow(label: "Label", value: label)
+                            }
+                            if let tool = metadata.creatorTool {
+                                InfoRow(label: "Creator Tool", value: tool)
+                            }
+                            if let desc = metadata.xmpDescription {
+                                InfoRow(label: "Description", value: desc, lineLimit: 3)
+                            }
+                            if let rights = metadata.xmpRights {
+                                InfoRow(label: "Rights", value: rights, lineLimit: 2)
+                            }
+                        }
+                    }
+
                     if metadata.caption != nil || !metadata.keywords.isEmpty || metadata.copyright != nil || metadata.credit != nil || metadata.byline != nil || metadata.city != nil || metadata.country != nil || metadata.headline != nil || metadata.objectName != nil {
                         GroupSection(title: "IPTC") {
                             if let obj = metadata.objectName {

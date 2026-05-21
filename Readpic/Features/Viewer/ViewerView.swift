@@ -5,6 +5,7 @@ import UniformTypeIdentifiers
 struct ViewerView: View {
     @Bindable var model: ViewerModel
     @State private var keyMonitor: Any?
+    @State private var scrollMonitor: Any?
 
     private var barsHidden: Bool {
         model.isFullScreen && !model.cursorNearTop && !model.cursorNearBottom
@@ -309,9 +310,23 @@ struct ViewerView: View {
                 }
                 return event
             }
+            var scrollAccumulator: CGFloat = 0
+            scrollMonitor = NSEvent.addLocalMonitorForEvents(matching: .any) { [weak model] event in
+                guard let model, model.isSlideshowActive,
+                      event.type == .scrollWheel,
+                      abs(event.scrollingDeltaX) > abs(event.scrollingDeltaY)
+                else { return event }
+                scrollAccumulator += event.scrollingDeltaX
+                if scrollAccumulator >= 45 { model.slideshowPrevious(); scrollAccumulator = 0; return nil }
+                if scrollAccumulator <= -45 { model.slideshowNext(); scrollAccumulator = 0; return nil }
+                return event
+            }
         }
         .onDisappear {
             if let monitor = keyMonitor as? NSObjectProtocol {
+                NSEvent.removeMonitor(monitor)
+            }
+            if let monitor = scrollMonitor as? NSObjectProtocol {
                 NSEvent.removeMonitor(monitor)
             }
         }

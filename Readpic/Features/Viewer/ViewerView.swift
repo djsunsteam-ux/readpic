@@ -212,6 +212,15 @@ struct ViewerView: View {
                 if let responder = NSApp.keyWindow?.firstResponder, responder.isKind(of: NSTextView.self) { return event }
                 let chars = event.characters
 
+                if model.isSlideshowActive {
+                    switch event.keyCode {
+                    case 49:  model.isAnimationPaused.toggle(); return nil
+                    case 123: model.slideshowPrevious(); return nil
+                    case 124: model.slideshowNext(); return nil
+                    default: break
+                    }
+                }
+
                 if model.isGridView {
                     if chars == "g" { model.toggleGridView(); return nil }
                     switch event.keyCode {

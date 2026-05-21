@@ -24,7 +24,6 @@ struct SlideshowView: View {
     @State private var showSettings = false
     @State private var hoveringControls = false
     @State private var hideControlsTask: Task<Void, Never>?
-    @State private var keyMonitor: Any?
 
     private let controlsHideDelay: TimeInterval = 2.5
 
@@ -46,7 +45,12 @@ struct SlideshowView: View {
                         .controlSize(.large)
                 }
 
-                // Controls overlay
+                // Tap-to-toggle area (behind controls, full screen)
+                Color.clear
+                    .contentShape(Rectangle())
+                    .onTapGesture { toggleControls() }
+
+                // Controls overlay (on top, consumes its own taps)
                 if controlsVisible {
                     VStack {
                         Spacer()
@@ -55,29 +59,16 @@ struct SlideshowView: View {
                             .padding(.bottom, 32)
                     }
                     .transition(.move(edge: .bottom).combined(with: .opacity))
+                    // Don't let control-bar taps propagate to the toggle area
+                    .contentShape(Rectangle())
+                    .onTapGesture { }  // swallow taps on controls
                 }
             }
-            .contentShape(Rectangle())
-            .onTapGesture { toggleControls() }
             .overlay(ScrollWheelHandler(onPrevious: { slideshowPrevious() }, onNext: { slideshowNext() }))
         }
         .focusEffectDisabled()
-        .onAppear {
-            scheduleHideControls()
-            keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-                switch event.keyCode {
-                case 49:  togglePlayPause(); return nil  // Space
-                case 123: slideshowPrevious(); return nil  // Left arrow
-                case 124: slideshowNext(); return nil      // Right arrow
-                default: break
-                }
-                return event
-            }
-        }
-        .onDisappear {
-            hideControlsTask?.cancel()
-            if let m = keyMonitor as? NSObjectProtocol { NSEvent.removeMonitor(m) }
-        }
+        .onAppear { scheduleHideControls() }
+        .onDisappear { hideControlsTask?.cancel() }
         .onChange(of: showSettings) { _, _ in
             if showSettings {
                 hideControlsTask?.cancel()
@@ -206,27 +197,8 @@ struct SlideshowView: View {
         model.isAnimationPaused.toggle()
     }
 
-    private func slideshowPrevious() {
-        let nav = model.navigableFiles
-        guard nav.count > 1, let url = model.currentFile?.url,
-              var idx = nav.firstIndex(where: { $0.url == url })
-        else { return }
-        let startIdx = idx
-        repeat {
-            idx = (idx - 1 + nav.count) % nav.count
-            let ext = nav[idx].url.pathExtension.lowercased()
-            if ext != "gif" { break }
-        } while idx != startIdx
-        guard idx != startIdx, let targetIdx = model.files.firstIndex(where: { $0.url == nav[idx].url }) else { return }
-        model.currentIndex = targetIdx
-        model.resetRotation()
-        model.loadCurrentImage()
-        model.startSlideshowTimer()
-    }
-
-    private func slideshowNext() {
-        model.slideshowNext()  // model's version handles GIF skip + timer reset
-    }
+    private func slideshowPrevious() { model.slideshowPrevious() }
+    private func slideshowNext() { model.slideshowNext() }
 
     // MARK: - Controls visibility
 

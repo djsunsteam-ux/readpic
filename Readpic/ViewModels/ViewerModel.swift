@@ -72,6 +72,7 @@ final class ViewerModel {
     var showFrameStrip = false
     var showExportPanel = false
     var showBatchExportPanel = false
+    var showBatchRenamePanel = false
     var isCropMode = false
     /// Normalized crop rect in image pixel space (0…1).
     var cropRect: CGRect = .init(x: 0, y: 0, width: 1, height: 1)
@@ -337,6 +338,13 @@ final class ViewerModel {
                 isLoading = false
             }
         }
+    }
+
+    /// Rescan the folder containing the current files, preserving the current selection.
+    func rescanCurrentFolder() {
+        guard let first = files.first else { return }
+        let folderURL = first.url.deletingLastPathComponent()
+        openFolder(folderURL)
     }
 
     func openFolder(_ url: URL) {
@@ -1078,6 +1086,14 @@ final class ViewerModel {
             return
         }
         showBatchExportPanel = true
+    }
+
+    func showBatchRename() {
+        guard isGridView, selectedGridIndices.count >= 2 else {
+            showToast("Select at least 2 files")
+            return
+        }
+        showBatchRenamePanel = true
     }
 
     func saveChanges() {

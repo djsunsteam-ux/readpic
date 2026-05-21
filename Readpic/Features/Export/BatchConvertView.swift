@@ -53,7 +53,7 @@ struct BatchConvertView: View {
             .padding(.bottom, 16)
 
             ScrollView {
-                VStack(spacing: 16) {
+                VStack(alignment: .leading, spacing: 16) {
                     formatSection
                     resizeSection
                     outputSection
@@ -103,19 +103,20 @@ struct BatchConvertView: View {
     private var formatSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Format")
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.secondary)
 
             Picker(selection: $config.format) {
-                ForEach(ExportConfiguration.ExportFormat.allCases, id: \.self) { fmt in
+                ForEach(ImageWriter.SaveFormat.allCases, id: \.self) { fmt in
                     Text(fmt.rawValue).tag(fmt)
                 }
             } label: { }
             .pickerStyle(.segmented)
             .labelsHidden()
 
-            if config.format.supportsQuality {
-                VStack(spacing: 4) {
+            VStack(spacing: 4) {
+                if config.format.supportsQuality {
                     HStack {
                         Text("Quality")
                             .font(.system(size: 12))
@@ -128,12 +129,14 @@ struct BatchConvertView: View {
                     Slider(value: $config.quality, in: 0.1...1.0, step: 0.05)
                 }
             }
+            .frame(minHeight: 50)
         }
     }
 
     private var resizeSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Resize")
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.secondary)
 
@@ -183,6 +186,27 @@ struct BatchConvertView: View {
                 .help("Lock aspect ratio")
                 .padding(.top, -12)
             }
+
+            // Aspect ratio presets (only when unlocked)
+            if !config.lockAspectRatio {
+                Divider()
+                HStack {
+                    Text("Ratio")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                }
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 56))], spacing: 6) {
+                    ForEach(ExportConfiguration.AspectPreset.all) { preset in
+                        Button(preset.label) {
+                            applyAspectPreset(preset)
+                        }
+                        .font(.system(size: 11, design: .monospaced))
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                    }
+                }
+            }
         }
     }
 
@@ -191,6 +215,7 @@ struct BatchConvertView: View {
             Text("Output")
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
             HStack(spacing: 8) {
                 Image(systemName: "folder")
@@ -209,6 +234,7 @@ struct BatchConvertView: View {
             Toggle("Open folder after export", isOn: $openFolderAfterExport)
                 .font(.system(size: 11))
                 .toggleStyle(.checkbox)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
@@ -276,7 +302,7 @@ struct BatchConvertView: View {
     private func iconName(for status: FileState.Status) -> String {
         switch status {
         case .pending:    "circle"
-        case .processing: "arrow.turn.right.forward"
+        case .processing: "arrow.triangle.2.circlepath"
         case .completed:  "checkmark.circle.fill"
         case .failed:     "exclamationmark.circle.fill"
         }
@@ -313,6 +339,17 @@ struct BatchConvertView: View {
         guard panel.runModal() == .OK, let url = panel.url else { return }
         outputFolder = url
         outputFolderLabel = url.path
+    }
+
+    private func applyAspectPreset(_ preset: ExportConfiguration.AspectPreset) {
+        switch focusedField {
+        case .width:
+            let h = max(1, Int(CGFloat(config.exportWidth) / preset.ratio))
+            config.exportHeight = h
+        case .height, .none:
+            let w = max(1, Int(CGFloat(config.exportHeight) * preset.ratio))
+            config.exportWidth = w
+        }
     }
 
     // MARK: - Convert
@@ -356,8 +393,7 @@ struct BatchConvertView: View {
                     let baseName = (file.name as NSString).deletingPathExtension
                     let destURL = folder.appendingPathComponent("\(baseName).\(ext)")
                     let compressionQuality: CGFloat? = fmt.supportsQuality ? quality : nil
-                    let saveFormat = ImageWriter.SaveFormat.from(extension: ext) ?? .jpeg
-                    let ok = ImageWriter.write(finalImage, to: destURL, format: saveFormat, compressionQuality: compressionQuality)
+                    let ok = ImageWriter.write(finalImage, to: destURL, format: fmt, compressionQuality: compressionQuality)
 
                     return (index: i, ok: ok, error: ok ? "" : "write error")
                 }.value

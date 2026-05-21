@@ -5,7 +5,7 @@ import UniformTypeIdentifiers
 // MARK: - Configuration
 
 struct ExportConfiguration {
-    var format: ExportFormat = .jpeg
+    var format: ImageWriter.SaveFormat = .jpeg
     var quality: Double = 0.9
     var exportWidth: Int = 1920
     var exportHeight: Int = 1080
@@ -14,31 +14,6 @@ struct ExportConfiguration {
     var fileName: String = ""
 
     var fileExtension: String { format.fileExtension }
-
-    enum ExportFormat: String, CaseIterable, Sendable {
-        case jpeg = "JPEG"
-        case png  = "PNG"
-        case tiff = "TIFF"
-        case bmp  = "BMP"
-        case heic = "HEIC"
-
-        var fileExtension: String {
-            switch self {
-            case .jpeg: "jpg"
-            case .png:  "png"
-            case .tiff: "tiff"
-            case .bmp:  "bmp"
-            case .heic: "heic"
-            }
-        }
-
-        var supportsQuality: Bool {
-            switch self {
-            case .jpeg, .heic: true
-            case .png, .tiff, .bmp: false
-            }
-        }
-    }
 
     struct AspectPreset: Identifiable, Sendable {
         let id: String
@@ -92,7 +67,7 @@ struct ExportView: View {
             .padding(.bottom, 16)
 
             ScrollView {
-                VStack(spacing: 16) {
+                VStack(alignment: .leading, spacing: 16) {
                     formatSection
                     resizeSection
                     outputSection
@@ -166,19 +141,20 @@ struct ExportView: View {
     private var formatSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Format")
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.secondary)
 
             Picker(selection: $config.format) {
-                ForEach(ExportConfiguration.ExportFormat.allCases, id: \.self) { fmt in
+                ForEach(ImageWriter.SaveFormat.allCases, id: \.self) { fmt in
                     Text(fmt.rawValue).tag(fmt)
                 }
             } label: { }
             .pickerStyle(.segmented)
             .labelsHidden()
 
-            if config.format.supportsQuality {
-                VStack(spacing: 4) {
+            VStack(spacing: 4) {
+                if config.format.supportsQuality {
                     HStack {
                         Text("Quality")
                             .font(.system(size: 12))
@@ -191,12 +167,14 @@ struct ExportView: View {
                     Slider(value: $config.quality, in: 0.1...1.0, step: 0.05)
                 }
             }
+            .frame(minHeight: 50)
         }
     }
 
     private var resizeSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Resize")
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.secondary)
 
@@ -283,6 +261,7 @@ struct ExportView: View {
             Text("Output")
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
             VStack(spacing: 8) {
                 HStack {
@@ -311,6 +290,7 @@ struct ExportView: View {
                 Toggle("Open folder after export", isOn: $openFolderAfterExport)
                     .font(.system(size: 11))
                     .toggleStyle(.checkbox)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
             .padding(8)
         }
@@ -397,9 +377,8 @@ struct ExportView: View {
 
             let destURL = folder.appendingPathComponent("\(fileName).\(ext)")
             let compressionQuality: CGFloat? = fmt.supportsQuality ? quality : nil
-            let saveFormat = ImageWriter.SaveFormat.from(extension: ext) ?? .jpeg
 
-            guard ImageWriter.write(finalImage, to: destURL, format: saveFormat, compressionQuality: compressionQuality) else {
+            guard ImageWriter.write(finalImage, to: destURL, format: fmt, compressionQuality: compressionQuality) else {
                 await MainActor.run {
                     exportError = "Failed to write file"
                     isExporting = false

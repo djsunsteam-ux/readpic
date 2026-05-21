@@ -115,13 +115,7 @@ struct InfoPanelView: View {
 
     /// Extra bottom padding so content ends above the overlaid bottom bars.
     private var bottomContentPadding: CGFloat {
-        let barsHidden = model.isFullScreen && !model.cursorNearTop && !model.cursorNearBottom
-        guard !barsHidden else { return 0 }
-        var height: CGFloat = 0
-        if model.showFrameStrip && model.hasAnimatedFrames { height += 80 }   // FrameStrip: header ~20 + scroll 52 + padding ≈ 80
-        if model.showThumbnailStrip && model.files.count > 1 && !model.isGridView { height += 64 } // ThumbnailStrip: .frame(height: 64)
-        if model.settings.showStatusBar && !model.statusText.isEmpty { height += 26 }               // Status bar: .frame(height: 26)
-        return height
+        model.bottomBarsTotalHeight + 24  // 24pt breathing room
     }
 }
 

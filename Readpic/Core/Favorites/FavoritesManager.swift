@@ -19,7 +19,6 @@ public final class FavoritesManager {
         var isFavorite: Bool
         var rating: Int  // 0 = not rated, 1-5 = star rating
 
-        static let empty = FavoriteEntry(isFavorite: false, rating: 0)
     }
 
     // MARK: - Private state
@@ -67,26 +66,6 @@ public final class FavoritesManager {
         } else if r > 0 {
             entries[path] = FavoriteEntry(isFavorite: false, rating: r)
         }
-        save()
-    }
-
-    /// All URLs currently marked as favorite.
-    public var allFavorites: [URL] {
-        entries.compactMap { path, entry in
-            entry.isFavorite ? URL(fileURLWithPath: path) : nil
-        }
-    }
-
-    /// All rated entries (rating > 0).
-    public var allRated: [(url: URL, rating: Int)] {
-        entries.compactMap { path, entry in
-            entry.rating > 0 ? (URL(fileURLWithPath: path), entry.rating) : nil
-        }
-    }
-
-    /// Remove all favorites and ratings.
-    public func clear() {
-        entries.removeAll()
         save()
     }
 

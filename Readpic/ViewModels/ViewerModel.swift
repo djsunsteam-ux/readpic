@@ -54,6 +54,17 @@ final class ViewerModel {
     var isFullScreen = false
     var cursorNearTop = false
     var cursorNearBottom = false
+    /// Total pixel height of bottom bars (frame-strip + thumbnail-strip + status-bar).
+    /// Returns 0 when bars are hidden (fullscreen with cursor not near bottom).
+    /// Used by both ViewerNSView (bar insets) and InfoPanelView (scroll padding).
+    var bottomBarsTotalHeight: CGFloat {
+        guard !(isFullScreen && !cursorNearTop && !cursorNearBottom) else { return 0 }
+        var height: CGFloat = 0
+        if showFrameStrip && hasAnimatedFrames && !isGridView { height += 56 }
+        if showThumbnailStrip && files.count > 1 && !isGridView { height += 64 }
+        if settings.showStatusBar && !statusText.isEmpty { height += 26 }
+        return height
+    }
     var rotation: Int = 0
     var isFlippedHorizontally = false
     var needsCanvasFocus = false
@@ -287,9 +298,24 @@ final class ViewerModel {
         currentProxyMaxPixelSize = 2048
         loadTask = Task {
             do {
-                let image = try await Task.detached(priority: .userInitiated) {
-                    try self.decoder.decode(url: url)
-                }.value
+                // Serialise through decodeQueue so concurrent opens don't blow memory
+                let image: DecodedImage
+                do {
+                    image = try await withCheckedThrowingContinuation { continuation in
+                        let urlCopy = url
+                        let op = BlockOperation {
+                            do {
+                                let result = try self.decoder.decode(url: urlCopy)
+                                continuation.resume(returning: result)
+                            } catch {
+                                continuation.resume(throwing: error)
+                            }
+                        }
+                        decodeQueue.addOperation(op)
+                    }
+                } catch {
+                    throw error
+                }
 
                 guard !Task.isCancelled else { return }
                 files = [FileItem(url: url)]
@@ -338,9 +364,24 @@ final class ViewerModel {
                     return
                 }
 
-                let image = try await Task.detached(priority: .userInitiated) {
-                    try self.decoder.decode(url: first.url)
-                }.value
+                // Serialise through decodeQueue so concurrent opens don't blow memory
+                let image: DecodedImage
+                do {
+                    let firstURL = first.url
+                    image = try await withCheckedThrowingContinuation { continuation in
+                        let op = BlockOperation {
+                            do {
+                                let result = try self.decoder.decode(url: firstURL)
+                                continuation.resume(returning: result)
+                            } catch {
+                                continuation.resume(throwing: error)
+                            }
+                        }
+                        decodeQueue.addOperation(op)
+                    }
+                } catch {
+                    throw error
+                }
 
                 guard !Task.isCancelled else { return }
                 files = items
@@ -907,11 +948,6 @@ final class ViewerModel {
             }
             updateMetadataForLastSelection()
         }
-    }
-
-    func deselectAllGrid() {
-        selectedGridIndices.removeAll()
-        metadata = nil
     }
 
     /// Invert current selection.

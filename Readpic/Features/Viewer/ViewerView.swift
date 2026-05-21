@@ -427,6 +427,16 @@ private struct ViewerToolbar: View {
                     }
                     .pickerStyle(.menu)
                     .menuIndicator(.visible)
+
+                    Picker(selection: $model.dateFilter) {
+                        ForEach(ViewerModel.DateFilter.allCases, id: \.rawValue) { d in
+                            Text(d.rawValue).tag(d)
+                        }
+                    } label: {
+                        Label("Date", systemImage: "calendar")
+                    }
+                    .pickerStyle(.menu)
+                    .menuIndicator(.visible)
                 }
 
                 Spacer()

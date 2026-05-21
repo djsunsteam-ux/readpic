@@ -20,6 +20,31 @@ final class ViewerModel {
         case resetZoom
     }
 
+    enum DateFilter: String, CaseIterable, Sendable {
+        case all = "All"
+        case today = "Today"
+        case thisWeek = "This Week"
+        case thisMonth = "This Month"
+        case thisYear = "This Year"
+
+        func matches(_ date: Date?) -> Bool {
+            guard self != .all, let date else { return false }
+            let cal = Calendar.current
+            switch self {
+            case .today:
+                return cal.isDateInToday(date)
+            case .thisWeek:
+                return cal.isDate(date, equalTo: Date(), toGranularity: .weekOfYear)
+            case .thisMonth:
+                return cal.isDate(date, equalTo: Date(), toGranularity: .month)
+            case .thisYear:
+                return cal.isDate(date, equalTo: Date(), toGranularity: .year)
+            case .all:
+                return true
+            }
+        }
+    }
+
     enum FileFormatFilter: String, CaseIterable, Sendable {
         case all = "All"
         case jpeg = "JPEG"
@@ -106,6 +131,7 @@ final class ViewerModel {
     var showFrameStrip = false
     var searchText = ""
     var formatFilter: FileFormatFilter = .all
+    var dateFilter: DateFilter = .all
     /// Files matching current search text and format filter.
     var filteredFiles: [FileItem] {
         var result = files
@@ -118,7 +144,7 @@ final class ViewerModel {
         return result
     }
     var isFilterActive: Bool {
-        !searchText.isEmpty || formatFilter != .all
+        !searchText.isEmpty || formatFilter != .all || dateFilter != .all
     }
     /// Indices into `files` that match the current filter.
     var filteredIndices: [Int] {
@@ -126,6 +152,7 @@ final class ViewerModel {
             let f = files[i]
             if !searchText.isEmpty, !f.name.localizedCaseInsensitiveContains(searchText) { return false }
             if formatFilter != .all, !formatFilter.matches(f.url) { return false }
+            if dateFilter != .all, !dateFilter.matches(f.modificationDate) { return false }
             return true
         }
     }

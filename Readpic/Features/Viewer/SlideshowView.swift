@@ -37,9 +37,8 @@ struct SlideshowView: View {
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: geo.size.width, height: geo.size.height)
-                        .transition(model.slideshowTransition.animation.map {
-                            AnyTransition.opacity.animation($0)
-                        } ?? .identity)
+                        .id(model.currentFile?.url)
+                        .transition(.opacity.animation(model.slideshowTransition.animation))
                 } else {
                     ProgressView()
                         .controlSize(.large)

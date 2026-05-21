@@ -772,6 +772,10 @@ final class ViewerModel {
             showToast("Need at least 2 images for slideshow")
             return
         }
+        if let url = currentFile?.url, url.pathExtension.lowercased() == "gif" {
+            showToast("GIF animations can't be used in slideshow, select another image")
+            return
+        }
         // Save thumbnail strip state, then hide it
         wasThumbnailStripVisibleBeforeSlideshow = showThumbnailStrip
         showThumbnailStrip = false
@@ -795,6 +799,8 @@ final class ViewerModel {
         isSlideshowActive = false
         slideshowTask?.cancel()
         slideshowTask = nil
+        // Sync grid selection with the last viewed image
+        if isGridView { selectedGridIndices = [currentIndex] }
         // Restore thumbnail strip if it was visible before
         if wasThumbnailStripVisibleBeforeSlideshow { showThumbnailStrip = true }
         showToast("Slideshow stopped")

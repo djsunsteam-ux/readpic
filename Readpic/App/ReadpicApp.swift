@@ -187,6 +187,12 @@ struct ReadpicApp: App {
 
                 Button("Fullscreen") { model.toggleFullScreen() }
                     .keyboardShortcut("f")
+
+                Divider()
+
+                Button("Start Slideshow") { model.toggleSlideshow() }
+                    .keyboardShortcut("f", modifiers: [.command, .option])
+                    .disabled(model.currentFile == nil)
             }
 
             // MARK: - Image

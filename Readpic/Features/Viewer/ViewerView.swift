@@ -286,6 +286,7 @@ struct ViewerView: View {
                     }
                 }
                 if event.keyCode == 53 {
+                    if model.isSlideshowActive { model.stopSlideshow(); return nil }
                     if model.showShortcutsHelp {
                         withAnimation(.easeInOut(duration: 0.15)) { model.showShortcutsHelp = false }
                         return nil
@@ -618,6 +619,7 @@ private struct EmptyStateView: View {
                         shortcutItem("\u{2318}\u{21E7}H", "Flip")
                         shortcutItem("+ / - / 0", "Zoom")
                         shortcutItem("F", "Fullscreen")
+                        shortcutItem("\u{2318}\u{2325}F", "Slideshow")
                         shortcutItem("C", "Crop")
                         shortcutItem("S", "Frame strip")
                     }

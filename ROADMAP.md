@@ -228,7 +228,7 @@
 - [x] 收藏 / 评分：心形收藏 + 1-5 星评分，信息面板/网格/缩略图条可见，UserDefaults 持久化。
 ### 5.4 体验增强
 
-- [ ] 幻灯片。
+- [x] 幻灯片（全屏自动翻页，跳过 GIF 动画，`⌘⌥F` 切换，Esc 停止）。
 - [x] 最近文件夹管理（最近 10 个，自动清理不存在的路径）。
 - [x] **菜单栏重构**：按 macOS 惯例重组菜单栏结构，确保所有功能入口在菜单中可用。
   - File 菜单：Open Image…、Open Folder…、Close Window、Move to Trash、Reveal in Finder、Open Externally
@@ -246,7 +246,7 @@
 ### 5.5 基础工程
 
 - [ ] 单元测试：ImageDecoder、FolderScanner、ThumbnailLoader、MetadataReader。
-- [ ] 缩略图磁盘缓存。
+- [x] 缩略图磁盘缓存（~Library/Caches/com.readpic/Thumbnails/v1，LRU 100MB/5000 文件）。
 
 ### 5.6 技术预研
 

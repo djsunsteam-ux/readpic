@@ -192,7 +192,7 @@ struct ReadpicApp: App {
 
                 Button("Start Slideshow") { model.toggleSlideshow() }
                     .keyboardShortcut("f", modifiers: [.command, .option])
-                    .disabled(model.currentFile == nil || (model.currentFile?.url.pathExtension.lowercased() == "gif"))
+                    .disabled(model.activeFile == nil || (model.activeFile?.url.pathExtension.lowercased() == "gif"))
             }
 
             // MARK: - Image

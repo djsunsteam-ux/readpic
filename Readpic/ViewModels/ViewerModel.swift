@@ -772,6 +772,10 @@ final class ViewerModel {
             showToast("Need at least 2 images for slideshow")
             return
         }
+        // Sync currentIndex with grid selection so slideshow starts on the selected file
+        if isGridView, let first = selectedGridIndices.sorted().first, files.indices.contains(first) {
+            currentIndex = first
+        }
         if let url = currentFile?.url, url.pathExtension.lowercased() == "gif" {
             showToast("GIF animations can't be used in slideshow, select another image")
             return
@@ -1182,7 +1186,7 @@ final class ViewerModel {
         }
     }
 
-    private var activeFile: FileItem? {
+    var activeFile: FileItem? {
         if isGridView, let first = selectedGridIndices.sorted().first, files.indices.contains(first) {
             return files[first]
         }

@@ -241,7 +241,7 @@
   - Edit：Select All、Copy Metadata
   - View：Filter By ▸ (Format / Date)、Search Files…、Start Slideshow、Metadata Panel
   - Image：Crop…、Resize…、Save Changes…、Optimize File Size…、Rate ▸、Favorite / Tag…
-- [ ] 本地化（Localizable.xcstrings，简体中文 + English）。
+- [x] 本地化（简体中文 + English，200+ 字符串全覆盖）。
 
 ### 5.5 基础工程
 

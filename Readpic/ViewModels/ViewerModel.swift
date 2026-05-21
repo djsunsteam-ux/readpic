@@ -1079,7 +1079,7 @@ final class ViewerModel {
             wasInGridViewBeforeCrop = false
         }
 
-        showToast("Saved as \(outputName)")
+        showToast(String(format: String(localized: "Saved as %@"), outputName))
     }
 
     func cancelCrop() {
@@ -1275,7 +1275,7 @@ final class ViewerModel {
         guard let url = currentFile?.url else { return }
         FavoritesManager.shared.setRating(rating, for: url)
         if rating > 0 {
-            showToast("Rated \(rating) ★")
+            showToast(String(format: String(localized: "Rated %d ★"), rating))
         } else {
             showToast("Rating cleared")
         }
@@ -1479,6 +1479,9 @@ final class ViewerModel {
     }
 
     private func showToast(_ message: String, actionTitle: String? = nil) {
+        toastTask?.cancel()
+        toastMessage = message
+        toastActionTitle = actionTitle
         toastTask?.cancel()
         toastMessage = message
         toastActionTitle = actionTitle

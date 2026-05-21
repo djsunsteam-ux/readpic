@@ -78,11 +78,11 @@ struct ViewerView: View {
 
                 if let toastMessage = model.toastMessage {
                     HStack(spacing: 12) {
-                        Text(toastMessage)
+                        Text(LocalizedStringKey(toastMessage))
                             .font(.system(size: 13))
 
                         if let actionTitle = model.toastActionTitle {
-                            Button(actionTitle) {
+                            Button(LocalizedStringKey(actionTitle)) {
                                 model.performToastAction()
                             }
                             .buttonStyle(.borderless)

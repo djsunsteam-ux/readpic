@@ -81,7 +81,7 @@ struct BatchRenameView: View {
                 Button(action: apply) {
                     HStack(spacing: 6) {
                         if isApplying { ProgressView().controlSize(.mini) }
-                        Text(isApplying ? "Renaming..." : "Rename \(files.count) Files")
+                        Text(isApplying ? String(localized: "Renaming...") : String(format: String(localized: "Rename %d Files"), files.count))
                     }
                     .frame(minWidth: 100)
                 }
@@ -412,7 +412,7 @@ struct BatchRenameView: View {
                 if results.count == toRename.count {
                     onComplete()
                 } else {
-                    errorMessage = "Renamed \(results.count) of \(toRename.count) files"
+                    errorMessage = String(format: String(localized: "Renamed %d of %d files"), results.count, toRename.count)
                 }
             }
         }

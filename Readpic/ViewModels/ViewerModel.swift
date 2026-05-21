@@ -171,6 +171,9 @@ final class ViewerModel {
     var showExportPanel = false
     var showBatchExportPanel = false
     var showBatchRenamePanel = false
+    var isSlideshowActive = false
+    var slideshowInterval: TimeInterval = 3.0
+    private var slideshowTask: Task<Void, Never>?
     var isCropMode = false
     /// Normalized crop rect in image pixel space (0…1).
     var cropRect: CGRect = .init(x: 0, y: 0, width: 1, height: 1)
@@ -758,6 +761,59 @@ final class ViewerModel {
 
     func toggleShortcutsHelp() {
         showShortcutsHelp.toggle()
+    }
+
+    // MARK: - Slideshow
+
+    func startSlideshow() {
+        guard navigableFiles.count > 1 else {
+            showToast("Need at least 2 images for slideshow")
+            return
+        }
+        isSlideshowActive = true
+        if !isFullScreen { toggleFullScreen() }
+        slideshowTask?.cancel()
+        slideshowTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(self?.slideshowInterval ?? 3))
+                guard let self, !Task.isCancelled, isSlideshowActive else { break }
+                await MainActor.run {
+                    guard !Task.isCancelled, isSlideshowActive else { return }
+                    slideshowNext()
+                }
+            }
+        }
+    }
+
+    func stopSlideshow() {
+        isSlideshowActive = false
+        slideshowTask?.cancel()
+        slideshowTask = nil
+        showToast("Slideshow stopped")
+    }
+
+    func toggleSlideshow() {
+        if isSlideshowActive { stopSlideshow() }
+        else { startSlideshow() }
+    }
+
+    /// Internal: navigate next, skipping animated formats like GIF.
+    private func slideshowNext() {
+        let nav = navigableFiles
+        guard nav.count > 1, let currentURL = currentFile?.url,
+              var idx = nav.firstIndex(where: { $0.url == currentURL })
+        else { return }
+        let startIdx = idx
+        repeat {
+            idx = (idx + 1) % nav.count
+            let ext = nav[idx].url.pathExtension.lowercased()
+            if ext != "gif" { break }
+        } while idx != startIdx
+        guard idx != startIdx, let targetIdx = files.firstIndex(where: { $0.url == nav[idx].url }) else { return }
+        currentIndex = targetIdx
+        resetRotation()
+        loadCurrentImage()
+        needsCanvasFocus = true
     }
 
     func selectInGrid(at index: Int) {

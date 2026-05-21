@@ -42,6 +42,7 @@
 		A00000000000000000000089 /* BatchConvertView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000088 /* BatchConvertView.swift */; };
 		A00000000000000000000090 /* CropOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000091 /* CropOverlayView.swift */; };
 		A00000000000000000000092 /* NativeHScroll.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000093 /* NativeHScroll.swift */; };
+		A00000000000000000000094 /* BatchRenameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000095 /* BatchRenameView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -83,6 +84,7 @@
 		A00000000000000000000088 /* BatchConvertView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatchConvertView.swift; sourceTree = "<group>"; };
 		A00000000000000000000091 /* CropOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CropOverlayView.swift; sourceTree = "<group>"; };
 		A00000000000000000000093 /* NativeHScroll.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeHScroll.swift; sourceTree = "<group>"; };
+		A00000000000000000000095 /* BatchRenameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatchRenameView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXContainerItemProxy section */
@@ -312,6 +314,7 @@
 			children = (
 				A00000000000000000000086 /* ExportView.swift */,
 				A00000000000000000000088 /* BatchConvertView.swift */,
+				A00000000000000000000095 /* BatchRenameView.swift */,
 			);
 			path = Export;
 			sourceTree = "<group>";
@@ -442,6 +445,7 @@
 				A00000000000000000000089 /* BatchConvertView.swift in Sources */,
 				A00000000000000000000090 /* CropOverlayView.swift in Sources */,
 				A00000000000000000000092 /* NativeHScroll.swift in Sources */,
+				A00000000000000000000094 /* BatchRenameView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -206,6 +206,8 @@ struct ViewerView: View {
         .onAppear {
             keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak model] event in
                 guard let model else { return event }
+                // When a sheet is open, pass all keys through so TextFields work correctly
+                if model.showExportPanel || model.showBatchExportPanel || model.showBatchRenamePanel { return event }
                 let chars = event.characters
 
                 if model.isGridView {
@@ -317,6 +319,15 @@ struct ViewerView: View {
             BatchConvertView(
                 files: Array(model.selectedFiles),
                 onComplete: { model.showBatchExportPanel = false }
+            )
+        }
+        .sheet(isPresented: $model.showBatchRenamePanel) {
+            BatchRenameView(
+                files: Array(model.selectedFiles),
+                onComplete: {
+                    model.showBatchRenamePanel = false
+                    model.rescanCurrentFolder()
+                }
             )
         }
     }

@@ -189,6 +189,9 @@ struct ReadpicApp: App {
 
                 Button("Batch Convert / Export\u{2026}") { model.showBatchExport() }
                     .disabled(!model.isGridView || model.selectedGridIndices.count < 2)
+
+                Button("Batch Rename\u{2026}") { model.showBatchRename() }
+                    .disabled(!model.isGridView || model.selectedGridIndices.count < 2)
             }
 
             // MARK: - Help

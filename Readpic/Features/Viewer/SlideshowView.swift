@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 // MARK: - Transition type
@@ -23,6 +24,7 @@ struct SlideshowView: View {
     @State private var showSettings = false
     @State private var hoveringControls = false
     @State private var hideControlsTask: Task<Void, Never>?
+    @State private var keyMonitor: Any?
 
     private let controlsHideDelay: TimeInterval = 2.5
 
@@ -59,12 +61,23 @@ struct SlideshowView: View {
             .onTapGesture { toggleControls() }
             .background(ScrollWheelHandler(onPrevious: { slideshowPrevious() }, onNext: { slideshowNext() }))
         }
-        .focusable()
-        .onKeyPress(.space) { togglePlayPause(); return .handled }
-        .onKeyPress(.leftArrow) { slideshowPrevious(); return .handled }
-        .onKeyPress(.rightArrow) { slideshowNext(); return .handled }
-        .onAppear { scheduleHideControls() }
-        .onDisappear { hideControlsTask?.cancel() }
+        .focusEffectDisabled()
+        .onAppear {
+            scheduleHideControls()
+            keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+                switch event.keyCode {
+                case 49:  togglePlayPause(); return nil  // Space
+                case 123: slideshowPrevious(); return nil  // Left arrow
+                case 124: slideshowNext(); return nil      // Right arrow
+                default: break
+                }
+                return event
+            }
+        }
+        .onDisappear {
+            hideControlsTask?.cancel()
+            if let m = keyMonitor as? NSObjectProtocol { NSEvent.removeMonitor(m) }
+        }
         .onChange(of: showSettings) { _, _ in
             if showSettings {
                 hideControlsTask?.cancel()

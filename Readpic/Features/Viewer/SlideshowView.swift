@@ -150,12 +150,12 @@ struct SlideshowView: View {
 
     private var settingsPanel: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Slideshow Settings")
+            Text.loc("Slideshow Settings")
                 .font(.system(size: 13, weight: .semibold))
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
-                    Text("Speed")
+                    Text.loc("Speed")
                         .font(.system(size: 12))
                     Spacer()
                     Text(speedLabel)
@@ -166,7 +166,7 @@ struct SlideshowView: View {
             }
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("Transition")
+                Text.loc("Transition")
                     .font(.system(size: 12))
                 Picker(selection: $model.slideshowTransition) {
                     ForEach(SlideshowTransition.allCases, id: \.rawValue) { t in

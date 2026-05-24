@@ -41,7 +41,7 @@ struct BatchConvertView: View {
         VStack(spacing: 0) {
             // Title
             HStack {
-                Text("Batch Convert / Export")
+                Text.loc("Batch Convert / Export")
                     .font(.system(size: 15, weight: .semibold))
                 Spacer()
                 Text(String(localized: "%d files").replacingOccurrences(of: "%d", with: "\(totalCount)"))
@@ -102,7 +102,7 @@ struct BatchConvertView: View {
 
     private var formatSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Format")
+            Text.loc("Format")
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.secondary)
@@ -118,7 +118,7 @@ struct BatchConvertView: View {
             VStack(spacing: 4) {
                 if config.format.supportsQuality {
                     HStack {
-                        Text("Quality")
+                        Text.loc("Quality")
                             .font(.system(size: 12))
                             .foregroundStyle(.secondary)
                         Spacer()
@@ -135,7 +135,7 @@ struct BatchConvertView: View {
 
     private var resizeSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Resize")
+            Text.loc("Resize")
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.secondary)
@@ -152,7 +152,7 @@ struct BatchConvertView: View {
                             guard config.lockAspectRatio, focusedField == .width else { return }
                             config.exportHeight = max(1, Int(CGFloat(max(1, newValue)) / lockedAspectRatio))
                         }
-                    Text("Width (px)")
+                    Text.loc("Width (px)")
                         .font(.system(size: 10))
                         .foregroundStyle(.tertiary)
                 }
@@ -173,7 +173,7 @@ struct BatchConvertView: View {
                             guard config.lockAspectRatio, focusedField == .height else { return }
                             config.exportWidth = max(1, Int(CGFloat(max(1, newValue)) * lockedAspectRatio))
                         }
-                    Text("Height (px)")
+                    Text.loc("Height (px)")
                         .font(.system(size: 10))
                         .foregroundStyle(.tertiary)
                 }
@@ -191,7 +191,7 @@ struct BatchConvertView: View {
             if !config.lockAspectRatio {
                 Divider()
                 HStack {
-                    Text("Ratio")
+                    Text.loc("Ratio")
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
                     Spacer()
@@ -212,7 +212,7 @@ struct BatchConvertView: View {
 
     private var outputSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Output")
+            Text.loc("Output")
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -241,7 +241,7 @@ struct BatchConvertView: View {
     private var progressSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             if isConverting || convertedCount > 0 || failedCount > 0 {
-                Text("Progress")
+                Text.loc("Progress")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.secondary)
 

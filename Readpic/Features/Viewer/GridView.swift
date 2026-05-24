@@ -35,7 +35,7 @@ struct GridView: View {
                             Image(systemName: "magnifyingglass")
                                 .font(.system(size: 28))
                                 .foregroundStyle(.tertiary)
-                            Text("No matching files")
+                            Text.loc("No matching files")
                                 .font(.system(size: 13))
                                 .foregroundStyle(.secondary)
                         }
@@ -133,7 +133,7 @@ struct GridView: View {
                     Image(systemName: "photo.badge.exclamationmark")
                         .font(.system(size: 24))
                         .foregroundStyle(.tertiary)
-                    Text("Failed to load")
+                    Text.loc("Failed to load")
                         .font(.system(size: 10))
                         .foregroundStyle(.tertiary)
                 }

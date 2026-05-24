@@ -39,7 +39,7 @@ struct BatchRenameView: View {
         VStack(spacing: 0) {
             // Title
             HStack {
-                Text("Batch Rename")
+                Text.loc("Batch Rename")
                     .font(.system(size: 15, weight: .semibold))
                 Spacer()
                 Text("\(files.count) files")
@@ -107,7 +107,7 @@ struct BatchRenameView: View {
 
     private var modeSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Mode")
+            Text.loc("Mode")
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.secondary)
 
@@ -123,7 +123,7 @@ struct BatchRenameView: View {
 
     private var sequentialSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Naming")
+            Text.loc("Naming")
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -134,7 +134,7 @@ struct BatchRenameView: View {
                         .textFieldStyle(.roundedBorder)
                         .font(.system(size: 13, design: .monospaced))
                         .frame(width: 200)
-                    Text("Base name")
+                    Text.loc("Base name")
                         .font(.system(size: 10))
                         .foregroundStyle(.tertiary)
                 }
@@ -149,7 +149,7 @@ struct BatchRenameView: View {
                                 .multilineTextAlignment(.center)
                         }
                     }
-                    Text("Start number")
+                    Text.loc("Start number")
                         .font(.system(size: 10))
                         .foregroundStyle(.tertiary)
                 }
@@ -164,13 +164,13 @@ struct BatchRenameView: View {
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                     .background(Color.secondary.opacity(0.1), in: RoundedRectangle(cornerRadius: 4))
-                Text("Preview")
+                Text.loc("Preview")
                     .font(.system(size: 10))
                     .foregroundStyle(.tertiary)
             }
 
             // Preset chips
-            Text("Presets")
+            Text.loc("Presets")
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
             HStack(spacing: 6) {
@@ -199,7 +199,7 @@ struct BatchRenameView: View {
                         .textFieldStyle(.roundedBorder)
                         .font(.system(size: 13, design: .monospaced))
                         .frame(width: 200)
-                    Text("Find")
+                    Text.loc("Find")
                         .font(.system(size: 10))
                         .foregroundStyle(.tertiary)
                 }
@@ -209,7 +209,7 @@ struct BatchRenameView: View {
                         .textFieldStyle(.roundedBorder)
                         .font(.system(size: 13, design: .monospaced))
                         .frame(width: 200)
-                    Text("Replace with")
+                    Text.loc("Replace with")
                         .font(.system(size: 10))
                         .foregroundStyle(.tertiary)
                 }
@@ -221,7 +221,7 @@ struct BatchRenameView: View {
     private var previewSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("Preview")
+                Text.loc("Preview")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.secondary)
                 Spacer()
@@ -257,7 +257,7 @@ struct BatchRenameView: View {
                             Spacer()
 
                             if item.isConflict {
-                                Text("Conflict")
+                                Text.loc("Conflict")
                                     .font(.system(size: 9))
                                     .foregroundStyle(.red)
                                     .padding(.horizontal, 4)

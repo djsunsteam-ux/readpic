@@ -50,7 +50,6 @@
 "Rate" = "Rate";
 "None" = "None";
 "Keyboard Shortcuts" = "Keyboard Shortcuts";
-
 /* ---------- Toolbar ---------- */
 "Grid" = "Grid";
 "Viewer" = "Viewer";
@@ -59,7 +58,6 @@
 "Thumbnails" = "Thumbnails";
 "Info" = "Info";
 "Search" = "Search";
-
 /* ---------- Settings ---------- */
 "General" = "General";
 "Navigation" = "Navigation";
@@ -85,16 +83,13 @@
 "Custom Color" = "Custom Color";
 "Session" = "Session";
 "Remember Last Folder" = "Remember Last Folder";
-
 /* ---------- Language ---------- */
 "Language" = "Language";
-
 /* ---------- Status Bar ---------- */
 "images" = "images";
 "selected" = "selected";
 "filtered from" = "filtered from";
 "Loading…" = "Loading…";
-
 /* ---------- Toolbar Help Tooltips ---------- */
 "Toggle grid or viewer" = "Toggle grid or viewer";
 "Toggle info panel" = "Toggle info panel";
@@ -102,7 +97,6 @@
 "Toggle frame strip" = "Toggle frame strip";
 "Toggle fullscreen" = "Toggle fullscreen";
 "Enter crop mode" = "Enter crop mode";
-
 /* ---------- Empty State Shortcuts ---------- */
 "Previous / Next" = "Previous / Next";
 "Open file" = "Open file";
@@ -114,7 +108,6 @@
 "Slideshow" = "Slideshow";
 "Crop" = "Crop";
 "Help" = "Help";
-
 /* ---------- Info Panel ---------- */
 "File" = "File";
 "Name" = "Name";
@@ -163,7 +156,6 @@
 "Add to Favorites" = "Add to Favorites";
 "Remove from Favorites" = "Remove from Favorites";
 "Export Info" = "Export Info";
-
 /* ---------- Export / Convert ---------- */
 "Export / Convert" = "Export / Convert";
 "Quality" = "Quality";
@@ -186,7 +178,6 @@
 "Converting..." = "Converting...";
 "Cancel Conversion" = "Cancel Conversion";
 "%d files" = "%d files";
-
 /* ---------- Batch Convert ---------- */
 "Batch Convert / Export" = "Batch Convert / Export";
 "Progress" = "Progress";
@@ -197,7 +188,6 @@
 "write error" = "write error";
 "Choose export destination folder" = "Choose export destination folder";
 "Select" = "Select";
-
 /* ---------- Batch Rename ---------- */
 "Batch Rename" = "Batch Rename";
 "Mode" = "Mode";
@@ -217,7 +207,6 @@
 "Rename %d Files" = "Rename %d Files";
 "No files to rename" = "No files to rename";
 "Renamed %d of %d files" = "Renamed %d of %d files";
-
 /* ---------- Slideshow ---------- */
 "Slideshow Settings" = "Slideshow Settings";
 "Speed" = "Speed";
@@ -233,7 +222,6 @@
 "Next" = "Next";
 "Resume" = "Resume";
 "Pause" = "Pause";
-
 /* ---------- Toast / Alerts ---------- */
 "Unsupported format" = "Unsupported format";
 "The file is damaged and can’t be displayed" = "The file is damaged and can’t be displayed";
@@ -272,28 +260,20 @@
 "No matching files" = "No matching files";
 "Failed to load" = "Failed to load";
 "error" = "error";
-" (filtered from \(totalCount))" = " (filtered from \(totalCount))";
-"%0\(String(files.count).count)d" = "%0\(String(files.count).count)d";
-".\(config.fileExtension)" = ".\(config.fileExtension)";
 "AVIF" = "AVIF";
 "All" = "All";
 "Apply" = "Apply";
 "BMP" = "BMP";
-"Batch Convert / Export\u{2026}" = "Batch Convert / Export\u{2026}";
-"Batch Rename\u{2026}" = "Batch Rename\u{2026}";
 "Changes will take effect after restarting the app." = "Changes will take effect after restarting the app.";
 "Close overlay / panel / window" = "Close overlay / panel / window";
 "Copy file" = "Copy file";
 "Copy image" = "Copy image";
 "Copy path" = "Copy path";
-"Crop\u{2026}" = "Crop\u{2026}";
 "English" = "English";
 "Esc" = "Esc";
-"Export / Convert\u{2026}" = "Export / Convert\u{2026}";
 "Export Metadata" = "Export Metadata";
 "Fit window / 100%" = "Fit window / 100%";
 "Flip horizontal" = "Flip horizontal";
-"Frame \(currentIndex + 1) of \(totalFrameCount)" = "Frame \(currentIndex + 1) of \(totalFrameCount)";
 "Frame strip" = "Frame strip";
 "Free" = "Free";
 "GIF" = "GIF";
@@ -304,13 +284,10 @@
 "Info panel" = "Info panel";
 "JPEG" = "JPEG";
 "JPEG XL" = "JPEG XL";
-"More\u{2026}" = "More\u{2026}";
 "Navigate images / grid" = "Navigate images / grid";
 "No image to save" = "No image to save";
 "Open Folder" = "Open Folder";
-"Open Folder\u{2026}" = "Open Folder\u{2026}";
 "Open Image" = "Open Image";
-"Open Image\u{2026}" = "Open Image\u{2026}";
 "Open externally" = "Open externally";
 "PNG" = "PNG";
 "PSD" = "PSD";
@@ -335,31 +312,6 @@
 "WebP" = "WebP";
 "Width" = "Width";
 "Zoom in / out" = "Zoom in / out";
-"\(Int(decodedImage.pixelSize.width)) × \(Int(decodedImage.pixelSize.height))" = "\(Int(decodedImage.pixelSize.width)) × \(Int(decodedImage.pixelSize.height))";
-"\(baseName).\(ext)" = "\(baseName).\(ext)";
-"\(baseName)_\(padded).\(ext)" = "\(baseName)_\(padded).\(ext)";
-"\(baseName)_\(preset)" = "\(baseName)_\(preset)";
-"\(baseName)_crop_\(sequence).\(ext)" = "\(baseName)_crop_\(sequence).\(ext)";
-"\(convertedCount + failedCount) of \(totalCount)" = "\(convertedCount + failedCount) of \(totalCount)";
-"\(convertedCount) converted" = "\(convertedCount) converted";
-"\(currentIndex + 1) / \(count)    \(currentFile.name)    \(dimensions)    \(sizeStr)    \(zoomPercent)%" = "\(currentIndex + 1) / \(count)    \(currentFile.name)    \(dimensions)    \(sizeStr)    \(zoomPercent)%";
-"\(failedCount) failed" = "\(failedCount) failed";
-"\(fileName).\(ext)" = "\(fileName).\(ext)";
-"\(filteredCount) images\(filterSuffix)" = "\(filteredCount) images\(filterSuffix)";
-"\(idx + 1) / \(model.navigableFiles.count)" = "\(idx + 1) / \(model.navigableFiles.count)";
-"\(selectedGridIndices.count) of \(filteredCount) selected\(filterSuffix)" = "\(selectedGridIndices.count) of \(filteredCount) selected\(filterSuffix)";
-"\(totalCount)" = "\(totalCount)";
-"\u{2318}C" = "\u{2318}C";
-"\u{2318}E" = "\u{2318}E";
-"\u{2318}O" = "\u{2318}O";
-"\u{2318}\u{21E7}C" = "\u{2318}\u{21E7}C";
-"\u{2318}\u{21E7}H" = "\u{2318}\u{21E7}H";
-"\u{2318}\u{21E7}O" = "\u{2318}\u{21E7}O";
-"\u{2318}\u{2325}C" = "\u{2318}\u{2325}C";
-"\u{2318}\u{2325}E" = "\u{2318}\u{2325}E";
-"\u{2318}\u{2325}F" = "\u{2318}\u{2325}F";
-"\u{2318}\u{232B}" = "\u{2318}\u{232B}";
-
 "%d images" = "%d images";
 "%d images (filtered from %d)" = "%d images (filtered from %d)";
 "%d of %d selected" = "%d of %d selected";

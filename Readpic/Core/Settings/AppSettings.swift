@@ -2,19 +2,31 @@ import AppKit
 import Foundation
 import SwiftUI
 
-// MARK: - Localization helpers for SPM compatibility
+// MARK: - Localization helpers (SPM + Xcode cross-build)
+extension Bundle {
+    /// The bundle containing localized strings. SPM uses .module; Xcode uses .main.
+    static let loc: Bundle = {
+        #if SWIFT_PACKAGE
+        return .module
+        #else
+        // Xcode builds: the .lproj are copied by the Resources build phase
+        return .main
+        #endif
+    }()
+}
+
 extension String {
-    /// Returns the localized version from Bundle.module (works in SPM and Xcode).
+    /// Returns the localized version from the correct bundle.
     var localized: String {
-        NSLocalizedString(self, bundle: .module, comment: "")
+        NSLocalizedString(self, bundle: .loc, comment: "")
     }
 }
 
 extension Text {
-    /// Creates a localized Text using Bundle.module for proper SPM/Xcode cross-build support.
-    /// Replace `Text("key")` with `Text(.loc("key"))`.
+    /// Creates a localized Text using the correct bundle.
+    /// Replace `Text("key")` with `Text.loc("key")`.
     static func loc(_ key: String) -> Text {
-        Text(LocalizedStringKey(key), bundle: .module)
+        Text(LocalizedStringKey(key), bundle: .loc)
     }
 }
 

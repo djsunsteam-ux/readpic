@@ -13,10 +13,11 @@ struct ReadpicApp: App {
         default:            langs = []
         }
         UserDefaults.standard.set(langs, forKey: "AppleLanguages")
+        #if SWIFT_PACKAGE
         // Copy .lproj from module bundle to main bundle so Text("key") resolves
         let fm = FileManager.default
         if let mainRes = Bundle.main.resourcePath ?? Bundle.main.bundlePath as String?,
-           let moduleRes = Bundle.module.resourcePath {
+           let moduleRes = Bundle.loc.resourcePath {
             for locale in ["en", "zh-Hans"] {
                 let src = moduleRes + "/" + locale + ".lproj"
                 let dst = mainRes + "/" + locale + ".lproj"
@@ -25,6 +26,7 @@ struct ReadpicApp: App {
                 }
             }
         }
+        #endif
     }
 
     var currentLocale: Locale {

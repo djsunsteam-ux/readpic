@@ -224,7 +224,7 @@ private struct InfoRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(label)
+            Text(label.localized)
                 .font(.system(size: 11))
                 .foregroundStyle(.tertiary)
             Text(value)

@@ -8,17 +8,17 @@ struct SettingsView: View {
             Form {
                 Section("Navigation") {
                     Picker("Scroll Wheel", selection: $settings.scrollBehavior) {
-                        Text("Zoom").tag(ScrollBehavior.zoom)
-                        Text("Pan").tag(ScrollBehavior.scrollPan)
-                        Text("Browse").tag(ScrollBehavior.browse)
+                        Text.loc("Zoom").tag(ScrollBehavior.zoom)
+                        Text.loc("Pan").tag(ScrollBehavior.scrollPan)
+                        Text.loc("Browse").tag(ScrollBehavior.browse)
                     }
                     .pickerStyle(.radioGroup)
                 }
 
                 Section("Viewing") {
                     Picker("Default Zoom", selection: $settings.defaultZoomMode) {
-                        Text("Fit Window").tag(DefaultZoomMode.fitWindow)
-                        Text("Fit Width").tag(DefaultZoomMode.fitWidth)
+                        Text.loc("Fit Window").tag(DefaultZoomMode.fitWindow)
+                        Text.loc("Fit Width").tag(DefaultZoomMode.fitWidth)
                         Text("100%").tag(DefaultZoomMode.actualSize)
                     }
 
@@ -27,9 +27,9 @@ struct SettingsView: View {
 
                 Section("Appearance") {
                     Picker("Theme", selection: $settings.theme) {
-                        Text("System").tag(ThemeMode.system)
-                        Text("Light").tag(ThemeMode.light)
-                        Text("Dark").tag(ThemeMode.dark)
+                        Text.loc("System").tag(ThemeMode.system)
+                        Text.loc("Light").tag(ThemeMode.light)
+                        Text.loc("Dark").tag(ThemeMode.dark)
                     }
                     .pickerStyle(.radioGroup)
 
@@ -47,12 +47,12 @@ struct SettingsView: View {
 
                 Section("Language") {
                     Picker("Language", selection: $settings.language) {
-                        Text("System").tag(LanguageMode.system)
-                        Text("English").tag(LanguageMode.english)
+                        Text.loc("System").tag(LanguageMode.system)
+                        Text.loc("English").tag(LanguageMode.english)
                         Text("简体中文").tag(LanguageMode.chinese)
                     }
                     .pickerStyle(.radioGroup)
-                    Text("Changes will take effect after restarting the app.")
+                    Text.loc("Changes will take effect after restarting the app.")
                         .font(.system(size: 11))
                         .foregroundStyle(.tertiary)
                 }

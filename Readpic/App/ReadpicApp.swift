@@ -10,9 +10,21 @@ struct ReadpicApp: App {
         switch lang {
         case "English":     langs = ["en"]
         case "简体中文":    langs = ["zh-Hans"]
-        default:            return
+        default:            langs = []
         }
         UserDefaults.standard.set(langs, forKey: "AppleLanguages")
+        // Copy .lproj from module bundle to main bundle so Text("key") resolves
+        let fm = FileManager.default
+        if let mainRes = Bundle.main.resourcePath ?? Bundle.main.bundlePath as String?,
+           let moduleRes = Bundle.module.resourcePath {
+            for locale in ["en", "zh-Hans"] {
+                let src = moduleRes + "/" + locale + ".lproj"
+                let dst = mainRes + "/" + locale + ".lproj"
+                if fm.fileExists(atPath: src) && !fm.fileExists(atPath: dst) {
+                    try? fm.copyItem(atPath: src, toPath: dst)
+                }
+            }
+        }
     }
 
     var currentLocale: Locale {
@@ -56,7 +68,7 @@ struct ReadpicApp: App {
                 Menu("Open Recent") {
                     let recents = model.settings.recentFolders
                     if recents.isEmpty {
-                        Text("No Recent Folders")
+                        Text.loc("No Recent Folders")
                     }
                     ForEach(recents, id: \.self) { url in
                         Button(url.lastPathComponent) { model.openFolder(url) }

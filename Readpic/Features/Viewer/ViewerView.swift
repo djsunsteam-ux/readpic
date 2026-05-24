@@ -542,7 +542,7 @@ private struct DragHoverOverlay: View {
             .stroke(Color.accentColor, lineWidth: 2)
             .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 14))
             .overlay {
-                Text("Release to open")
+                Text.loc("Release to open")
                     .font(.system(size: 15, weight: .medium))
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
@@ -563,9 +563,9 @@ private struct EmptyStateView: View {
                     .foregroundStyle(.secondary)
 
                 VStack(spacing: 6) {
-                    Text("Readpic")
+                    Text.loc("Readpic")
                         .font(.system(size: 20, weight: .semibold))
-                    Text("Drop images or folders here")
+                    Text.loc("Drop images or folders here")
                         .font(.system(size: 13))
                         .foregroundStyle(.secondary)
                 }
@@ -681,7 +681,7 @@ private struct ShortcutsHelpView: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
-                Text("Keyboard Shortcuts")
+                Text.loc("Keyboard Shortcuts")
                     .font(.system(size: 15, weight: .semibold))
                     .padding(.bottom, 16)
 

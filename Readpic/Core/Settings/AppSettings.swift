@@ -2,6 +2,22 @@ import AppKit
 import Foundation
 import SwiftUI
 
+// MARK: - Localization helpers for SPM compatibility
+extension String {
+    /// Returns the localized version from Bundle.module (works in SPM and Xcode).
+    var localized: String {
+        NSLocalizedString(self, bundle: .module, comment: "")
+    }
+}
+
+extension Text {
+    /// Creates a localized Text using Bundle.module for proper SPM/Xcode cross-build support.
+    /// Replace `Text("key")` with `Text(.loc("key"))`.
+    static func loc(_ key: String) -> Text {
+        Text(LocalizedStringKey(key), bundle: .module)
+    }
+}
+
 enum ScrollBehavior: String, CaseIterable, Sendable {
     case scrollPan
     case browse

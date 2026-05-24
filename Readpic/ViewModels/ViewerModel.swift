@@ -330,11 +330,16 @@ final class ViewerModel {
         if isGridView {
             let filteredCount = filteredIndices.count
             let totalCount = files.count
-            let filterSuffix = isFilterActive ? " (filtered from \(totalCount))" : ""
             if selectedGridIndices.isEmpty {
-                return "\(filteredCount) images\(filterSuffix)"
+                if isFilterActive {
+                    return String(format: String(localized: "%d images (filtered from %d)"), filteredCount, totalCount)
+                }
+                return String(format: String(localized: "%d images"), filteredCount)
             } else {
-                return "\(selectedGridIndices.count) of \(filteredCount) selected\(filterSuffix)"
+                if isFilterActive {
+                    return String(format: String(localized: "%d of %d selected (filtered from %d)"), selectedGridIndices.count, filteredCount, totalCount)
+                }
+                return String(format: String(localized: "%d of %d selected"), selectedGridIndices.count, filteredCount)
             }
         }
         guard let currentFile else { return "" }

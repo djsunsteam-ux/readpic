@@ -452,7 +452,7 @@ private struct ViewerToolbar: View {
 
                     Picker(selection: $model.formatFilter) {
                         ForEach(ViewerModel.FileFormatFilter.allCases, id: \.rawValue) { fmt in
-                            Text(fmt.rawValue).tag(fmt)
+                            Text(fmt.rawValue.localized).tag(fmt)
                         }
                     } label: {
                         Label("Format", systemImage: "line.3.horizontal.decrease.circle")
@@ -462,7 +462,7 @@ private struct ViewerToolbar: View {
 
                     Picker(selection: $model.dateFilter) {
                         ForEach(ViewerModel.DateFilter.allCases, id: \.rawValue) { d in
-                            Text(d.rawValue).tag(d)
+                            Text(d.rawValue.localized).tag(d)
                         }
                     } label: {
                         Label("Date", systemImage: "calendar")
@@ -502,7 +502,7 @@ private struct ViewerToolbar: View {
                 .frame(height: 18)
 
             ForEach(ViewerModel.CropPreset.allCases, id: \.self) { preset in
-                Button(preset.rawValue) {
+                Button(preset.rawValue.localized) {
                     model.setCropPreset(preset)
                 }
                 .font(.system(size: 11, design: .monospaced))

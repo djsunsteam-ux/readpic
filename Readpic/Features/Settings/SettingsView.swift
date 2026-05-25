@@ -33,15 +33,17 @@ struct SettingsView: View {
                     }
                     .pickerStyle(.radioGroup)
 
-                    Picker("Background", selection: $settings.backgroundColor) {
-                        ForEach(BackgroundColor.allCases, id: \.self) { bg in
-                            Text(bg.displayName).tag(bg)
+                    HStack {
+                        Picker("Background", selection: $settings.backgroundColor) {
+                            ForEach(BackgroundColor.allCases, id: \.self) { bg in
+                                Text(bg.displayName).tag(bg)
+                            }
                         }
-                    }
-
-                    if settings.backgroundColor == .custom {
-                        ColorPicker("Custom Color", selection: $settings.customBackgroundColor)
-                            .padding(.leading, 12)
+                        if settings.backgroundColor == .custom {
+                            ColorPicker("", selection: $settings.customBackgroundColor)
+                                .labelsHidden()
+                                .frame(width: 30)
+                        }
                     }
                 }
 
@@ -52,18 +54,19 @@ struct SettingsView: View {
                         Text("简体中文").tag(LanguageMode.chinese)
                     }
                     .pickerStyle(.radioGroup)
+
                     Text.loc("Changes will take effect after restarting the app.")
-                        .font(.system(size: 11))
+                        .font(.system(size: 10))
                         .foregroundStyle(.tertiary)
                 }
 
-                Section("Session") {
+                Section {
                     Toggle("Remember Last Folder", isOn: $settings.rememberLastFolder)
                 }
             }
             .padding(20)
             .tabItem { Label("General", systemImage: "gearshape") }
         }
-        .frame(width: 460, height: 400)
+        .frame(width: 460, height: 420)
     }
 }

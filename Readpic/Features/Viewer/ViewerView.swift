@@ -667,7 +667,7 @@ private struct EmptyStateView: View {
                 .font(.system(size: 11, design: .monospaced))
                 .foregroundStyle(.primary)
                 .frame(minWidth: 50, alignment: .leading)
-            Text(description)
+            Text(description.localized)
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
         }
@@ -728,7 +728,7 @@ private struct ShortcutsHelpView: View {
     @ViewBuilder
     private func shortcutsGroup(_ title: String, @ViewBuilder content: () -> some View) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(title)
+            Text(title.localized)
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(.secondary)
                 .padding(.top, 8)
@@ -743,7 +743,7 @@ private struct ShortcutsHelpView: View {
                 .font(.system(size: 12, design: .monospaced))
                 .foregroundStyle(.primary)
                 .frame(minWidth: 80, alignment: .leading)
-            Text(description)
+            Text(description.localized)
                 .font(.system(size: 12))
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)

@@ -158,7 +158,7 @@ struct SlideshowView: View {
                     Text.loc("Speed")
                         .font(.system(size: 12))
                     Spacer()
-                    Text(speedLabel)
+                    Text(speedLabel.localized)
                         .font(.system(size: 12, design: .monospaced))
                         .foregroundStyle(.secondary)
                 }
@@ -170,7 +170,7 @@ struct SlideshowView: View {
                     .font(.system(size: 12))
                 Picker(selection: $model.slideshowTransition) {
                     ForEach(SlideshowTransition.allCases, id: \.rawValue) { t in
-                        Text(t.rawValue).tag(t)
+                        Text(t.rawValue.localized).tag(t)
                     }
                 } label: { }
                 .pickerStyle(.segmented)

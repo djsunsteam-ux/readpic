@@ -532,7 +532,7 @@ private struct ToolbarButton: View {
                 .frame(width: 28, height: 28)
         }
         .buttonStyle(.borderless)
-        .help(title)
+        .help(title.localized)
     }
 }
 

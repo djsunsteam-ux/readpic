@@ -315,3 +315,5 @@
 "%d images (filtered from %d)" = "%d 张图片（筛选自 %d 张）";
 "%d of %d selected" = "已选 %d / %d";
 "%d of %d selected (filtered from %d)" = "已选 %d / %d（筛选自 %d 张）";
+"Frame %d of %d" = "第 %d 帧，共 %d 帧";
+"Original: %d × %d" = "原始：%d × %d";

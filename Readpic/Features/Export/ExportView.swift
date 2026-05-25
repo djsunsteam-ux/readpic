@@ -227,7 +227,7 @@ struct ExportView: View {
 
                     // Original size reference
                     HStack {
-                        Text("Original: \(sourceWidth) × \(sourceHeight)")
+                        Text(String(format: String(localized: "Original: %d × %d"), sourceWidth, sourceHeight))
                             .font(.system(size: 11))
                             .foregroundStyle(.tertiary)
                         Spacer()
@@ -277,7 +277,7 @@ struct ExportView: View {
                     Image(systemName: "folder")
                         .foregroundStyle(.secondary)
                         .font(.system(size: 13))
-                    Text(outputFolderLabel)
+                    Text(outputFolderLabel.localized)
                         .font(.system(size: 12))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)

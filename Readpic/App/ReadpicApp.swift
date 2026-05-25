@@ -145,7 +145,7 @@ struct ReadpicApp: App {
             }
 
             // MARK: - View
-            CommandMenu("View") {
+            CommandMenu("Navigate") {
                 Button("Grid View") { model.toggleGridView() }
                     .keyboardShortcut("g")
                     .disabled(model.currentFile == nil && !model.isGridView)

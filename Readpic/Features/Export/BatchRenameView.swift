@@ -113,7 +113,7 @@ struct BatchRenameView: View {
 
             Picker(selection: $mode) {
                 ForEach(RenameMode.allCases, id: \.self) { m in
-                    Text(m.rawValue).tag(m)
+                    Text(m.rawValue.localized).tag(m)
                 }
             } label: { }
             .pickerStyle(.segmented)

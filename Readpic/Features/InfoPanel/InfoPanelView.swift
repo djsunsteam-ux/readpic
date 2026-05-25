@@ -204,7 +204,7 @@ private struct GroupSection<Content: View>: View {
     @ViewBuilder let content: () -> Content
 
     var body: some View {
-        Text(title)
+        Text(title.localized)
             .font(.system(size: 12, weight: .semibold))
             .foregroundStyle(.secondary)
             .padding(.bottom, 6)

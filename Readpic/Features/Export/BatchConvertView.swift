@@ -221,7 +221,7 @@ struct BatchConvertView: View {
                 Image(systemName: "folder")
                     .foregroundStyle(.secondary)
                     .font(.system(size: 13))
-                Text(outputFolderLabel)
+                Text(outputFolderLabel.localized)
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)

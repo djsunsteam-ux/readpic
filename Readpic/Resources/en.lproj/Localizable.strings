@@ -315,3 +315,5 @@
 "%d images (filtered from %d)" = "%d images (filtered from %d)";
 "%d of %d selected" = "%d of %d selected";
 "%d of %d selected (filtered from %d)" = "%d of %d selected (filtered from %d)";
+"Frame %d of %d" = "Frame %d of %d";
+"Original: %d × %d" = "Original: %d × %d";

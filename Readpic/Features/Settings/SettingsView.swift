@@ -5,6 +5,7 @@ struct SettingsView: View {
 
     var body: some View {
         TabView {
+            // ---------- General ----------
             Form {
                 Section("Navigation") {
                     Picker("Scroll Wheel", selection: $settings.scrollBehavior) {
@@ -25,29 +26,40 @@ struct SettingsView: View {
                     Toggle("Show Status Bar", isOn: $settings.showStatusBar)
                 }
 
-                Section("Appearance") {
-                    Picker("Theme", selection: $settings.theme) {
+                Section {
+                    Toggle("Remember Last Folder", isOn: $settings.rememberLastFolder)
+                }
+            }
+            .padding(20)
+            .tabItem { Label("General", systemImage: "gearshape") }
+
+            // ---------- Appearance ----------
+            Form {
+                Section("Theme") {
+                    Picker(selection: $settings.theme) {
                         Text.loc("System").tag(ThemeMode.system)
                         Text.loc("Light").tag(ThemeMode.light)
                         Text.loc("Dark").tag(ThemeMode.dark)
-                    }
+                    } label: { }
                     .pickerStyle(.radioGroup)
 
-                    HStack {
-                        Picker("Background", selection: $settings.backgroundColor) {
-                            ForEach(BackgroundColor.allCases, id: \.self) { bg in
-                                Text(bg.displayName).tag(bg)
-                            }
-                        }
-                        if settings.backgroundColor == .custom {
-                            ColorPicker("", selection: $settings.customBackgroundColor)
-                                .labelsHidden()
-                                .frame(width: 30)
+                    Picker("Background", selection: $settings.backgroundColor) {
+                        ForEach(BackgroundColor.allCases, id: \.self) { bg in
+                            Text(bg.displayName).tag(bg)
                         }
                     }
-                }
 
-                Section("Language") {
+                    if settings.backgroundColor == .custom {
+                        ColorPicker("Custom Color", selection: $settings.customBackgroundColor)
+                    }
+                }
+            }
+            .padding(20)
+            .tabItem { Label("Appearance", systemImage: "paintbrush") }
+
+            // ---------- Language ----------
+            Form {
+                Section {
                     Picker("Language", selection: $settings.language) {
                         Text.loc("System").tag(LanguageMode.system)
                         Text.loc("English").tag(LanguageMode.english)
@@ -59,14 +71,10 @@ struct SettingsView: View {
                         .font(.system(size: 10))
                         .foregroundStyle(.tertiary)
                 }
-
-                Section {
-                    Toggle("Remember Last Folder", isOn: $settings.rememberLastFolder)
-                }
             }
             .padding(20)
-            .tabItem { Label("General", systemImage: "gearshape") }
+            .tabItem { Label("Language", systemImage: "globe") }
         }
-        .frame(width: 460, height: 420)
+        .frame(width: 460, height: 340)
     }
 }

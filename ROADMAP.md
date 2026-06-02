@@ -265,23 +265,18 @@
 - [x] RAW 常见格式浏览（17 种 RAW 扩展名，ImageIO 原生解码）。
 - [x] RAW 内嵌 JPEG 预览优先（`kCGImageSourceCreateThumbnailFromImageIfPossible`，避免全量 RAW 解码）。
 - [x] AVIF（macOS 15+ ImageIO 原生支持）。
-- [ ] JPEG XL（需要 libjxl 第三方库）。
-- [ ] SVG（SVGKit vs WebKit 渲染方案待选型）。
 - [x] PSD/PSB 合并图层预览（ImageIO 读取合并图层）。
 
 ### 6.2 专业查看
 
 - [x] 直方图（RGB + Luminance，vImage 加速，URL-keyed 缓存，512px 降采样，radius-1 平滑，通道可切换）。
 - [x] 颜色拾取器（实时追踪采色、点击锁定/解锁、十字光标、RGB + Hex 复制按钮）。
-- [ ] 并排对比。
 - [ ] 同步缩放。
-- [ ] 打印尺寸信息。
 
 ### 6.3 归档与漫画
 
 - [ ] ZIP / CBZ 浏览。
 - [ ] 加密 ZIP 支持。
-- [ ] 漫画阅读模式。
 - [ ] TAR / GZIP 视需求评估。
 
 ### 6.4 系统集成
@@ -355,6 +350,11 @@ GitHub Release 可发布，用户可按 README 完成安装和首次启动。
 - DAM 数字资产管理系统。
 - 团队协作功能。
 - SQLite 元数据存储（当前 UserDefaults 方案已满足轻量需求，不做引入额外数据库依赖）。
+- JPEG XL（需要 libjxl 第三方库，分发复杂度高）。
+- SVG（SVGKit vs WebKit 渲染方案不稳定）。
+- 并排对比。
+- 打印尺寸信息。
+- 漫画阅读模式。
 
 ---
 

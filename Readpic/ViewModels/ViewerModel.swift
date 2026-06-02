@@ -138,24 +138,10 @@ final class ViewerModel {
     var dateFilter: DateFilter = .all {
         didSet { if isGridView { clearSelection() } }
     }
-    /// Files matching current search text and format filter.
-    var filteredFiles: [FileItem] {
-        var result = files
-        if !searchText.isEmpty {
-            result = result.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
-        }
-        if formatFilter != .all {
-            result = result.filter { formatFilter.matches($0.url) }
-        }
-        if dateFilter != .all {
-            result = result.filter { dateFilter.matches($0.modificationDate) }
-        }
-        return result
-    }
     var isFilterActive: Bool {
         !searchText.isEmpty || formatFilter != .all || dateFilter != .all
     }
-    /// Indices into `files` that match the current filter.
+    /// Indices into `files` that match the current filter (single source of truth).
     var filteredIndices: [Int] {
         files.indices.filter { i in
             let f = files[i]
@@ -164,6 +150,10 @@ final class ViewerModel {
             if dateFilter != .all, !dateFilter.matches(f.modificationDate) { return false }
             return true
         }
+    }
+    /// Files matching current filter — derived from filteredIndices.
+    var filteredFiles: [FileItem] {
+        filteredIndices.map { files[$0] }
     }
     /// Files available for navigation — filtered list when filter active, full list otherwise.
     var navigableFiles: [FileItem] {
@@ -211,6 +201,7 @@ final class ViewerModel {
     private var loadTask: Task<Void, Never>?
     private var toastTask: Task<Void, Never>?
     private var animationTask: Task<Void, Never>?
+    private var metadataTask: Task<Void, Never>?
     /// Background preload chain for higher-resolution proxies of the current image.
     private var preloadTask: Task<Void, Never>?
 
@@ -1268,17 +1259,18 @@ final class ViewerModel {
     }
 
     private func updateMetadataForLastSelection() {
+        metadataTask?.cancel()
         guard let lastIdx = selectedGridIndices.max(),
               files.indices.contains(lastIdx) else {
             metadata = nil
             return
         }
         let file = files[lastIdx]
-        Task.detached(priority: .userInitiated) { [weak self] in
+        metadataTask = Task.detached(priority: .userInitiated) { [weak self] in
             guard let self else { return }
             let meta = self.metadataReader.read(url: file.url, pixelSize: .zero)
             await MainActor.run {
-                guard self.selectedGridIndices.contains(lastIdx) else { return }
+                guard !Task.isCancelled, self.selectedGridIndices.contains(lastIdx) else { return }
                 self.metadata = meta
             }
         }

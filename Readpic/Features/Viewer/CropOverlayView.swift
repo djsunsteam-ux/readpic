@@ -110,6 +110,7 @@ final class CropOverlayView: NSView {
     // MARK: - Mouse
 
     override func mouseDown(with event: NSEvent) {
+        guard imageRect.width > 0, imageRect.height > 0 else { return }
         let pt = convert(event.locationInWindow, from: nil)
         dragHandle = hitTestHandle(pt)
         dragStartPoint = pt
@@ -117,7 +118,7 @@ final class CropOverlayView: NSView {
     }
 
     override func mouseDragged(with event: NSEvent) {
-        guard dragHandle != .none else { return }
+        guard dragHandle != .none, imageRect.width > 0, imageRect.height > 0 else { return }
         let pt = convert(event.locationInWindow, from: nil)
         let dx = (pt.x - dragStartPoint.x) / imageRect.width
         let dy = (pt.y - dragStartPoint.y) / imageRect.height

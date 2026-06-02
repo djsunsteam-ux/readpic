@@ -149,7 +149,10 @@ v1 优先使用 ImageIO 支持的系统格式：
 - GIF
 - TIFF
 - BMP
-- ICO 可作为 P1
+- ICO
+- RAW（17 种：CR2/CR3/NEF/ARW/DNG/ORF/RW2/RAF/SRW/PEF/SRF/SR2/3FR/FFF/X3F/MEF/MOS）
+- AVIF（macOS 15+）
+- PSD / PSB（合并图层预览）
 
 ### 4.2 解码流程
 
@@ -173,7 +176,7 @@ v1 优先使用 ImageIO 支持的系统格式：
 
 - 避免不必要的全尺寸位图解码。
 - 对大图使用 `kCGImageSourceShouldCache = false` 降低峰值内存。
-- 缩略图使用 `kCGImageSourceCreateThumbnailFromImageAlways`，优先利用内嵌缩略图。
+- 使用 `kCGImageSourceCreateThumbnailFromImageIfPossible` 优先利用内嵌预览/缩略图（对 RAW 文件读取内嵌 JPEG 预览，避免全量 RAW 解码）。
 - 用户缩放超过代理图分辨率 1.2x 时触发按需升级解码。
 
 ### 4.4 GIF / 动画图片

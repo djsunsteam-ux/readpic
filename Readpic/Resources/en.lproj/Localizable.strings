@@ -318,3 +318,15 @@
 "Frame %d of %d" = "Frame %d of %d";
 "Original: %d × %d" = "Original: %d × %d";
 "Navigate" = "Navigate";
+"Red" = "Red";
+"Green" = "Green";
+"Blue" = "Blue";
+"Luminance" = "Luminance";
+"Histogram" = "Histogram";
+"No data" = "No data";
+/* ---------- Color Picker ---------- */
+"Move over image" = "Move over image";
+"RGB copied" = "RGB copied";
+"Hex copied" = "Hex copied";
+"Click to unlock" = "Click to unlock";
+"Click to lock" = "Click to lock";

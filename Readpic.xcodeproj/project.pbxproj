@@ -43,7 +43,9 @@
 		A00000000000000000000090 /* CropOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000091 /* CropOverlayView.swift */; };
 		A00000000000000000000092 /* NativeHScroll.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000093 /* NativeHScroll.swift */; };
 		A00000000000000000000094 /* BatchRenameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000095 /* BatchRenameView.swift */; };
-		A00000000000000000000096 /* SlideshowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000097 /* SlideshowView.swift */; };
+				A00000000000000000000099 /* Histogram.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000098 /* Histogram.swift */; };
+		A00000000000000000000101 /* HistogramChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000100 /* HistogramChartView.swift */; };
+A00000000000000000000096 /* SlideshowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000097 /* SlideshowView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -86,7 +88,9 @@
 		A00000000000000000000091 /* CropOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CropOverlayView.swift; sourceTree = "<group>"; };
 		A00000000000000000000093 /* NativeHScroll.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeHScroll.swift; sourceTree = "<group>"; };
 		A00000000000000000000095 /* BatchRenameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatchRenameView.swift; sourceTree = "<group>"; };
-		A00000000000000000000097 /* SlideshowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideshowView.swift; sourceTree = "<group>"; };
+				A00000000000000000000098 /* Histogram.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Readpic/Core/ImageLoading/Histogram.swift"; sourceTree = SOURCE_ROOT; };
+		A00000000000000000000100 /* HistogramChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Readpic/Features/InfoPanel/HistogramChartView.swift"; sourceTree = SOURCE_ROOT; };
+A00000000000000000000097 /* SlideshowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideshowView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXContainerItemProxy section */
@@ -244,6 +248,8 @@
 				A00000000000000000000019 /* ViewerRepresentable.swift */,
 				A0000000000000000000001A /* ViewerNSView.swift */,
 				A00000000000000000000097 /* SlideshowView.swift */,
+				A00000000000000000000098 /* Histogram.swift */,
+				A00000000000000000000100 /* HistogramChartView.swift */,
 				A00000000000000000000062 /* ThumbnailStripView.swift */,
 				A00000000000000000000064 /* GridView.swift */,
 				A00000000000000000000072 /* FrameStripView.swift */,
@@ -450,6 +456,8 @@
 				A00000000000000000000092 /* NativeHScroll.swift in Sources */,
 				A00000000000000000000094 /* BatchRenameView.swift in Sources */,
 				A00000000000000000000096 /* SlideshowView.swift in Sources */,
+				A00000000000000000000099 /* Histogram.swift in Sources */,
+				A00000000000000000000101 /* HistogramChartView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -608,10 +616,8 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Readpic;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.photography";
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "Readpic/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -633,10 +639,8 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Readpic;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.photography";
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "Readpic/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",

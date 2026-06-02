@@ -4,6 +4,13 @@ public struct FolderScanner: Sendable {
     private static let supportedExtensions: Set<String> = [
         "jpg", "jpeg", "png",
         "heic", "heif", "webp", "gif", "tiff", "tif", "bmp", "ico",
+        // RAW
+        "cr2", "cr3", "nef", "arw", "dng", "orf", "rw2", "raf",
+        "srw", "pef", "srf", "sr2", "3fr", "fff", "x3f", "mef", "mos",
+        // AVIF
+        "avif",
+        // PSD
+        "psd", "psb",
     ]
 
     public init() {}

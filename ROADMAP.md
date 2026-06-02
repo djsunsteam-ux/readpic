@@ -245,14 +245,14 @@
 
 ### 5.5 基础工程
 
-- [ ] 单元测试：ImageDecoder、FolderScanner、ThumbnailLoader、MetadataReader。
+- [x] 单元测试：ImageDecoder、FolderScanner、ThumbnailLoader、MetadataReader（58 个用例）。
 - [x] 缩略图磁盘缓存（~Library/Caches/com.readpic/Thumbnails/v1，LRU 100MB/5000 文件）。
 
 ### 5.6 技术预研
 
 - [ ] ZIP/CBZ 选型：ZIPFoundation / libarchive / minizip-ng。
 - [ ] SVG 选型：SVGKit vs WebKit。
-- [ ] RAW ImageIO 支持矩阵。
+- [x] RAW ImageIO 支持矩阵（macOS 15 原生支持 CR2/CR3/NEF/ARW/DNG/ORF/RW2/RAF 等）。
 
 ---
 
@@ -262,12 +262,12 @@
 
 ### 6.1 高级格式
 
-- [ ] RAW 常见格式浏览。
-- [ ] RAW 内嵌 JPEG 预览优先。
-- [ ] AVIF。
-- [ ] JPEG XL。
-- [ ] SVG。
-- [ ] PSD/PSB 合并图层预览。
+- [x] RAW 常见格式浏览（17 种 RAW 扩展名，ImageIO 原生解码）。
+- [x] RAW 内嵌 JPEG 预览优先（`kCGImageSourceCreateThumbnailFromImageIfPossible`，避免全量 RAW 解码）。
+- [x] AVIF（macOS 15+ ImageIO 原生支持）。
+- [ ] JPEG XL（需要 libjxl 第三方库）。
+- [ ] SVG（SVGKit vs WebKit 渲染方案待选型）。
+- [x] PSD/PSB 合并图层预览（ImageIO 读取合并图层）。
 
 ### 6.2 专业查看
 
@@ -366,6 +366,6 @@ GitHub Release 可发布，用户可按 README 完成安装和首次启动。
 | Phase 1b | 单图浏览体验完整，可日常轻量使用 |
 | Phase 1c | 缩略图条、全屏、EXIF、性能目标达成，形成 beta |
 | Phase 2 | 信息、基础编辑、批量管理能力完成 |
-| Phase 3 | 高级格式、归档、专业查看功能完成 |
+| Phase 3 | RAW/AVIF/PSD 格式支持完成（JPEG XL/SVG/ZIP-CBZ/专业查看待续） |
 | Phase 4 | GitHub Release 可发布，安装说明完整 |
 | Phase 5 | 可选分发体验升级 |

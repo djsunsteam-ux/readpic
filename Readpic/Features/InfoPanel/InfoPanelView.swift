@@ -8,6 +8,26 @@ struct InfoPanelView: View {
             VStack(alignment: .leading, spacing: 0) {
                 Color.clear.frame(height: topContentPadding)
 
+                // MARK: - Histogram (always top)
+                // In grid view: use the small proxy decode of the highlighted item.
+                // In viewer: use the full decoded image.
+                let histPair: (image: CGImage, url: URL)? = {
+                    if model.isGridView {
+                        if let img = model.gridPreviewImage,
+                           let idx = model.selectedGridIndices.sorted().last,
+                           model.files.indices.contains(idx) {
+                            return (img, model.files[idx].url)
+                        }
+                        return nil
+                    }
+                    if let d = model.decodedImage { return (d.image, d.url) }
+                    return nil
+                }()
+                if let (histImage, histURL) = histPair {
+                    HistogramSection(image: histImage, imageURL: histURL)
+                        .id(histURL)
+                }
+
                 if let metadata = model.metadata {
                     GroupSection(title: "File") {
                         InfoRow(label: "Name", value: metadata.name)
@@ -168,9 +188,6 @@ struct InfoPanelView: View {
                         .padding(.vertical, 2)
                     }
 
-                    Divider()
-                        .padding(.vertical, 12)
-
                     Button(action: { model.exportMetadata() }) {
                         Label("Export Info", systemImage: "square.and.arrow.up")
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -232,6 +249,49 @@ private struct InfoRow: View {
                 .lineLimit(lineLimit)
                 .truncationMode(.middle)
                 .textSelection(.enabled)
+        }
+    }
+}
+
+// MARK: - Histogram Section
+
+private struct HistogramSection: View {
+    let image: CGImage
+    let imageURL: URL
+    @State private var histogram: Histogram?
+    @State private var hasFailed = false
+
+    var body: some View {
+        GroupSection(title: "Histogram".localized) {
+            if let histogram {
+                HistogramChartView(histogram: histogram, imageURL: imageURL)
+                    .padding(.vertical, 4)
+            } else if hasFailed {
+                Text.loc("No data")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.tertiary)
+                    .padding(.vertical, 8)
+            } else {
+                ProgressView()
+                    .controlSize(.small)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+            }
+        }
+        .id(imageURL)
+        .task {
+            let url = imageURL
+            let img = image
+            let result = await Task.detached(priority: .userInitiated) {
+                Histogram.compute(from: img, url: url)
+            }.value
+            if !Task.isCancelled {
+                if let result {
+                    histogram = result
+                } else {
+                    hasFailed = true
+                }
+            }
         }
     }
 }

@@ -197,7 +197,7 @@ enum ThumbnailLoader {
         ] as CFDictionary) else { return nil }
 
         let options: [CFString: Any] = [
-            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            "kCGImageSourceCreateThumbnailFromImageIfPossible" as CFString: true,
             kCGImageSourceThumbnailMaxPixelSize: maxSize,
             kCGImageSourceCreateThumbnailWithTransform: true,
             kCGImageSourceShouldCacheImmediately: false,

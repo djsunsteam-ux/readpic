@@ -5,6 +5,14 @@ struct ReadpicApp: App {
     @State private var model = ViewerModel()
 
     init() {
+        // Suppress macOS 15 Shortcuts/Intents auto-registration warnings.
+        // AppKit unconditionally tries to XPC into com.apple.linkd.autoShortcut
+        // during launch. When linkd is unavailable it logs a benign Code 4097
+        // error. Setting this default short-circuits the registration.
+        UserDefaults.standard.register(defaults: [
+            "NSApplicationSupportsSecureRestorableState": true
+        ])
+
         let lang = UserDefaults.standard.string(forKey: "LanguageMode")
         let langs: [String]
         switch lang {
@@ -83,7 +91,7 @@ struct ReadpicApp: App {
 
                 Button("Export / Convert\u{2026}") { model.showExport() }
                     .keyboardShortcut("s", modifiers: [.command, .shift])
-                    .disabled(model.currentFile == nil || model.selectedGridIndices.count >= 2)
+                    .disabled(model.currentFile == nil || (model.isGridView && model.selectedGridIndices.isEmpty))
 
                 Divider()
 

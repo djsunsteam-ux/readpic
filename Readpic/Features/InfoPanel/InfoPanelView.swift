@@ -14,7 +14,7 @@ struct InfoPanelView: View {
                 let histPair: (image: CGImage, url: URL)? = {
                     if model.isGridView {
                         if let img = model.gridPreviewImage,
-                           let idx = model.selectedGridIndices.sorted().last,
+                           let idx = model.selectedGridIndices.max(),
                            model.files.indices.contains(idx) {
                             return (img, model.files[idx].url)
                         }

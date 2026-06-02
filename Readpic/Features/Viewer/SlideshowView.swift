@@ -220,10 +220,6 @@ struct SlideshowView: View {
             }
         }
     }
-
-    private func resetAutoAdvance() {
-        if !hoveringControls, !showSettings { scheduleHideControls() }
-    }
 }
 
 

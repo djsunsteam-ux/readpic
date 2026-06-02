@@ -186,8 +186,8 @@ struct Histogram {
 
     // MARK: - Smoothing
 
-    /// Radius-2 moving-average smoother (pre-computed once for each channel).
-    static func smooth(_ data: [UInt], radius: Int = 1) -> [CGFloat] {
+    /// Radius-1 moving-average smoother (pre-computed once for each channel).
+    private static func smooth(_ data: [UInt], radius: Int = 1) -> [CGFloat] {
         guard !data.isEmpty else { return [] }
         var result = [CGFloat](repeating: 0, count: data.count)
         for i in 0..<data.count {

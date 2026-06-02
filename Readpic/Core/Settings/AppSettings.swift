@@ -98,6 +98,8 @@ enum BackgroundColor: String, CaseIterable, Sendable {
 
 @Observable
 final class AppSettings {
+    nonisolated(unsafe) static let shared = AppSettings()
+
     var scrollBehavior: ScrollBehavior {
         didSet { UserDefaults.standard.set(scrollBehavior.rawValue, forKey: Self.scrollBehaviorKey) }
     }
@@ -194,7 +196,7 @@ final class AppSettings {
         recentFolderPaths = []
     }
 
-    init() {
+    private init() {
         scrollBehavior = Self.read(key: Self.scrollBehaviorKey, fallback: ScrollBehavior.zoom)
         defaultZoomMode = Self.read(key: Self.defaultZoomModeKey, fallback: DefaultZoomMode.fitWindow)
         showStatusBar = UserDefaults.standard.object(forKey: Self.showStatusBarKey).flatMap { $0 as? Bool } ?? true

@@ -53,8 +53,6 @@ final class ViewerNSView: NSView {
 
     private let imageLayer = CALayer()
 
-    /// Tracks the proxy decode size so we don't request upgrades more than once per proxy level.
-    private var currentProxyMaxPixelSize: CGFloat = 2048
     /// Prevents re-requesting a higher-res proxy while one is already in flight.
     private var hasRequestedHigherRes = false
     /// Accumulated horizontal scroll delta for side-wheel page navigation.
@@ -160,10 +158,6 @@ final class ViewerNSView: NSView {
     }
 
     // MARK: - Public configuration
-
-    func setProxyMaxPixelSize(_ size: CGFloat) {
-        currentProxyMaxPixelSize = size
-    }
 
     /// Set a new image (first load or navigation).
     /// Recomputes zoom from the current mode and native size.

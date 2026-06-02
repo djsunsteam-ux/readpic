@@ -119,7 +119,7 @@ public struct ImageMetadata: Equatable, Sendable {
         lines.append("  Color Space: \(colorSpace)")
         if let bd = bitDepth { lines.append("  Bit Depth:  \(bd)-bit") }
 
-        if dateTaken != nil || camera != nil || lens != nil || iso != nil || aperture != nil || shutterSpeed != nil {
+        if dateTaken != nil || camera != nil || lens != nil || iso != nil || aperture != nil || shutterSpeed != nil || focalLength != nil || exposureCompensation != nil || flash != nil {
             lines.append("")
             lines.append("▸ Camera")
             if let d = dateTakenText { lines.append("  Date Taken: \(d)") }
@@ -128,11 +128,48 @@ public struct ImageMetadata: Equatable, Sendable {
             if let i = iso { lines.append("  ISO:        \(i)") }
             if let a = apertureText { lines.append("  Aperture:   \(a)") }
             if let s = shutterText { lines.append("  Shutter:    \(s)") }
+            if let fl = focalLength { lines.append("  Focal Length: \(String(format: "%.0f", fl)) mm") }
+            if let ev = exposureCompensation { lines.append("  Exposure Comp.: \(String(format: "%+.1f", ev)) EV") }
+            if let f = flash { lines.append("  Flash:      \(f)") }
+        }
+
+        if meteringMode != nil || whiteBalance != nil || exposureMode != nil || subjectDistance != nil || digitalZoomRatio != nil {
+            lines.append("")
+            lines.append("▸ Advanced")
+            if let m = meteringMode { lines.append("  Metering Mode: \(m)") }
+            if let wb = whiteBalance { lines.append("  White Balance: \(wb)") }
+            if let em = exposureMode { lines.append("  Exposure Mode: \(em)") }
+            if let d = subjectDistance { lines.append("  Subject Dist.: \(String(format: "%.2f", d)) m") }
+            if let z = digitalZoomRatio { lines.append("  Digital Zoom:  \(String(format: "%.1f", z))×") }
+        }
+
+        if xmpRating != nil || xmpLabel != nil || creatorTool != nil || xmpDescription != nil || xmpRights != nil {
+            lines.append("")
+            lines.append("▸ XMP")
+            if let r = xmpRating { lines.append("  Rating:       \(String(repeating: "★", count: r))") }
+            if let l = xmpLabel { lines.append("  Label:        \(l)") }
+            if let t = creatorTool { lines.append("  Creator Tool: \(t)") }
+            if let d = xmpDescription { lines.append("  Description:  \(d)") }
+            if let r = xmpRights { lines.append("  Rights:       \(r)") }
+        }
+
+        if objectName != nil || headline != nil || caption != nil || byline != nil || credit != nil || copyright != nil || !keywords.isEmpty || city != nil || country != nil {
+            lines.append("")
+            lines.append("▸ IPTC")
+            if let o = objectName { lines.append("  Title:     \(o)") }
+            if let h = headline { lines.append("  Headline:  \(h)") }
+            if let c = caption { lines.append("  Caption:   \(c)") }
+            if let b = byline { lines.append("  Byline:    \(b)") }
+            if let cr = credit { lines.append("  Credit:    \(cr)") }
+            if let cp = copyright { lines.append("  Copyright: \(cp)") }
+            if !keywords.isEmpty { lines.append("  Keywords:  \(keywords.joined(separator: ", "))") }
+            if let ci = city { lines.append("  City:      \(ci)") }
+            if let co = country { lines.append("  Country:   \(co)") }
         }
 
         if let loc = locationText {
             lines.append("")
-            lines.append("▸ Location")
+            lines.append("▸ GPS")
             lines.append("  \(loc)")
         }
 

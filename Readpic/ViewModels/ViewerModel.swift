@@ -214,7 +214,7 @@ final class ViewerModel {
         return q
     }()
 
-    let settings = AppSettings()
+    let settings = AppSettings.shared
     private var fullscreenObserver: Any?
     private var mouseMonitor: NSObjectProtocol?
     private var memorySource: DispatchSourceMemoryPressure?

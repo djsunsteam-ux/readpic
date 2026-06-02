@@ -376,7 +376,11 @@ v1 读取：
 延后：
 
 - GPS 地图。
-- 直方图。
+
+已实现：
+
+- 直方图（`Histogram.swift`）：vImage 加速 RGB + Luminance 计算，URL-keyed NSCache 缓存（10 条），>512px 自动降采样，radius-1 移动平均预平滑，`HistogramChartView` 渲染（120pt，直角，4 通道可切换）。
+- 颜色拾取器（`ViewerNSView` + `ColorInfoOverlay`）：NSTrackingArea 实时采色，`dataProvider` 直接字节读取 O(1)，十字光标（mouseMoved + cursorUpdate 双重保障），点击锁定/解锁，RGB + Hex 复制按钮。
 
 ---
 

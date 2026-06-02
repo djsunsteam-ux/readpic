@@ -2,10 +2,15 @@ import AppKit
 import CoreGraphics
 import Foundation
 import ImageIO
+import os
 
 /// Global low-memory flag — checked by ImageDecoder and ThumbnailLoader.
-/// Only written from @MainActor, read from background queues. Brief stale reads are harmless.
-nonisolated(unsafe) var isLowMemoryMode = false
+/// Written from @MainActor, read from background queues. Thread-safe via unfair lock.
+private let _isLowMemoryMode = OSAllocatedUnfairLock(initialState: false)
+var isLowMemoryMode: Bool {
+    get { _isLowMemoryMode.withLock { $0 } }
+    set { _isLowMemoryMode.withLock { $0 = newValue } }
+}
 
 /// Composite key for thumbnail cache using multiple file identity factors.
 struct ThumbnailCacheKey: Hashable, Sendable {

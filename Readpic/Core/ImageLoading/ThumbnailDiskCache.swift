@@ -21,6 +21,8 @@ final class ThumbnailDiskCache: @unchecked Sendable {
     private let maxDiskBytes: Int64 = 100 * 1024 * 1024   // 100 MB
     private let maxFileCount = 5000
     private let fileManager = FileManager.default
+    private var setCount = 0
+    private let budgetCheckInterval = 50  // Run enforceBudget every N sets
 
     private var cacheDir: URL? {
         let paths = fileManager.urls(for: .cachesDirectory, in: .userDomainMask)
@@ -65,8 +67,12 @@ final class ThumbnailDiskCache: @unchecked Sendable {
         guard let data = image.jpegData(compressionQuality: 0.85) else { return }
         try? data.write(to: url, options: .atomic)
 
-        // Keep total within budget
-        enforceBudget()
+        // Amortize budget enforcement — scan directory every N writes
+        setCount += 1
+        if setCount >= budgetCheckInterval {
+            setCount = 0
+            enforceBudget()
+        }
     }
 
     /// Remove a specific thumbnail.

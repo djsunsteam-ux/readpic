@@ -158,9 +158,8 @@ struct ViewerRepresentable: NSViewRepresentable {
             Task { @MainActor in model.zoomAction = .none }
         }
 
-        // ── Rotation / flip / proxy / scroll / bar insets ────────
+        // ── Rotation / flip / scroll / bar insets ────────
         nsView.setRotation(model.rotation, flipped: model.isFlippedHorizontally)
-        nsView.setProxyMaxPixelSize(model.currentProxyMaxPixelSize)
         nsView.scrollBehavior = model.settings.scrollBehavior
         nsView.setBarInsets(
             isFullScreen: model.isFullScreen,

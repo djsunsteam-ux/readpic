@@ -135,6 +135,24 @@ struct ViewerView: View {
                 .clipped()
                 .zIndex(2)
 
+            // ── Color picker info ──
+            if model.isColorPickerMode {
+                ColorInfoOverlay(
+                    color: model.pickedColor?.color,
+                    hex: model.pickedColor?.hex,
+                    point: model.pickedColor?.point,
+                    isLocked: model.isColorPickerLocked,
+                    onCopyRGB: { model.copyPickedColorRGB() },
+                    onCopyHex: { model.copyPickedColorHex() },
+                    onDismiss: { model.toggleColorPickerMode() }
+                )
+                .padding(.top, 44)
+                .padding(.leading, 12)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+                .zIndex(2)
+            }
+
             // ── Bottom bars overlaid at bottom ──
             VStack(spacing: 0) {
                 Spacer()
@@ -193,9 +211,14 @@ struct ViewerView: View {
         .background {
             WindowAccessor { window in
                 model.window = window
-                // Keep the title bar opaque — prevents ScrollView content from extending
-                // behind it (which triggers the system's title-bar vibrancy in GridView).
-                window.styleMask.remove(.fullSizeContentView)
+                // Paint a solid background in the title bar area by letting the
+                // content view extend behind it, then covering everything with a
+                // solid color. This avoids the system's default frosted-glass
+                // title bar appearance.
+                window.styleMask.insert(.fullSizeContentView)
+                window.titlebarAppearsTransparent = true
+                window.isOpaque = true
+                window.backgroundColor = .black
                 if !window.setFrameUsingName("mainWindow") {
                     window.setFrame(NSRect(x: 0, y: 0, width: 1280, height: 800), display: false)
                     window.center()
@@ -412,6 +435,10 @@ private struct ViewerToolbar: View {
 
                 ToolbarButton(title: "Crop", systemImage: "crop", action: model.enterCropMode)
                     .disabled(model.currentFile == nil)
+
+                ToolbarButton(title: "Color Picker", systemImage: "eyedropper.full", action: { model.toggleColorPickerMode() })
+                    .disabled(disabled)
+                    .foregroundStyle(disabled ? .secondary : (model.isColorPickerMode ? Color.accentColor : .primary))
 
                 Divider()
                     .frame(height: 18)
@@ -748,6 +775,91 @@ private struct ShortcutsHelpView: View {
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
+    }
+}
+
+// MARK: - Color Picker Overlay
+
+private struct ColorInfoOverlay: View {
+    let color: NSColor?
+    let hex: String?
+    let point: CGPoint?
+    let isLocked: Bool
+    let onCopyRGB: () -> Void
+    let onCopyHex: () -> Void
+    let onDismiss: () -> Void
+
+    var body: some View {
+        HStack(spacing: 10) {
+            if let color {
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color(nsColor: color))
+                    .frame(width: 32, height: 32)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 4)
+                            .stroke(Color.primary.opacity(0.2), lineWidth: 1)
+                    )
+            } else {
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(width: 32, height: 32)
+                    .overlay(
+                        Image(systemName: "eyedropper")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.secondary)
+                    )
+            }
+
+            if let hex, let color {
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 6) {
+                        Text(hex)
+                            .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                        Button(action: onCopyHex) {
+                            Image(systemName: "doc.on.doc")
+                                .font(.system(size: 10))
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(.secondary)
+                    }
+
+                    HStack(spacing: 6) {
+                        Text("R \(Int(color.redComponent * 255))  G \(Int(color.greenComponent * 255))  B \(Int(color.blueComponent * 255))")
+                            .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                        Button(action: onCopyRGB) {
+                            Image(systemName: "doc.on.doc")
+                                .font(.system(size: 10))
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(.secondary)
+                    }
+                }
+            } else {
+                Text("Move over image")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+            }
+
+            // Lock indicator
+            Image(systemName: isLocked ? "lock.fill" : "lock.open")
+                .font(.system(size: 11))
+                .foregroundStyle(isLocked ? Color.accentColor : .secondary)
+                .help(isLocked ? "Click to unlock" : "Click to lock")
+
+            Button(action: onDismiss) {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 14))
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(10)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(Color.primary.opacity(0.1), lineWidth: 1)
+        )
+        .shadow(radius: 4)
     }
 }
 

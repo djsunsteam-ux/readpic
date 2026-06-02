@@ -166,12 +166,18 @@ final class AppSettings {
     }
 
     var recentFolders: [URL] {
-        recentFolderPaths.compactMap { path in
+        let valid = recentFolderPaths.compactMap { path -> URL? in
             let url = URL(fileURLWithPath: path)
             var isDir: ObjCBool = false
             guard FileManager.default.fileExists(atPath: path, isDirectory: &isDir), isDir.boolValue else { return nil }
             return url
         }
+        // Prune stale entries from storage so displayed count matches stored count
+        let validPaths = Set(valid.map(\.path))
+        if recentFolderPaths.count != validPaths.count {
+            recentFolderPaths = recentFolderPaths.filter { validPaths.contains($0) }
+        }
+        return valid
     }
 
     func addRecentFolder(_ url: URL) {

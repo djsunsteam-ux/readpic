@@ -54,6 +54,13 @@ struct ViewerRepresentable: NSViewRepresentable {
             else if model.isInfoPanelVisible { model.isInfoPanelVisible = false }
             else { model.closeWindow() }
         }
+        view.onColorPicked = { color, point, hex in
+            guard model.isColorPickerMode, !model.isColorPickerLocked else { return }
+            model.pickedColor = (color, point, hex)
+        }
+        view.onColorPickerLockToggled = {
+            model.toggleColorPickerLock()
+        }
         view.onOpenURL = { url in
             var isDirectory: ObjCBool = false
             if FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory), isDirectory.boolValue {
@@ -168,6 +175,10 @@ struct ViewerRepresentable: NSViewRepresentable {
             statusBarVisible: model.settings.showStatusBar && !model.statusText.isEmpty,
             infoPanelWidth: model.isInfoPanelVisible ? 300 : 0
         )
+
+        // ── Color picker mode ────────────────────────────────────
+        nsView.isColorPickerMode = model.isColorPickerMode
+        nsView.isColorPickerLocked = model.isColorPickerLocked
 
         // ── Crop mode — shared between animation and normal paths ──
         // Sync crop state from model to NSView (shared by animation and normal paths).

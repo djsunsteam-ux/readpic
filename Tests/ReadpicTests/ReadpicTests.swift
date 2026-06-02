@@ -80,6 +80,20 @@ final class ReadpicTests: XCTestCase {
         XCTAssertTrue(FolderScanner.supports(URL(fileURLWithPath: "/tmp/a.tiff")))
         XCTAssertTrue(FolderScanner.supports(URL(fileURLWithPath: "/tmp/a.tif")))
         XCTAssertTrue(FolderScanner.supports(URL(fileURLWithPath: "/tmp/a.bmp")))
+        // RAW
+        XCTAssertTrue(FolderScanner.supports(URL(fileURLWithPath: "/tmp/a.CR2")))
+        XCTAssertTrue(FolderScanner.supports(URL(fileURLWithPath: "/tmp/a.nef")))
+        XCTAssertTrue(FolderScanner.supports(URL(fileURLWithPath: "/tmp/a.ARW")))
+        XCTAssertTrue(FolderScanner.supports(URL(fileURLWithPath: "/tmp/a.dng")))
+        XCTAssertTrue(FolderScanner.supports(URL(fileURLWithPath: "/tmp/a.orf")))
+        XCTAssertTrue(FolderScanner.supports(URL(fileURLWithPath: "/tmp/a.rw2")))
+        XCTAssertTrue(FolderScanner.supports(URL(fileURLWithPath: "/tmp/a.raf")))
+        // AVIF
+        XCTAssertTrue(FolderScanner.supports(URL(fileURLWithPath: "/tmp/a.avif")))
+        XCTAssertTrue(FolderScanner.supports(URL(fileURLWithPath: "/tmp/a.AVIF")))
+        // PSD
+        XCTAssertTrue(FolderScanner.supports(URL(fileURLWithPath: "/tmp/a.psd")))
+        XCTAssertTrue(FolderScanner.supports(URL(fileURLWithPath: "/tmp/a.psb")))
         XCTAssertFalse(FolderScanner.supports(URL(fileURLWithPath: "/tmp/a.svg")))
         XCTAssertFalse(FolderScanner.supports(URL(fileURLWithPath: "/tmp/a.txt")))
         XCTAssertFalse(FolderScanner.supports(URL(fileURLWithPath: "/tmp/a.pdf")))

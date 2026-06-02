@@ -30,9 +30,19 @@ final class ViewerNSView: NSView {
     var onCropConfirm: (() -> Void)?
     var onCropCancel: (() -> Void)?
     var onCrop: (() -> Void)?
+    var onColorPicked: ((NSColor, CGPoint, String) -> Void)?
+    var onColorPickerLockToggled: (() -> Void)?
 
     // MARK: - Public state
     var scrollBehavior: ScrollBehavior = .scrollPan
+    var isColorPickerMode = false {
+        didSet {
+            guard oldValue != isColorPickerMode else { return }
+            window?.invalidateCursorRects(for: self)
+            updateTrackingAreas()
+        }
+    }
+    var isColorPickerLocked = false
 
     // MARK: - Private state
 
@@ -125,6 +135,7 @@ final class ViewerNSView: NSView {
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
         window?.makeFirstResponder(self)
+        window?.invalidateCursorRects(for: self)
     }
 
     // MARK: - Layout
@@ -178,7 +189,10 @@ final class ViewerNSView: NSView {
     }
 
     /// Upgrade proxy resolution for the same image — preserves zoom level and mode.
+    /// No-ops when the CGImage and native size are unchanged (avoids redundant
+    /// layout passes triggered by unrelated @Observable updates like color picker).
     func upgradeImage(_ image: CGImage, nativeSize: CGSize) {
+        guard proxyImage !== image || zoom.imageSize != nativeSize else { return }
         CATransaction.begin()
         CATransaction.setDisableActions(true)
 
@@ -197,7 +211,7 @@ final class ViewerNSView: NSView {
     /// because individual GIF frames may be smaller than the canvas, which would
     /// trigger a false proxy cap in `layoutImageLayer`.
     func setAnimatedFrame(_ image: CGImage) {
-        guard (imageLayer.contents as! CGImage) !== image else { return }
+        guard imageLayer.contents != nil, (imageLayer.contents as! CGImage) !== image else { return }
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         imageLayer.contents = image
@@ -258,49 +272,122 @@ final class ViewerNSView: NSView {
 
     override func keyDown(with event: NSEvent) {
         let key = event.charactersIgnoringModifiers?.lowercased()
-        let chars = event.characters
+
+        // When crop mode is active, Return and Escape are handled by SwiftUI
+        // button .keyboardShortcut to avoid double-firing applyCrop/cancelCrop.
+        guard !isCropMode || (event.keyCode != 36 && event.keyCode != 53) else {
+            return
+        }
 
         switch event.keyCode {
         case 123: onPrevious?()
         case 124: onNext?()
-        case 53:
-            if isCropMode { onCropCancel?() }
-            else { onEscape?() }
-        case 36:
-            if isCropMode { onCropConfirm?() }
-        case 49:  onToggleAnimationPause?()
+        case 53:  onEscape?()
+        case 49:
+            // Slideshow uses Space for pause — handled by ViewerView key monitor
+            guard onToggleAnimationPause != nil else { fallthrough }
+            onToggleAnimationPause?()
         default:
             switch key {
             case "=", "+": zoomIn()
             case "-": zoomOut()
             case "0": resetZoom()
-            case "i": onToggleInfoPanel?()
-            case "g": onToggleGridView?()
-            case "t": onToggleThumbnailStrip?()
-            case "f": onToggleFullScreen?()
-            case "c": onCrop?()  // toggle handled by ViewerView key monitor
             default:
-                if chars == "?" { onToggleShortcutsHelp?() }
-                else { super.keyDown(with: event) }
+                super.keyDown(with: event)
             }
         }
     }
 
-    override func rightMouseDown(with event: NSEvent) {
-        let menu = NSMenu(title: "Image")
+    // MARK: - Color Picker
 
-        menu.addItem(withTitle: "Copy Image", action: #selector(doCopyImage), keyEquivalent: "")
-        menu.addItem(withTitle: "Copy File", action: #selector(doCopyFile), keyEquivalent: "")
-        menu.addItem(withTitle: "Copy Path", action: #selector(doCopyFilePath), keyEquivalent: "")
+    private func sampleColor(at viewPoint: CGPoint) {
+        guard let proxyImage else { return }
+
+        // Convert view → unrotated layer space (CATransform3D inverse handled by CALayer)
+        let layerPoint = imageLayer.convert(viewPoint, from: self.layer)
+        let lb = imageLayer.bounds
+        let imgW = CGFloat(proxyImage.width)
+        let imgH = CGFloat(proxyImage.height)
+
+        guard lb.width > 0, lb.height > 0, imgW > 0, imgH > 0,
+              layerPoint.x >= 0, layerPoint.x <= lb.width,
+              layerPoint.y >= 0, layerPoint.y <= lb.height else { return }
+
+        // Map to image pixel coordinates (layer Y-up → CGImage Y-down)
+        let px = max(0, min(Int((layerPoint.x / lb.width) * imgW), proxyImage.width - 1))
+        let py = max(0, min(Int(((lb.height - layerPoint.y) / lb.height) * imgH), proxyImage.height - 1))
+
+        guard let color = proxyImage.colorAt(x: px, y: py) else { return }
+
+        let hex = String(format: "#%02X%02X%02X",
+                         Int(color.redComponent * 255),
+                         Int(color.greenComponent * 255),
+                         Int(color.blueComponent * 255))
+
+        onColorPicked?(color, CGPoint(x: px, y: py), hex)
+    }
+
+    // MARK: - Tracking area (color picker mouse tracking)
+
+    override func updateTrackingAreas() {
+        super.updateTrackingAreas()
+        for area in trackingAreas where area.owner === self {
+            removeTrackingArea(area)
+        }
+        let options: NSTrackingArea.Options = isColorPickerMode
+            ? [.mouseMoved, .activeInKeyWindow]
+            : []
+        if !options.isEmpty {
+            addTrackingArea(NSTrackingArea(rect: bounds, options: options, owner: self, userInfo: nil))
+        }
+    }
+
+    override func mouseMoved(with event: NSEvent) {
+        super.mouseMoved(with: event)
+        if isColorPickerMode { NSCursor.crosshair.set() }
+        guard isColorPickerMode, !isColorPickerLocked else { return }
+        let viewPoint = convert(event.locationInWindow, from: nil)
+        sampleColor(at: viewPoint)
+    }
+
+    override func cursorUpdate(with event: NSEvent) {
+        if isColorPickerMode {
+            NSCursor.crosshair.set()
+        } else {
+            super.cursorUpdate(with: event)
+        }
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        if isColorPickerMode {
+            onColorPickerLockToggled?()
+            return
+        }
+        super.mouseDown(with: event)
+    }
+
+    override func resetCursorRects() {
+        super.resetCursorRects()
+        if isColorPickerMode {
+            addCursorRect(bounds, cursor: .crosshair)
+        }
+    }
+
+    override func rightMouseDown(with event: NSEvent) {
+        let menu = NSMenu(title: "Image".localized)
+
+        menu.addItem(withTitle: "Copy Image".localized, action: #selector(doCopyImage), keyEquivalent: "")
+        menu.addItem(withTitle: "Copy File".localized, action: #selector(doCopyFile), keyEquivalent: "")
+        menu.addItem(withTitle: "Copy Path".localized, action: #selector(doCopyFilePath), keyEquivalent: "")
         menu.addItem(.separator())
-        menu.addItem(withTitle: "Reveal in Finder", action: #selector(doRevealInFinder), keyEquivalent: "")
-        menu.addItem(withTitle: "Open Externally", action: #selector(doOpenExternally), keyEquivalent: "")
+        menu.addItem(withTitle: "Reveal in Finder".localized, action: #selector(doRevealInFinder), keyEquivalent: "")
+        menu.addItem(withTitle: "Open Externally".localized, action: #selector(doOpenExternally), keyEquivalent: "")
         menu.addItem(.separator())
-        menu.addItem(withTitle: "Rotate Left", action: #selector(doRotateLeft), keyEquivalent: "")
-        menu.addItem(withTitle: "Rotate Right", action: #selector(doRotateRight), keyEquivalent: "")
-        menu.addItem(withTitle: "Flip Horizontal", action: #selector(doFlipHorizontal), keyEquivalent: "")
+        menu.addItem(withTitle: "Rotate Left".localized, action: #selector(doRotateLeft), keyEquivalent: "")
+        menu.addItem(withTitle: "Rotate Right".localized, action: #selector(doRotateRight), keyEquivalent: "")
+        menu.addItem(withTitle: "Flip Horizontal".localized, action: #selector(doFlipHorizontal), keyEquivalent: "")
         menu.addItem(.separator())
-        menu.addItem(withTitle: "Move to Trash", action: #selector(doMoveToTrash), keyEquivalent: "")
+        menu.addItem(withTitle: "Move to Trash".localized, action: #selector(doMoveToTrash), keyEquivalent: "")
 
         NSMenu.popUpContextMenu(menu, with: event, for: self)
     }
@@ -319,6 +406,7 @@ final class ViewerNSView: NSView {
 
     override func scrollWheel(with event: NSEvent) {
         // Side-scroll wheel (MX Master 3S etc.): pure horizontal → accumulate + page nav
+        // Pure horizontal scroll (side-wheel etc.): accumulate + page nav
         if event.scrollingDeltaY == 0, abs(event.scrollingDeltaX) > 0.5 {
             horizontalScrollAccumulator += event.scrollingDeltaX
             let threshold: CGFloat = 45
@@ -328,6 +416,9 @@ final class ViewerNSView: NSView {
             }
             return
         }
+        // Non-horizontal scroll resets accumulator so a stale partial doesn't
+        // trigger a premature page-turn on the next horizontal event.
+        horizontalScrollAccumulator = 0
 
         if event.modifierFlags.contains(.option) || event.modifierFlags.contains(.command) {
             applyZoomDelta(event.scrollingDeltaY == 0 ? -event.scrollingDeltaX : event.scrollingDeltaY)
@@ -494,6 +585,14 @@ final class ViewerNSView: NSView {
                 onRequestHigherRes?()
             }
         }
+
+        // ── Sync crop overlay after zoom/pan ───────────────────────
+        // layout() only fires on view-system-initiated layout passes, but every
+        // zoom/pan action calls layoutImageLayer() directly. Update the overlay
+        // here so its imageRect stays in sync with imageLayer.frame.
+        if !cropOverlayView.isHidden {
+            cropOverlayView.imageRect = imageLayer.frame
+        }
     }
 
     // MARK: - Helpers
@@ -530,5 +629,67 @@ final class ViewerNSView: NSView {
         } else {
             return desired
         }
+    }
+}
+
+// MARK: - Pixel color reading
+
+private extension CGImage {
+    /// Read the color of a single pixel at (x, y) in the image's own coordinate system.
+    /// Fast path reads bytes directly from the data provider; exotic formats fall
+    /// back to a 1×1 CGContext render.
+    func colorAt(x: Int, y: Int) -> NSColor? {
+        guard x >= 0, x < width, y >= 0, y < height else { return nil }
+
+        // Fast path: read raw bytes directly (O(1), common ImageIO formats)
+        if let color = fastColorAt(x: x, y: y) { return color }
+
+        // Exotic format — render a 1×1 crop into a known-format context
+        return slowColorAt(x: x, y: y)
+    }
+
+    private func fastColorAt(x: Int, y: Int) -> NSColor? {
+        guard let provider = dataProvider,
+              let data = CFDataGetBytePtr(provider.data) else { return nil }
+
+        let bpp = bitsPerPixel / 8
+        let offset = y * bytesPerRow + x * bpp
+        guard offset >= 0, offset + bpp <= CFDataGetLength(provider.data) else { return nil }
+
+        let ptr = data + offset
+        let ai = alphaInfo
+        let bi = bitmapInfo
+
+        // BGRA — most common on Apple Silicon (kCGImageAlphaPremultipliedFirst | kCGBitmapByteOrder32Little)
+        if ai == .premultipliedFirst, bi.contains(.byteOrder32Little) {
+            return NSColor(red: CGFloat(ptr[2])/255, green: CGFloat(ptr[1])/255, blue: CGFloat(ptr[0])/255, alpha: 1)
+        }
+        // RGBA (big-endian or default)
+        if ai == .premultipliedLast || ai == .last {
+            if bi.contains(.byteOrder32Little) {
+                // ABGR
+                return NSColor(red: CGFloat(ptr[3])/255, green: CGFloat(ptr[2])/255, blue: CGFloat(ptr[1])/255, alpha: 1)
+            }
+            return NSColor(red: CGFloat(ptr[0])/255, green: CGFloat(ptr[1])/255, blue: CGFloat(ptr[2])/255, alpha: 1)
+        }
+        // RGB — no alpha (24-bit)
+        if ai == .none || ai == .noneSkipLast {
+            return NSColor(red: CGFloat(ptr[0])/255, green: CGFloat(ptr[1])/255, blue: CGFloat(ptr[2])/255, alpha: 1)
+        }
+
+        return nil
+    }
+
+    private func slowColorAt(x: Int, y: Int) -> NSColor? {
+        guard let cropped = self.cropping(to: CGRect(x: x, y: y, width: 1, height: 1)) else { return nil }
+        var pixel = [UInt8](repeating: 0, count: 4)
+        let cs = CGColorSpaceCreateDeviceRGB()
+        guard let ctx = CGContext(
+            data: &pixel, width: 1, height: 1,
+            bitsPerComponent: 8, bytesPerRow: 4,
+            space: cs, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else { return nil }
+        ctx.draw(cropped, in: CGRect(x: 0, y: 0, width: 1, height: 1))
+        return NSColor(red: CGFloat(pixel[0])/255, green: CGFloat(pixel[1])/255, blue: CGFloat(pixel[2])/255, alpha: 1)
     }
 }

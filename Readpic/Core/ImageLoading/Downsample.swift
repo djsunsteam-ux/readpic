@@ -17,7 +17,9 @@ struct Downsample {
         }
 
         let options: [CFString: Any] = [
-            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            // Prefer embedded thumbnail/preview (e.g. JPEG preview in RAW)
+            // over full decode, falling back automatically when unavailable.
+            "kCGImageSourceCreateThumbnailFromImageIfPossible" as CFString: true,
             kCGImageSourceShouldCacheImmediately: true,
             kCGImageSourceCreateThumbnailWithTransform: true,
             kCGImageSourceThumbnailMaxPixelSize: constrainedSize

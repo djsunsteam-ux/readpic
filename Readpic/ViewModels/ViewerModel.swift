@@ -129,9 +129,15 @@ final class ViewerModel {
     var needsCanvasFocus = false
     var needsGridScroll: UInt = 0
     var showFrameStrip = false
-    var searchText = ""
-    var formatFilter: FileFormatFilter = .all
-    var dateFilter: DateFilter = .all
+    var searchText = "" {
+        didSet { if isGridView { clearSelection() } }
+    }
+    var formatFilter: FileFormatFilter = .all {
+        didSet { if isGridView { clearSelection() } }
+    }
+    var dateFilter: DateFilter = .all {
+        didSet { if isGridView { clearSelection() } }
+    }
     /// Files matching current search text and format filter.
     var filteredFiles: [FileItem] {
         var result = files
@@ -177,6 +183,11 @@ final class ViewerModel {
     private var slideshowTask: Task<Void, Never>?
     private var wasThumbnailStripVisibleBeforeSlideshow = true
     var isCropMode = false
+    var isColorPickerMode = false
+    var isColorPickerLocked = false
+    var pickedColor: (color: NSColor, point: CGPoint, hex: String)?
+    /// Small proxy decode of the currently highlighted grid item (for histogram).
+    var gridPreviewImage: CGImage?
     /// Normalized crop rect in image pixel space (0…1).
     var cropRect: CGRect = .init(x: 0, y: 0, width: 1, height: 1)
     var cropPreset: CropPreset = .free
@@ -367,6 +378,9 @@ final class ViewerModel {
             .jpeg, .png, .heic, .heif, .gif, .tiff, .bmp,
             UTType(filenameExtension: "webp")!,
             UTType(filenameExtension: "ico")!,
+            UTType.rawImage,
+            UTType(filenameExtension: "avif")!,
+            UTType(filenameExtension: "psd")!,
         ]
         panel.allowsMultipleSelection = false
         panel.canChooseFiles = true
@@ -395,6 +409,7 @@ final class ViewerModel {
     }
 
     func open(_ url: URL) {
+        pickedColor = nil
         guard FolderScanner.supports(url) else {
             showToast("Unsupported format")
             return
@@ -446,8 +461,20 @@ final class ViewerModel {
                 currentIndex = 0
                 decodedImage = nil
                 metadata = nil
-                showToast("The file is damaged and can’t be displayed")
                 isLoading = false
+                switch error {
+                case ImageDecodeError.unsupported:
+                    showToast("Unsupported or inaccessible file")
+                case ImageDecodeError.noImage:
+                    showToast("The file is damaged and can’t be displayed")
+                default:
+                    let nsError = error as NSError
+                    if nsError.domain == NSCocoaErrorDomain, nsError.code == NSFileReadNoPermissionError {
+                        showToast("Permission denied — can’t read this file")
+                    } else {
+                        showToast("The file is damaged and can’t be displayed")
+                    }
+                }
             }
         }
     }
@@ -460,6 +487,7 @@ final class ViewerModel {
     }
 
     func openFolder(_ url: URL) {
+        pickedColor = nil
         settings.addRecentFolder(url)
         if settings.rememberLastFolder {
             settings.lastFolderURL = url
@@ -515,6 +543,9 @@ final class ViewerModel {
                 metadata = metadataReader.read(url: image.url, pixelSize: image.pixelSize)
                 zoomMode = defaultZoomModeFromSettings
                 isLoading = false
+                if isGridView {
+                    gridPreviewImage = decodedImage?.image
+                }
                 preloadAdjacent()
             } catch {
                 guard !Task.isCancelled else { return }
@@ -523,13 +554,21 @@ final class ViewerModel {
                 currentIndex = 0
                 decodedImage = nil
                 metadata = nil
-                showToast("The folder can’t be opened")
                 isLoading = false
+                let nsError = error as NSError
+                if nsError.domain == NSCocoaErrorDomain, nsError.code == NSFileReadNoPermissionError {
+                    showToast("Permission denied — can’t read this folder")
+                } else if nsError.domain == NSCocoaErrorDomain, nsError.code == NSFileReadNoSuchFileError {
+                    showToast("The folder no longer exists")
+                } else {
+                    showToast("The folder can’t be opened")
+                }
             }
         }
     }
 
     func showPrevious() {
+        pickedColor = nil
         let nav = navigableFiles
         guard nav.count > 1, let url = currentFile?.url,
               let idx = nav.firstIndex(where: { $0.url == url }), idx > 0 else { return }
@@ -540,6 +579,7 @@ final class ViewerModel {
     }
 
     func showNext() {
+        pickedColor = nil
         let nav = navigableFiles
         guard nav.count > 1, let url = currentFile?.url,
               let idx = nav.firstIndex(where: { $0.url == url }), idx < nav.count - 1 else { return }
@@ -618,6 +658,7 @@ final class ViewerModel {
     }
 
     func selectFile(at index: Int) {
+        pickedColor = nil
         let nav = navigableFiles
         guard nav.indices.contains(index) else { return }
         let targetFile = nav[index]
@@ -870,13 +911,17 @@ final class ViewerModel {
         guard files.indices.contains(index) else { return }
         selectedGridIndices = [index]
         lastGridClickedIndex = index
+        gridPreviewImage = nil  // Prevent stale preview → wrong histogram cache
         let file = files[index]
         Task.detached(priority: .userInitiated) { [weak self] in
             guard let self else { return }
             let meta = self.metadataReader.read(url: file.url, pixelSize: .zero)
+            // Decode a small proxy for the histogram (512px is fast for all formats)
+            let preview = try? self.decoder.decode(url: file.url, maxPixelSize: 512)
             await MainActor.run {
                 guard self.selectedGridIndices.contains(index) else { return }
                 self.metadata = meta
+                self.gridPreviewImage = preview?.image
             }
         }
     }
@@ -987,7 +1032,19 @@ final class ViewerModel {
                         enterCropModeDirect()
                     } catch {
                         isLoading = false
-                        showToast("The file is damaged and can’t be displayed")
+                        switch error {
+                        case ImageDecodeError.unsupported:
+                            showToast("Unsupported or inaccessible file")
+                        case ImageDecodeError.noImage:
+                            showToast("The file is damaged and can’t be displayed")
+                        default:
+                            let nsError = error as NSError
+                            if nsError.domain == NSCocoaErrorDomain, nsError.code == NSFileReadNoPermissionError {
+                                showToast("Permission denied — can’t read this file")
+                            } else {
+                                showToast("The file is damaged and can’t be displayed")
+                            }
+                        }
                     }
                 }
             }
@@ -999,6 +1056,11 @@ final class ViewerModel {
 
     private func enterCropModeDirect() {
         guard decodedImage != nil else { return }
+        if isColorPickerMode {
+            isColorPickerMode = false
+            isColorPickerLocked = false
+            pickedColor = nil
+        }
         stopAnimation()
         if hasAnimatedFrames { isAnimationPaused = true }
         wasThumbnailStripVisibleBeforeCrop = showThumbnailStrip
@@ -1097,6 +1159,39 @@ final class ViewerModel {
             selectedGridIndices = [currentIndex]
             needsCanvasFocus = true
         }
+    }
+
+    // MARK: - Color Picker
+
+    func toggleColorPickerMode() {
+        isColorPickerMode.toggle()
+        if isColorPickerMode {
+            pickedColor = nil
+            isColorPickerLocked = false
+        } else {
+            pickedColor = nil
+        }
+    }
+
+    func toggleColorPickerLock() {
+        isColorPickerLocked.toggle()
+    }
+
+    func copyPickedColorRGB() {
+        guard let picked = pickedColor else { return }
+        let r = Int(picked.color.redComponent * 255)
+        let g = Int(picked.color.greenComponent * 255)
+        let b = Int(picked.color.blueComponent * 255)
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString("R \(r)  G \(g)  B \(b)", forType: .string)
+        showToast("RGB copied")
+    }
+
+    func copyPickedColorHex() {
+        guard let picked = pickedColor else { return }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(picked.hex, forType: .string)
+        showToast("Hex copied")
     }
 
     func setCropPreset(_ preset: CropPreset) {
@@ -1199,6 +1294,11 @@ final class ViewerModel {
             lastGridClickedIndex = selectionAnchorIndex
             updateMetadataForLastSelection()
         }
+    }
+
+    private func clearSelection() {
+        selectedGridIndices.removeAll()
+        lastGridClickedIndex = 0
     }
 
     private func updateMetadataForLastSelection() {
@@ -1370,6 +1470,7 @@ final class ViewerModel {
                 ImageCache.shared.remove(url)
                 ThumbnailCache.shared.remove(url)
                 ThumbnailDiskCache.shared.remove(key: ThumbnailCacheKey(url: url))
+                Histogram.clearCache(for: url)
 
                 self.rotation = 0
                 self.isFlippedHorizontally = false
@@ -1484,9 +1585,6 @@ final class ViewerModel {
     }
 
     private func showToast(_ message: String, actionTitle: String? = nil) {
-        toastTask?.cancel()
-        toastMessage = message
-        toastActionTitle = actionTitle
         toastTask?.cancel()
         toastMessage = message
         toastActionTitle = actionTitle

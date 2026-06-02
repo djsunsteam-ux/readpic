@@ -318,3 +318,15 @@
 "Frame %d of %d" = "第 %d 帧，共 %d 帧";
 "Original: %d × %d" = "原始：%d × %d";
 "Navigate" = "导航";
+"Red" = "红色";
+"Green" = "绿色";
+"Blue" = "蓝色";
+"Luminance" = "亮度";
+"Histogram" = "直方图";
+"No data" = "无数据";
+/* ---------- Color Picker ---------- */
+"Move over image" = "移动鼠标到图片上";
+"RGB copied" = "RGB 已复制";
+"Hex copied" = "Hex 已复制";
+"Click to unlock" = "点击解锁";
+"Click to lock" = "点击锁定";

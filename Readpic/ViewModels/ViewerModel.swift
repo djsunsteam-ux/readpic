@@ -374,14 +374,8 @@ final class ViewerModel {
 
     func showOpenPanel() {
         let panel = NSOpenPanel()
-        panel.allowedContentTypes = [
-            .jpeg, .png, .heic, .heif, .gif, .tiff, .bmp,
-            UTType(filenameExtension: "webp")!,
-            UTType(filenameExtension: "ico")!,
-            UTType.rawImage,
-            UTType(filenameExtension: "avif")!,
-            UTType(filenameExtension: "psd")!,
-        ]
+        let extraTypes = ["webp", "ico", "avif", "psd"].compactMap { UTType(filenameExtension: $0) }
+        panel.allowedContentTypes = [.jpeg, .png, .heic, .heif, .gif, .tiff, .bmp, .rawImage] + extraTypes
         panel.allowsMultipleSelection = false
         panel.canChooseFiles = true
         panel.canChooseDirectories = false
@@ -462,19 +456,7 @@ final class ViewerModel {
                 decodedImage = nil
                 metadata = nil
                 isLoading = false
-                switch error {
-                case ImageDecodeError.unsupported:
-                    showToast("Unsupported or inaccessible file")
-                case ImageDecodeError.noImage:
-                    showToast("The file is damaged and can’t be displayed")
-                default:
-                    let nsError = error as NSError
-                    if nsError.domain == NSCocoaErrorDomain, nsError.code == NSFileReadNoPermissionError {
-                        showToast("Permission denied — can’t read this file")
-                    } else {
-                        showToast("The file is damaged and can’t be displayed")
-                    }
-                }
+                showDecodeError(error)
             }
         }
     }
@@ -596,19 +578,7 @@ final class ViewerModel {
         isAnimating = true
         isAnimationPaused = false
         currentFrameIndex = 0
-        animationTask = Task { [weak self] in
-            while !Task.isCancelled {
-                guard let self else { return }
-                let delay = frames[self.currentFrameIndex].delay
-                try? await Task.sleep(for: .seconds(delay))
-                guard !Task.isCancelled else { return }
-                if self.isAnimationPaused { continue }
-                await MainActor.run {
-                    guard !self.isAnimationPaused else { return }
-                    self.currentFrameIndex = (self.currentFrameIndex + 1) % frames.count
-                }
-            }
-        }
+        startAnimationLoop(fromFrame: 0)
     }
 
     private func stopAnimation() {
@@ -627,12 +597,18 @@ final class ViewerModel {
     /// Resume animation from the current frame index (does not reset to frame 0).
     private func resumeAnimation() {
         guard let frames = decodedImage?.animatedFrames, frames.count > 1 else { return }
-        animationTask?.cancel()
-        animationTask = nil
         let startIndex = min(currentFrameIndex, frames.count - 1)
         isAnimating = true
         isAnimationPaused = false
         currentFrameIndex = startIndex
+        startAnimationLoop(fromFrame: startIndex)
+    }
+
+    /// Shared animation loop — starts from the given frame index.
+    private func startAnimationLoop(fromFrame startIdx: Int) {
+        guard let frames = decodedImage?.animatedFrames, frames.count > 1 else { return }
+        animationTask?.cancel()
+        currentFrameIndex = min(startIdx, frames.count - 1)
         animationTask = Task { [weak self] in
             while !Task.isCancelled {
                 guard let self else { return }
@@ -691,7 +667,7 @@ final class ViewerModel {
     func setSortMode(_ mode: SortMode) {
         settings.sortMode = mode
         guard !files.isEmpty, let first = files.first else { return }
-        open(first.url)
+        openFolder(first.url.deletingLastPathComponent())
     }
 
     func updateZoomPercent(_ percent: Int) {
@@ -796,7 +772,7 @@ final class ViewerModel {
             stopAnimation()
         } else {
             // Switch to the grid-selected file
-            if let first = selectedGridIndices.sorted().first, files.indices.contains(first) {
+            if let first = selectedGridIndices.min(), files.indices.contains(first) {
                 currentIndex = first
             }
             selectedGridIndices.removeAll()
@@ -819,7 +795,7 @@ final class ViewerModel {
             return
         }
         // Sync currentIndex with grid selection so slideshow starts on the selected file
-        if isGridView, let first = selectedGridIndices.sorted().first, files.indices.contains(first) {
+        if isGridView, let first = selectedGridIndices.min(), files.indices.contains(first) {
             currentIndex = first
         }
         if let url = currentFile?.url, url.pathExtension.lowercased() == "gif" {
@@ -879,7 +855,8 @@ final class ViewerModel {
             let ext = nav[idx].url.pathExtension.lowercased()
             if ext != "gif" { break }
         } while idx != startIdx
-        guard idx != startIdx, let targetIdx = files.firstIndex(where: { $0.url == nav[idx].url }) else { return }
+        // If all files are GIFs, still advance (don't stall)
+        let targetIdx = files.firstIndex(where: { $0.url == nav[idx].url }) ?? 0
         currentIndex = targetIdx
         resetRotation()
         loadCurrentImage()
@@ -899,7 +876,8 @@ final class ViewerModel {
             let ext = nav[idx].url.pathExtension.lowercased()
             if ext != "gif" { break }
         } while idx != startIdx
-        guard idx != startIdx, let targetIdx = files.firstIndex(where: { $0.url == nav[idx].url }) else { return }
+        // If all files are GIFs, still advance (don't stall)
+        let targetIdx = files.firstIndex(where: { $0.url == nav[idx].url }) ?? 0
         currentIndex = targetIdx
         resetRotation()
         loadCurrentImage()
@@ -999,7 +977,7 @@ final class ViewerModel {
     func enterCropMode() {
         if isGridView {
             // Determine target file: explicit selection → grid highlight → first file
-            let targetIdx = selectedGridIndices.sorted().first ?? currentIndex
+            let targetIdx = selectedGridIndices.min() ?? currentIndex
             guard files.indices.contains(targetIdx) else { return }
             let file = files[targetIdx]
 
@@ -1032,19 +1010,7 @@ final class ViewerModel {
                         enterCropModeDirect()
                     } catch {
                         isLoading = false
-                        switch error {
-                        case ImageDecodeError.unsupported:
-                            showToast("Unsupported or inaccessible file")
-                        case ImageDecodeError.noImage:
-                            showToast("The file is damaged and can’t be displayed")
-                        default:
-                            let nsError = error as NSError
-                            if nsError.domain == NSCocoaErrorDomain, nsError.code == NSFileReadNoPermissionError {
-                                showToast("Permission denied — can’t read this file")
-                            } else {
-                                showToast("The file is damaged and can’t be displayed")
-                            }
-                        }
+                        showDecodeError(error)
                     }
                 }
             }
@@ -1266,7 +1232,7 @@ final class ViewerModel {
             updateMetadataForLastSelection()
         } else {
             // Save anchor before bulk-selecting
-            selectionAnchorIndex = selectedGridIndices.sorted().first ?? currentIndex
+            selectionAnchorIndex = selectedGridIndices.min() ?? currentIndex
             selectedGridIndices = Set(files.indices)
             if let last = files.indices.last {
                 lastGridClickedIndex = last
@@ -1278,14 +1244,14 @@ final class ViewerModel {
     /// Invert current selection.
     func invertGridSelection() {
         // Save anchor before inverting
-        if let first = selectedGridIndices.sorted().first {
+        if let first = selectedGridIndices.min() {
             selectionAnchorIndex = first
         } else {
             selectionAnchorIndex = currentIndex
         }
         let all = Set(files.indices)
         selectedGridIndices = all.subtracting(selectedGridIndices)
-        if let first = selectedGridIndices.sorted().first {
+        if let first = selectedGridIndices.min() {
             lastGridClickedIndex = first
             updateMetadataForLastSelection()
         } else {
@@ -1302,7 +1268,7 @@ final class ViewerModel {
     }
 
     private func updateMetadataForLastSelection() {
-        guard let lastIdx = selectedGridIndices.sorted().last,
+        guard let lastIdx = selectedGridIndices.max(),
               files.indices.contains(lastIdx) else {
             metadata = nil
             return
@@ -1319,7 +1285,7 @@ final class ViewerModel {
     }
 
     var activeFile: FileItem? {
-        if isGridView, let first = selectedGridIndices.sorted().first, files.indices.contains(first) {
+        if isGridView, let first = selectedGridIndices.min(), files.indices.contains(first) {
             return files[first]
         }
         return currentFile
@@ -1391,7 +1357,7 @@ final class ViewerModel {
     /// URL of the file to export — respects grid selection, falls back to current file.
     var exportFileURL: URL? {
         if isGridView {
-            if let first = selectedGridIndices.sorted().first,
+            if let first = selectedGridIndices.min(),
                files.indices.contains(first) {
                 return files[first].url
             }
@@ -1525,7 +1491,7 @@ final class ViewerModel {
                         let sorted = selectedGridIndices.sorted()
                         let newSet = Set(sorted.map { min($0, files.count - 1) }.filter { files.indices.contains($0) })
                         selectedGridIndices = newSet
-                        if let first = selectedGridIndices.sorted().first {
+                        if let first = selectedGridIndices.min() {
                             selectInGrid(at: first)
                         }
                     }
@@ -1584,6 +1550,22 @@ final class ViewerModel {
         }
     }
 
+    private func showDecodeError(_ error: Error) {
+        switch error {
+        case ImageDecodeError.unsupported:
+            showToast("Unsupported or inaccessible file")
+        case ImageDecodeError.noImage:
+            showToast("The file is damaged and can't be displayed")
+        default:
+            let nsError = error as NSError
+            if nsError.domain == NSCocoaErrorDomain, nsError.code == NSFileReadNoPermissionError {
+                showToast("Permission denied — can't read this file")
+            } else {
+                showToast("The file is damaged and can't be displayed")
+            }
+        }
+    }
+
     private func showToast(_ message: String, actionTitle: String? = nil) {
         toastTask?.cancel()
         toastMessage = message
@@ -1622,8 +1604,10 @@ final class ViewerModel {
 
         currentProxyMaxPixelSize = 2048
         isLoading = true
-        // Cancel any pending decode — the serial queue bounds concurrent memory.
-        decodeQueue.cancelAllOperations()
+        // Don't cancel decodeQueue operations — a cancelled BlockOperation whose
+        // main block never runs would leave a WithCheckedContinuation unresumed,
+        // crashing at runtime. The serial queue already bounds concurrent memory;
+        // cancelled loadTasks discard their results via guard !Task.isCancelled.
 
         loadTask = Task {
             let image: DecodedImage
@@ -1643,8 +1627,8 @@ final class ViewerModel {
                 guard !Task.isCancelled else { return }
                 decodedImage = nil
                 metadata = nil
-                showToast("The file is damaged and can’t be displayed")
                 isLoading = false
+                showDecodeError(error)
                 return
             }
 

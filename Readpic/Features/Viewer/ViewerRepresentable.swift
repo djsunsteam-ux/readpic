@@ -46,7 +46,6 @@ struct ViewerRepresentable: NSViewRepresentable {
         view.onToggleFullScreen = { model.toggleFullScreen() }
         view.onCropConfirm = { model.applyCrop() }
         view.onCropCancel = { model.cancelCrop() }
-        view.onCrop = { model.enterCropMode() }
         view.onCropRectChanged = { rect in model.cropRect = rect }
         view.onEscape = {
             if model.isCropMode { model.cancelCrop() }

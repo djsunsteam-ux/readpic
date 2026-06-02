@@ -29,7 +29,6 @@ final class ViewerNSView: NSView {
     var onCropRectChanged: ((CGRect) -> Void)?
     var onCropConfirm: (() -> Void)?
     var onCropCancel: (() -> Void)?
-    var onCrop: (() -> Void)?
     var onColorPicked: ((NSColor, CGPoint, String) -> Void)?
     var onColorPickerLockToggled: (() -> Void)?
 

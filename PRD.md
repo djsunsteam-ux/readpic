@@ -171,6 +171,9 @@ GPS 地图延后。
 - `⌘+Delete` 移到废纸篓。
 - 移到废纸篓后显示 Toast，并提供「撤销」。
 - 永久删除不作为 v1 默认快捷操作。
+- 分享菜单（右键 Share…，NSSharingServicePicker）。
+- 设置桌面壁纸（Image 菜单，多显示器支持）。
+- ZIP / CBZ 归档浏览（ZIPFoundation，自动解压到临时目录）。
 
 #### F-008 旋转与翻转
 
@@ -214,19 +217,20 @@ v1 设置项：
 - JPEG XL
 - SVG / SVGZ
 - XCF / EMF / WMF / WPG / CUT 等低频格式
-- ZIP / CBZ / 漫画归档浏览
+- 加密 ZIP 支持
+- 漫画阅读模式
 - Base64 文本图片输入
 - Live Photos 视频部分播放
 - 专业图像编辑
 - 图层编辑
-- 批量重命名
-- 批量格式转换
 - 批量 resize
-- 直方图
-- 颜色拾取器
 - GPS 地图
 - 自动更新
 - Mac App Store 版本
+- 并排对比
+- 同步缩放
+- 打印尺寸信息
+- TAR / GZIP
 - App Sandbox 版本
 - 视频播放器
 

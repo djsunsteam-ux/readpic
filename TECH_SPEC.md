@@ -157,26 +157,28 @@ v1 优先使用 ImageIO 支持的系统格式：
 ### 4.2 解码流程
 
 1. 根据文件 URL 创建 `CGImageSource`。
-2. 读取基础元数据和像素尺寸。
-3. 根据显示目标决定是否降采样。
-4. 使用 `CGImageSourceCreateThumbnailAtIndex` 生成显示代理图。
-5. 缩放到超过代理图有效分辨率时，再按需加载更高分辨率版本。
+2. 读取基础元数据、像素尺寸和 EXIF 方向。
+3. 使用 `CGImageSourceCreateImageAtIndex` 完整解码（不使用内嵌缩略图，避免模糊）。
+4. 使用 `CGContext` 高质量降采样到目标尺寸。
+5. 读取 EXIF 方向，由 viewer 层应用旋转/翻转。
+6. 缩放到超过代理图有效分辨率时，再按需加载更高分辨率版本。
 
 ### 4.3 降采样策略
 
 | 场景 | 策略 |
 |---|---|
 | 普通图片 | 长边 2048px 代理图 |
-| 超大图片 | 长边 1024px 起步，必要时显示加载状态 |
+| 超大图片 | 长边 2048px，CGContext 高质量降采样 |
 | 用户放大 | 按需解码更高分辨率（每次翻倍，无上限），通过 `ViewerNSView` 检测缩放超出阈值后触发重解码 |
 | 低内存模式 | 降为 1024px 代理图 |
 | 缩略图 | 统一生成 160px 缩略图（低内存模式降为 128px） |
 
 解码选项原则：
 
-- 避免不必要的全尺寸位图解码。
-- 对大图使用 `kCGImageSourceShouldCache = false` 降低峰值内存。
-- 使用 `kCGImageSourceCreateThumbnailFromImageIfPossible` 优先利用内嵌预览/缩略图（对 RAW 文件读取内嵌 JPEG 预览，避免全量 RAW 解码）。
+- 使用 `CGImageSourceCreateImageAtIndex` 完整解码，不依赖内嵌缩略图（避免 JPEG 内嵌预览导致模糊）。
+- 使用 `CGContext` + `interpolationQuality = .high` 进行高质量降采样。
+- 使用 `kCGImageAlphaNoneSkipFirst | kCGBitmapByteOrder32Little` 像素格式（全平台兼容）。
+- 读取 EXIF 方向标签，由 viewer 层通过 `CATransform3D` 应用旋转/翻转。
 - 用户缩放超过代理图分辨率 1.2x 时触发按需升级解码。
 
 ### 4.4 GIF / 动画图片

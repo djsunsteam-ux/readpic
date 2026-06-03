@@ -10,50 +10,36 @@ struct ThumbnailStripView: View {
     @State private var thumbnails: [URL: CGImage] = [:]
 
     var body: some View {
-        ScrollViewReader { proxy in
-            NativeHScroll {
-                LazyHStack(spacing: 4) {
-                    ForEach(Array(files.enumerated()), id: \.element.url) { index, file in
-                        let isSelected = index == currentIndex
+        NativeHScroll(scrollToIndex: currentIndex) {
+            LazyHStack(spacing: 4) {
+                ForEach(Array(files.enumerated()), id: \.element.url) { index, file in
+                    let isSelected = index == currentIndex
 
-                        Button {
-                            select(index)
-                        } label: {
-                            thumbnailView(for: file, isSelected: isSelected)
-                        }
-                        .buttonStyle(.plain)
-                        .frame(width: 80, height: 56)
-                        .background(isSelected ? Color.accentColor.opacity(0.3) : Color.clear)
-                        .cornerRadius(4)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 4)
-                                .stroke(isSelected ? Color.accentColor : Color.clear, lineWidth: 1.5)
-                        )
-                        .id(index)
-                        .task {
-                            await loadThumbnail(for: file.url)
-                        }
+                    Button {
+                        select(index)
+                    } label: {
+                        thumbnailView(for: file, isSelected: isSelected)
+                    }
+                    .buttonStyle(.plain)
+                    .frame(width: 80, height: 56)
+                    .background(isSelected ? Color.accentColor.opacity(0.3) : Color.clear)
+                    .cornerRadius(4)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 4)
+                            .stroke(isSelected ? Color.accentColor : Color.clear, lineWidth: 1.5)
+                    )
+                    .task {
+                        await loadThumbnail(for: file.url)
                     }
                 }
-                .padding(.horizontal, 8)
-                .frame(height: 64)
             }
-            .onScrollStart { onScrollStart?() }
-            .onScrollEnd { onScrollEnd?() }
+            .padding(.horizontal, 8)
             .frame(height: 64)
-            .background(.ultraThinMaterial)
-            .onAppear {
-                // Delay to ensure LazyHStack has laid out the target item
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                    proxy.scrollTo(currentIndex, anchor: .center)
-                }
-            }
-            .onChange(of: currentIndex) { _, newIndex in
-                withAnimation(.easeOut(duration: 0.2)) {
-                    proxy.scrollTo(newIndex, anchor: .center)
-                }
-            }
         }
+        .onScrollStart { onScrollStart?() }
+        .onScrollEnd { onScrollEnd?() }
+        .frame(height: 64)
+        .background(.ultraThinMaterial)
         .task(id: files.map(\.url)) {
             let currentURLs = Set(files.map(\.url))
             thumbnails = thumbnails.filter { currentURLs.contains($0.key) }

@@ -1734,10 +1734,6 @@ final class ViewerModel {
 
         currentProxyMaxPixelSize = 2048
         isLoading = true
-        // Don't cancel decodeQueue operations — a cancelled BlockOperation whose
-        // main block never runs would leave a WithCheckedContinuation unresumed,
-        // crashing at runtime. The serial queue already bounds concurrent memory;
-        // cancelled loadTasks discard their results via guard !Task.isCancelled.
 
         loadTask = Task {
             let image: DecodedImage

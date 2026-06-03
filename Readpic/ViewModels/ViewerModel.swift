@@ -819,16 +819,18 @@ final class ViewerModel {
 
 
     /// Apply EXIF orientation as initial rotation/flip state.
+    /// Rotation is in degrees, positive = counter-clockwise.
+    /// EXIF 6 = 90° CW = viewer rotation 270°.
     private func applyExifOrientation(_ orientation: Int) {
         switch orientation {
         case 1: rotation = 0; isFlippedHorizontally = false
         case 2: rotation = 0; isFlippedHorizontally = true
         case 3: rotation = 180; isFlippedHorizontally = false
         case 4: rotation = 180; isFlippedHorizontally = true
-        case 5: rotation = 90; isFlippedHorizontally = true
-        case 6: rotation = 90; isFlippedHorizontally = false
-        case 7: rotation = 270; isFlippedHorizontally = true
-        case 8: rotation = 270; isFlippedHorizontally = false
+        case 5: rotation = 270; isFlippedHorizontally = true
+        case 6: rotation = 270; isFlippedHorizontally = false
+        case 7: rotation = 90; isFlippedHorizontally = true
+        case 8: rotation = 90; isFlippedHorizontally = false
         default: rotation = 0; isFlippedHorizontally = false
         }
     }

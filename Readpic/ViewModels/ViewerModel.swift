@@ -85,6 +85,9 @@ final class ViewerModel {
         didSet {
             if oldValue?.url != decodedImage?.url {
                 showFrameStrip = false
+                if let img = decodedImage {
+                    applyExifOrientation(img.exifOrientation)
+                }
             }
             stopAnimation()
             startAnimation()
@@ -810,6 +813,30 @@ final class ViewerModel {
     func resetRotation() {
         rotation = 0
         isFlippedHorizontally = false
+    }
+
+    /// Apply EXIF orientation as initial rotation/flip state.
+    private func applyExifOrientation(_ orientation: Int) {
+        switch orientation {
+        case 1: // Normal
+            rotation = 0; isFlippedHorizontally = false
+        case 2: // Flipped horizontally
+            rotation = 0; isFlippedHorizontally = true
+        case 3: // Rotated 180°
+            rotation = 180; isFlippedHorizontally = false
+        case 4: // Flipped vertically
+            rotation = 180; isFlippedHorizontally = true
+        case 5: // Transposed
+            rotation = 270; isFlippedHorizontally = true
+        case 6: // Rotated 90° CW
+            rotation = 270; isFlippedHorizontally = false
+        case 7: // Transversed
+            rotation = 90; isFlippedHorizontally = true
+        case 8: // Rotated 90° CCW
+            rotation = 90; isFlippedHorizontally = false
+        default:
+            rotation = 0; isFlippedHorizontally = false
+        }
     }
 
     func closeWindow() {

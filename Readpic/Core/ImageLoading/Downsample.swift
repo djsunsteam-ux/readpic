@@ -3,6 +3,15 @@ import Foundation
 import ImageIO
 
 struct Downsample {
+    /// Read EXIF orientation from image source (1-8, default 1 = normal).
+    static func readOrientation(source: CGImageSource) -> Int {
+        guard let props = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+              let orient = props[kCGImagePropertyOrientation] as? Int else {
+            return 1
+        }
+        return orient
+    }
+
     static func createImage(source: CGImageSource, maxPixelSize: CGFloat) throws -> CGImage {
         // Only constrain max pixel size if it's smaller than the source,
         // otherwise ImageIO warns that maxPixelSize exceeds the image dimensions.
@@ -16,10 +25,9 @@ struct Downsample {
             constrainedSize = maxPixelSize
         }
 
+        // Don't use embedded thumbnails — they are typically 160px and look
+        // blurry when displayed at full screen. Force full decode + downsample.
         let options: [CFString: Any] = [
-            // Prefer embedded thumbnail/preview (e.g. JPEG preview in RAW)
-            // over full decode, falling back automatically when unavailable.
-            "kCGImageSourceCreateThumbnailFromImageIfPossible" as CFString: true,
             kCGImageSourceShouldCacheImmediately: true,
             kCGImageSourceThumbnailMaxPixelSize: constrainedSize
         ]

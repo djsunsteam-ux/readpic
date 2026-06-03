@@ -861,7 +861,6 @@ final class ViewerModel {
 
         let nativeMax = max(currentDecoded.pixelSize.width, currentDecoded.pixelSize.height)
         let nextRes = min(currentProxyMaxPixelSize * 2, nativeMax)
-        print("[ViewerModel] requestHigherResolution: current=\(currentProxyMaxPixelSize), next=\(nextRes), native=\(nativeMax)")
         guard nextRes > currentProxyMaxPixelSize else { return }
 
         // Preloaded version already sitting in cache?

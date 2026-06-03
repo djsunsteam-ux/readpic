@@ -267,7 +267,7 @@ final class ImageDecoderTests: XCTestCase {
         let image = ctx.makeImage()!
         let decoded = DecodedImage(url: url, image: image,
                                    pixelSize: CGSize(width: 100, height: 100),
-                                   animatedFrames: nil, frameCount: 1)
+                                   animatedFrames: nil, frameCount: 1, exifOrientation: 1)
 
         // Pass to a Task to verify Sendable conformance at runtime
         let expectation = XCTestExpectation(description: "Sendable")

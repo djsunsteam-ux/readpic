@@ -85,6 +85,11 @@ final class ViewerModel {
         didSet {
             if oldValue?.url != decodedImage?.url {
                 showFrameStrip = false
+                // Apply EXIF orientation for images decoded via fallback path
+                // (CreateThumbnail with transform handles this automatically for most formats)
+                if let img = decodedImage, img.exifOrientation != 1 {
+                    applyExifOrientation(img.exifOrientation)
+                }
             }
             stopAnimation()
             startAnimation()
@@ -812,6 +817,21 @@ final class ViewerModel {
         isFlippedHorizontally = false
     }
 
+
+    /// Apply EXIF orientation as initial rotation/flip state.
+    private func applyExifOrientation(_ orientation: Int) {
+        switch orientation {
+        case 1: rotation = 0; isFlippedHorizontally = false
+        case 2: rotation = 0; isFlippedHorizontally = true
+        case 3: rotation = 180; isFlippedHorizontally = false
+        case 4: rotation = 180; isFlippedHorizontally = true
+        case 5: rotation = 90; isFlippedHorizontally = true
+        case 6: rotation = 90; isFlippedHorizontally = false
+        case 7: rotation = 270; isFlippedHorizontally = true
+        case 8: rotation = 270; isFlippedHorizontally = false
+        default: rotation = 0; isFlippedHorizontally = false
+        }
+    }
 
     func closeWindow() {
         NSApp.keyWindow?.close()

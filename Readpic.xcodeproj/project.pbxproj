@@ -350,6 +350,9 @@
 			dependencies = (
 			);
 			name = Readpic;
+			packageProductDependencies = (
+				F88A17EC2FD0147200B14AD0 /* ZIPFoundation */,
+			);
 			productName = Readpic;
 			productReference = A0000000000000000000000D /* Readpic.app */;
 			productType = "com.apple.product-type.application";
@@ -740,6 +743,13 @@
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
+/* Begin XCSwiftPackageProductDependency section */
+		F88A17EC2FD0147200B14AD0 /* ZIPFoundation */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F88A17EB2FD0147200B14AD0 /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
+			productName = ZIPFoundation;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = A00000000000000000000034 /* Project object */;
 }

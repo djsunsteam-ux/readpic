@@ -34,13 +34,15 @@ struct ArchiveScanner: Sendable {
     /// List image entries in a ZIP/CBZ archive, sorted by name.
     func scanArchive(_ archiveURL: URL, sortMode: SortMode = .name) throws -> [ArchiveEntry] {
         #if canImport(ZIPFoundation)
+        print("[ArchiveScanner] Opening archive: \(archiveURL.path)")
         let archive = try Archive(url: archiveURL, accessMode: .read)
+        print("[ArchiveScanner] Archive opened, reading entries...")
 
         var entries: [ArchiveEntry] = []
         for entry in archive {
             guard entry.type == .file else { continue }
             let ext = (entry.path as NSString).pathExtension.lowercased()
-            guard imageExtensions.contains(ext) else { continue }
+            guard Self.imageExtensions.contains(ext) else { continue }
             // Skip macOS resource forks and hidden files
             let name = (entry.path as NSString).lastPathComponent
             guard !name.hasPrefix("._"), !name.hasPrefix(".") else { continue }

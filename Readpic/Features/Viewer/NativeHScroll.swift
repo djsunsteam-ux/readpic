@@ -4,6 +4,8 @@ import SwiftUI
 /// A horizontal NSScrollView hosting SwiftUI content.
 /// Click-drag scrolling via a transparent overlay that forwards taps to the content.
 struct NativeHScroll<Content: View>: NSViewRepresentable {
+    /// Index to scroll to on appear. Item width = 80 + 4 spacing = 84.
+    var scrollToIndex: Int = -1
     @ViewBuilder let content: Content
     var onScrollStart: (() -> Void)?
     var onScrollEnd: (() -> Void)?
@@ -42,6 +44,13 @@ struct NativeHScroll<Content: View>: NSViewRepresentable {
             overlay.trailingAnchor.constraint(equalTo: scrollView.contentView.trailingAnchor),
         ])
 
+        // Scroll to initial index after layout
+        if scrollToIndex >= 0 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                Self.scrollToItem(scrollView, index: scrollToIndex)
+            }
+        }
+
         return scrollView
     }
 
@@ -54,6 +63,32 @@ struct NativeHScroll<Content: View>: NSViewRepresentable {
         overlay.hostingView = hosting
         overlay.onScrollStart = onScrollStart
         overlay.onScrollEnd = onScrollEnd
+
+        // Scroll to index when it changes
+        if scrollToIndex >= 0, scrollToIndex != context.coordinator.lastScrollIndex {
+            context.coordinator.lastScrollIndex = scrollToIndex
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                Self.scrollToItem(nsView, index: scrollToIndex)
+            }
+        }
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    class Coordinator {
+        var lastScrollIndex: Int = -1
+    }
+
+    /// Scroll NSScrollView to center the item at the given index.
+    /// Item width = 80 + 4 spacing = 84, plus 8pt leading padding.
+    private static func scrollToItem(_ scrollView: NSScrollView, index: Int) {
+        let itemWidth: CGFloat = 84 // 80 + 4 spacing
+        let padding: CGFloat = 8
+        let targetX = padding + CGFloat(index) * itemWidth - (scrollView.bounds.width / 2) + (itemWidth / 2)
+        let maxX = max(0, scrollView.documentView!.bounds.width - scrollView.bounds.width)
+        let clampedX = min(max(0, targetX), maxX)
+        scrollView.contentView.scroll(NSPoint(x: clampedX, y: 0))
+        scrollView.reflectScrolledClipView(scrollView.contentView)
     }
 }
 

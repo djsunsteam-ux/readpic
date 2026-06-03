@@ -30,5 +30,48 @@
     <true/>
     <key>NSPrincipalClass</key>
     <string>NSApplication</string>
+    <key>CFBundleDocumentTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleTypeName</key>
+            <string>Image</string>
+            <key>CFBundleTypeRole</key>
+            <string>Viewer</string>
+            <key>LSHandlerRank</key>
+            <string>Alternate</string>
+            <key>LSItemContentTypes</key>
+            <array>
+                <string>public.image</string>
+                <string>public.jpeg</string>
+                <string>public.png</string>
+                <string>public.heic</string>
+                <string>public.heif</string>
+                <string>com.microsoft.bmp</string>
+                <string>com.compuserve.gif</string>
+                <string>public.tiff</string>
+                <string>org.webmproject.webp</string>
+                <string>com.microsoft.ico</string>
+                <string>com.adobe.photoshop-image</string>
+                <string>com.canon.cr2-raw-image</string>
+                <string>com.nikon.nef-raw-image</string>
+                <string>com.sony.arw-raw-image</string>
+                <string>com.adobe.dng-image</string>
+                <string>public.avif</string>
+            </array>
+        </dict>
+        <dict>
+            <key>CFBundleTypeName</key>
+            <string>Comic Book Archive</string>
+            <key>CFBundleTypeRole</key>
+            <string>Viewer</string>
+            <key>LSHandlerRank</key>
+            <string>Alternate</string>
+            <key>LSItemContentTypes</key>
+            <array>
+                <string>org.idpf.epub-container</string>
+                <string>public.zip-archive</string>
+            </array>
+        </dict>
+    </array>
 </dict>
 </plist>

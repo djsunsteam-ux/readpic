@@ -38,4 +38,10 @@ public struct FolderScanner: Sendable {
     public static func supports(_ url: URL) -> Bool {
         supportedExtensions.contains(url.pathExtension.lowercased())
     }
+
+    /// Check if a URL is a ZIP/CBZ archive.
+    public static func isArchive(_ url: URL) -> Bool {
+        let ext = url.pathExtension.lowercased()
+        return ext == "zip" || ext == "cbz"
+    }
 }

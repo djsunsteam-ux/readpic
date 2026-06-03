@@ -21,7 +21,6 @@ struct Downsample {
             // over full decode, falling back automatically when unavailable.
             "kCGImageSourceCreateThumbnailFromImageIfPossible" as CFString: true,
             kCGImageSourceShouldCacheImmediately: true,
-            kCGImageSourceCreateThumbnailWithTransform: true,
             kCGImageSourceThumbnailMaxPixelSize: constrainedSize
         ]
 

@@ -183,10 +183,7 @@ final class ViewerNSView: NSView {
     }
 
     /// Upgrade proxy resolution for the same image — preserves zoom level and mode.
-    /// No-ops when the CGImage and native size are unchanged (avoids redundant
-    /// layout passes triggered by unrelated @Observable updates like color picker).
     func upgradeImage(_ image: CGImage, nativeSize: CGSize) {
-        guard proxyImage !== image || zoom.imageSize != nativeSize else { return }
         CATransaction.begin()
         CATransaction.setDisableActions(true)
 

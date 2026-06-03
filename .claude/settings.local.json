@@ -15,7 +15,8 @@
       "Bash(grep -rn \"rememberLastFolder\\\\|lastFolderURL\\\\|lastFolder\" --include=\"*.swift\" *.swift Core/ Services/ ViewModels/ Features/ App/)",
       "Bash(grep -rn \"showOpenPanel\\\\|showOpenFolderPanel\" --include=\"*.swift\" *.swift Core/ Services/ ViewModels/ Features/ App/)",
       "Bash(xxd /Users/yh/workspace/Readpic/Features/Viewer/ViewerView.swift)",
-      "Bash(xxd)"
+      "Bash(xxd)",
+      "Bash(sysctl -n hw.memsize)"
     ]
   }
 }

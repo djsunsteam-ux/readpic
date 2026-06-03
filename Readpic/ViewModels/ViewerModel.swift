@@ -875,7 +875,7 @@ final class ViewerModel {
         }
 
         // Fall back to on-demand decode
-        Task.detached(priority: .userInitiated) { [weak self] in
+        Task.detached(priority: .utility) { [weak self] in
             guard let self, let image = try? self.decoder.decode(url: currentFile.url, maxPixelSize: nextRes) else { return }
             await MainActor.run {
                 guard !Task.isCancelled else { return }
@@ -1031,7 +1031,7 @@ final class ViewerModel {
         lastGridClickedIndex = index
         gridPreviewImage = nil  // Prevent stale preview → wrong histogram cache
         let file = files[index]
-        Task.detached(priority: .userInitiated) { [weak self] in
+        Task.detached(priority: .utility) { [weak self] in
             guard let self else { return }
             let meta = self.metadataReader.read(url: file.url, pixelSize: .zero)
             // Decode a small proxy for the histogram (512px is fast for all formats)
@@ -1137,7 +1137,7 @@ final class ViewerModel {
                 loadTask?.cancel()
                 loadTask = Task {
                     do {
-                        let image = try await Task.detached(priority: .userInitiated) {
+                        let image = try await Task.detached(priority: .utility) {
                             try self.decoder.decode(url: file.url)
                         }.value
                         guard !Task.isCancelled else { return }

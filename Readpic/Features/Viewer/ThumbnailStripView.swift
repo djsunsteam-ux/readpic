@@ -43,7 +43,10 @@ struct ThumbnailStripView: View {
             .frame(height: 64)
             .background(.ultraThinMaterial)
             .onAppear {
-                proxy.scrollTo(currentIndex, anchor: .center)
+                // Delay to ensure LazyHStack has laid out the target item
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                    proxy.scrollTo(currentIndex, anchor: .center)
+                }
             }
             .onChange(of: currentIndex) { _, newIndex in
                 withAnimation(.easeOut(duration: 0.2)) {

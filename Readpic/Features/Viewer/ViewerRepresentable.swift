@@ -77,11 +77,11 @@ struct ViewerRepresentable: NSViewRepresentable {
     }
 
     func updateNSView(_ nsView: ViewerNSView, context: Context) {
-        // Use actual CGImage dimensions so zoom/layout matches the displayed pixels.
-        // pixelSize from ImageIO properties may have swapped W/H for EXIF-oriented HEIC.
+        // Use original image dimensions (not proxy) so the proxy upgrade logic
+        // knows when to request higher resolution.
         let nativeSize: CGSize
         if let img = model.decodedImage {
-            nativeSize = CGSize(width: img.image.width, height: img.image.height)
+            nativeSize = img.pixelSize
         } else {
             nativeSize = .zero
         }

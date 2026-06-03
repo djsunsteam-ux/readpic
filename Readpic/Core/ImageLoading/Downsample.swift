@@ -53,7 +53,6 @@ struct Downsample {
         let w = image.width
         let h = image.height
 
-        // Determine output dimensions and transform
         let outW: Int
         let outH: Int
         var transform = CGAffineTransform.identity
@@ -84,12 +83,14 @@ struct Downsample {
             return image
         }
 
+        // Use a universally supported pixel format (kCGImageAlphaNoneSkipFirst works everywhere)
+        let bitmapInfo = CGBitmapInfo.byteOrder32Little.rawValue | CGImageAlphaInfo.noneSkipFirst.rawValue
         guard let ctx = CGContext(
             data: nil, width: outW, height: outH,
-            bitsPerComponent: image.bitsPerComponent,
+            bitsPerComponent: 8,
             bytesPerRow: 0,
-            space: image.colorSpace ?? CGColorSpaceCreateDeviceRGB(),
-            bitmapInfo: image.bitmapInfo.rawValue
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: bitmapInfo
         ) else { return image }
 
         ctx.concatenate(transform)

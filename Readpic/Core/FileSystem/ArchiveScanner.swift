@@ -70,15 +70,15 @@ struct ArchiveScanner: Sendable {
     /// Extract a single entry from the archive to a temporary location.
     func extractEntry(_ entryPath: String, from archiveURL: URL, to tempDir: URL) -> URL? {
         #if canImport(ZIPFoundation)
-        guard let archive = try? Archive(url: archiveURL, accessMode: .read) else { return nil }
-        guard let entry = archive[entryPath] else { return nil }
-
-        let outputURL = tempDir.appendingPathComponent((entryPath as NSString).lastPathComponent)
-        if FileManager.default.fileExists(atPath: outputURL.path) {
-            return outputURL
-        }
-
         do {
+            let archive = try Archive(url: archiveURL, accessMode: .read)
+            guard let entry = archive[entryPath] else { return nil }
+
+            let outputURL = tempDir.appendingPathComponent((entryPath as NSString).lastPathComponent)
+            if FileManager.default.fileExists(atPath: outputURL.path) {
+                return outputURL
+            }
+
             _ = try archive.extract(entry, to: outputURL)
             return outputURL
         } catch {

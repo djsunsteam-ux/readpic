@@ -857,12 +857,11 @@ final class ViewerModel {
 
     func requestHigherResolution() {
         guard let currentFile, let currentDecoded = decodedImage else { return }
-        // Animated images are already at their native resolution — frames don't benefit
-        // from upscaling, and re-decoding would lose animatedFrames.
         guard currentDecoded.animatedFrames == nil else { return }
 
         let nativeMax = max(currentDecoded.pixelSize.width, currentDecoded.pixelSize.height)
         let nextRes = min(currentProxyMaxPixelSize * 2, nativeMax)
+        print("[ViewerModel] requestHigherResolution: current=\(currentProxyMaxPixelSize), next=\(nextRes), native=\(nativeMax)")
         guard nextRes > currentProxyMaxPixelSize else { return }
 
         // Preloaded version already sitting in cache?

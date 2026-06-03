@@ -569,12 +569,13 @@ final class ViewerNSView: NSView {
         onZoomChanged?(Int((zoom.zoomLevel * 100).rounded()))
 
         // ── Request higher-res proxy if needed ─────────────────────
-        // Only request when a) proxy is NOT at native res and b) either dimension is stretched beyond limit.
         if !isAtNativeRes, !hasRequestedHigherRes {
             let neededProxyWidth  = unrotatedIdeal.width  / Self.proxyStretchLimit
             let neededProxyHeight = unrotatedIdeal.height / Self.proxyStretchLimit
+            print("[ViewerNSView] proxy=\(proxySize.width)x\(proxySize.height), ideal=\(unrotatedIdeal.width)x\(unrotatedIdeal.height), needed=\(neededProxyWidth)x\(neededProxyHeight), isAtNative=\(isAtNativeRes)")
             if proxySize.width < neededProxyWidth || proxySize.height < neededProxyHeight {
                 hasRequestedHigherRes = true
+                print("[ViewerNSView] Requesting higher res!")
                 onRequestHigherRes?()
             }
         }

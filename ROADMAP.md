@@ -274,15 +274,15 @@
 
 ### 6.3 归档与漫画
 
-- [ ] ZIP / CBZ 浏览。
+- [x] ZIP / CBZ 浏览（ZIPFoundation，ArchiveScanner，临时目录提取）。
 - [ ] 加密 ZIP 支持。
 
 ### 6.4 系统集成
 
-- [ ] 分享菜单。
-- [ ] 设置桌面壁纸。
-- [ ] 更完整的 Finder 集成。
-- [ ] Homebrew Cask 可选。
+- [x] 分享菜单（NSSharingServicePicker，右键菜单）。
+- [x] 设置桌面壁纸（NSWorkspace，多显示器支持）。
+- [x] Finder 集成（Info.plist 文档类型注册，打开方式菜单）。
+- [x] Homebrew Cask（Scripts/readpic.rb）。
 
 ---
 

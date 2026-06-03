@@ -659,7 +659,6 @@ final class ViewerModel {
                 decodedImage = nil
                 metadata = nil
                 isLoading = false
-                print("[ArchiveScanner] Error: \(error)")
                 showToast("Failed to open archive")
             }
         }

@@ -333,3 +333,7 @@
 "Share…" = "Share…";
 "Wallpaper set" = "Wallpaper set";
 "Failed to set wallpaper" = "Failed to set wallpaper";
+"Set as Desktop Wallpaper" = "Set as Desktop Wallpaper";
+"No supported images found in archive" = "No supported images found in archive";
+"Failed to extract archive" = "Failed to extract archive";
+"Failed to open archive" = "Failed to open archive";

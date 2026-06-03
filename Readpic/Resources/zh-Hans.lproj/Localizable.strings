@@ -333,3 +333,7 @@
 "Share…" = "分享…";
 "Wallpaper set" = "已设为壁纸";
 "Failed to set wallpaper" = "无法设为壁纸";
+"Set as Desktop Wallpaper" = "设为桌面壁纸";
+"No supported images found in archive" = "压缩包中未找到支持的图片";
+"Failed to extract archive" = "无法解压压缩包";
+"Failed to open archive" = "无法打开压缩包";

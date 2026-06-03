@@ -13,6 +13,8 @@ struct DecodedImage: Sendable {
     let pixelSize: CGSize
     let animatedFrames: [AnimationFrame]?
     let frameCount: Int
+    /// EXIF orientation (1-8). 1 = normal, 3 = 180°, 6 = 90° CW, 8 = 90° CCW.
+    let exifOrientation: Int
 }
 
 enum ImageDecodeError: Error {
@@ -40,6 +42,7 @@ struct ImageDecoder {
         let width = properties[kCGImagePropertyPixelWidth] as? CGFloat ?? 0
         let height = properties[kCGImagePropertyPixelHeight] as? CGFloat ?? 0
         let frameCount = CGImageSourceGetCount(source)
+        let orientation = Downsample.readOrientation(source: source)
         let image = try Downsample.createImage(source: source, maxPixelSize: pixelSize)
         let animatedFrames: [AnimationFrame]?
 
@@ -55,7 +58,8 @@ struct ImageDecoder {
             image: image,
             pixelSize: CGSize(width: width, height: height),
             animatedFrames: animatedFrames,
-            frameCount: frameCount
+            frameCount: frameCount,
+            exifOrientation: orientation
         )
     }
 

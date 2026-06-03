@@ -13,29 +13,35 @@ struct Downsample {
     }
 
     static func createImage(source: CGImageSource, maxPixelSize: CGFloat) throws -> CGImage {
-        // Only constrain max pixel size if it's smaller than the source,
-        // otherwise ImageIO warns that maxPixelSize exceeds the image dimensions.
-        let constrainedSize: CGFloat
-        if let props = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
-           let w = props[kCGImagePropertyPixelWidth] as? CGFloat,
-           let h = props[kCGImagePropertyPixelHeight] as? CGFloat {
-            let sourceMax = max(w, h)
-            constrainedSize = sourceMax < maxPixelSize ? sourceMax : maxPixelSize
-        } else {
-            constrainedSize = maxPixelSize
-        }
-
-        // Don't use embedded thumbnails — they are typically 160px and look
-        // blurry when displayed at full screen. Force full decode + downsample.
-        let options: [CFString: Any] = [
-            kCGImageSourceShouldCacheImmediately: true,
-            kCGImageSourceThumbnailMaxPixelSize: constrainedSize
-        ]
-
-        guard let image = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else {
+        // Use full decode + manual downsample. CGImageSourceCreateThumbnailAtIndex
+        // falls back to tiny embedded thumbnails for some JPEG files (error -51).
+        guard let fullImage = CGImageSourceCreateImageAtIndex(source, 0, nil) else {
             throw ImageDecodeError.noImage
         }
 
-        return image
+        let w = CGFloat(fullImage.width)
+        let h = CGFloat(fullImage.height)
+        let maxDim = max(w, h)
+
+        // Skip downsample if image is already within target size
+        guard maxDim > maxPixelSize else { return fullImage }
+
+        let scale = maxPixelSize / maxDim
+        let tw = Int((w * scale).rounded())
+        let th = Int((h * scale).rounded())
+        guard tw > 0, th > 0 else { return fullImage }
+
+        guard let ctx = CGContext(
+            data: nil, width: tw, height: th,
+            bitsPerComponent: fullImage.bitsPerComponent,
+            bytesPerRow: 0,
+            space: fullImage.colorSpace ?? CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: fullImage.bitmapInfo.rawValue
+        ) else { return fullImage }
+
+        ctx.interpolationQuality = .high
+        ctx.draw(fullImage, in: CGRect(x: 0, y: 0, width: tw, height: th))
+        guard let downsampled = ctx.makeImage() else { return fullImage }
+        return downsampled
     }
 }

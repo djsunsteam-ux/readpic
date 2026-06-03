@@ -136,7 +136,7 @@ final class ReadpicTests: XCTestCase {
         let url1 = URL(fileURLWithPath: "/tmp/img1.png")
         let img1 = makeFakeImage()
         let decoded1 = DecodedImage(url: url1, image: img1, pixelSize: CGSize(width: 100, height: 100),
-                                    animatedFrames: nil, frameCount: 1)
+                                    animatedFrames: nil, frameCount: 1, exifOrientation: 1)
         cache.set(decoded1)
         XCTAssertNotNil(cache.get(url1))
     }
@@ -152,7 +152,7 @@ final class ReadpicTests: XCTestCase {
             let url = URL(fileURLWithPath: "/tmp/img_\(i).png")
             let fake = makeFakeImage()
             let decoded = DecodedImage(url: url, image: fake, pixelSize: CGSize(width: 100, height: 100),
-                                       animatedFrames: nil, frameCount: 1)
+                                       animatedFrames: nil, frameCount: 1, exifOrientation: 1)
             images.append(decoded)
             cache.set(decoded)
         }
@@ -179,14 +179,14 @@ final class ReadpicTests: XCTestCase {
 
         let fake = makeFakeImage()
         for url in [url1, url2, url3, url4, url5] {
-            cache.set(DecodedImage(url: url, image: fake, pixelSize: .zero, animatedFrames: nil, frameCount: 1))
+            cache.set(DecodedImage(url: url, image: fake, pixelSize: .zero, animatedFrames: nil, frameCount: 1, exifOrientation: 1))
         }
 
         // Re-insert url1 (it was first, now becomes most recent)
-        cache.set(DecodedImage(url: url1, image: fake, pixelSize: .zero, animatedFrames: nil, frameCount: 1))
+        cache.set(DecodedImage(url: url1, image: fake, pixelSize: .zero, animatedFrames: nil, frameCount: 1, exifOrientation: 1))
 
         // Insert url6 — should evict url2 (the LRU now, since url1 was re-inserted)
-        cache.set(DecodedImage(url: url6, image: fake, pixelSize: .zero, animatedFrames: nil, frameCount: 1))
+        cache.set(DecodedImage(url: url6, image: fake, pixelSize: .zero, animatedFrames: nil, frameCount: 1, exifOrientation: 1))
 
         XCTAssertNotNil(cache.get(url1)) // was re-inserted
         XCTAssertNil(cache.get(url2))     // should be evicted
@@ -199,7 +199,7 @@ final class ReadpicTests: XCTestCase {
         cache.clear()
 
         let url = URL(fileURLWithPath: "/tmp/test.png")
-        cache.set(DecodedImage(url: url, image: makeFakeImage(), pixelSize: .zero, animatedFrames: nil, frameCount: 1))
+        cache.set(DecodedImage(url: url, image: makeFakeImage(), pixelSize: .zero, animatedFrames: nil, frameCount: 1, exifOrientation: 1))
         cache.clear()
         XCTAssertNil(cache.get(url))
     }

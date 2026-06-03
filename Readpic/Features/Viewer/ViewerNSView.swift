@@ -572,10 +572,8 @@ final class ViewerNSView: NSView {
         if !isAtNativeRes, !hasRequestedHigherRes {
             let neededProxyWidth  = unrotatedIdeal.width  / Self.proxyStretchLimit
             let neededProxyHeight = unrotatedIdeal.height / Self.proxyStretchLimit
-            print("[ViewerNSView] proxy=\(proxySize.width)x\(proxySize.height), ideal=\(unrotatedIdeal.width)x\(unrotatedIdeal.height), needed=\(neededProxyWidth)x\(neededProxyHeight), isAtNative=\(isAtNativeRes)")
             if proxySize.width < neededProxyWidth || proxySize.height < neededProxyHeight {
                 hasRequestedHigherRes = true
-                print("[ViewerNSView] Requesting higher res!")
                 onRequestHigherRes?()
             }
         }

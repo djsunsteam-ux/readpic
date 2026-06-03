@@ -13,30 +13,6 @@ struct Downsample {
     }
 
     static func createImage(source: CGImageSource, maxPixelSize: CGFloat) throws -> CGImage {
-        // Only constrain max pixel size if it's smaller than the source.
-        let constrainedSize: CGFloat
-        if let props = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
-           let w = props[kCGImagePropertyPixelWidth] as? CGFloat,
-           let h = props[kCGImagePropertyPixelHeight] as? CGFloat {
-            let sourceMax = max(w, h)
-            constrainedSize = sourceMax < maxPixelSize ? sourceMax : maxPixelSize
-        } else {
-            constrainedSize = maxPixelSize
-        }
-
-        // Try CreateThumbnail with EXIF transform first (handles orientation automatically).
-        // Falls back to CreateImage + manual downsample for JPEG files that error with -51.
-        let options: [CFString: Any] = [
-            kCGImageSourceCreateThumbnailWithTransform: true,
-            kCGImageSourceShouldCacheImmediately: true,
-            kCGImageSourceThumbnailMaxPixelSize: constrainedSize
-        ]
-
-        if let image = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) {
-            return image
-        }
-
-        // Fallback: full decode + manual downsample (for JPEG error -51)
         guard let rawImage = CGImageSourceCreateImageAtIndex(source, 0, nil) else {
             throw ImageDecodeError.noImage
         }

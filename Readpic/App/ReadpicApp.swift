@@ -287,6 +287,11 @@ struct ReadpicApp: App {
 
                 Divider()
 
+                Button("Set as Desktop Wallpaper") { model.setDesktopWallpaper() }
+                    .disabled(model.currentFile == nil)
+
+                Divider()
+
                 Button("Batch Convert / Export\u{2026}") { model.showBatchExport() }
                     .disabled(!model.isGridView || model.selectedGridIndices.count < 2)
 

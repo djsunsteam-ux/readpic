@@ -60,6 +60,11 @@ struct ViewerRepresentable: NSViewRepresentable {
         view.onColorPickerLockToggled = {
             model.toggleColorPickerLock()
         }
+        view.onShare = { [weak view] in
+            guard let url = model.activeFile?.url, let nsView = view else { return }
+            let picker = NSSharingServicePicker(items: [url])
+            picker.show(relativeTo: .zero, of: nsView, preferredEdge: .minY)
+        }
         view.onOpenURL = { url in
             var isDirectory: ObjCBool = false
             if FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory), isDirectory.boolValue {

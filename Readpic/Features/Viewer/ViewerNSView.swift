@@ -31,6 +31,7 @@ final class ViewerNSView: NSView {
     var onCropCancel: (() -> Void)?
     var onColorPicked: ((NSColor, CGPoint, String) -> Void)?
     var onColorPickerLockToggled: (() -> Void)?
+    var onShare: (() -> Void)?
 
     // MARK: - Public state
     var scrollBehavior: ScrollBehavior = .scrollPan
@@ -380,6 +381,7 @@ final class ViewerNSView: NSView {
         menu.addItem(withTitle: "Rotate Right".localized, action: #selector(doRotateRight), keyEquivalent: "")
         menu.addItem(withTitle: "Flip Horizontal".localized, action: #selector(doFlipHorizontal), keyEquivalent: "")
         menu.addItem(.separator())
+        menu.addItem(withTitle: "Share…".localized, action: #selector(doShare), keyEquivalent: "")
         menu.addItem(withTitle: "Move to Trash".localized, action: #selector(doMoveToTrash), keyEquivalent: "")
 
         NSMenu.popUpContextMenu(menu, with: event, for: self)
@@ -393,6 +395,7 @@ final class ViewerNSView: NSView {
     @objc private func doRotateLeft() { onRotateLeft?() }
     @objc private func doRotateRight() { onRotateRight?() }
     @objc private func doFlipHorizontal() { onFlipHorizontal?() }
+    @objc private func doShare() { onShare?() }
     @objc private func doMoveToTrash() { onMoveToTrash?() }
 
     // MARK: - Scroll wheel

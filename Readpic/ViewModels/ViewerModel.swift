@@ -191,9 +191,12 @@ final class ViewerModel {
     weak var window: NSWindow?
 
     private let scanner = FolderScanner()
+    private let archiveScanner = ArchiveScanner()
     private let decoder = ImageDecoder()
     private let metadataReader = MetadataReader()
     private let clipboardService = ClipboardService()
+    private var archiveTempDir: URL?
+    private var archiveSourceURL: URL?
     private let finderService = FinderService()
     private let externalOpenService = ExternalOpenService()
     private let fileOperationService = FileOperationService()
@@ -365,7 +368,7 @@ final class ViewerModel {
 
     func showOpenPanel() {
         let panel = NSOpenPanel()
-        let extraTypes = ["webp", "ico", "avif", "psd"].compactMap { UTType(filenameExtension: $0) }
+        let extraTypes = ["webp", "ico", "avif", "psd", "zip", "cbz"].compactMap { UTType(filenameExtension: $0) }
         panel.allowedContentTypes = [.jpeg, .png, .heic, .heif, .gif, .tiff, .bmp, .rawImage] + extraTypes
         panel.allowsMultipleSelection = false
         panel.canChooseFiles = true
@@ -395,9 +398,19 @@ final class ViewerModel {
 
     func open(_ url: URL) {
         pickedColor = nil
+        if FolderScanner.isArchive(url) {
+            openArchive(url)
+            return
+        }
         guard FolderScanner.supports(url) else {
             showToast("Unsupported format")
             return
+        }
+        // Clean up archive temp dir when opening a regular file
+        if let old = archiveTempDir {
+            ArchiveScanner.cleanupTempDirectory(old)
+            archiveTempDir = nil
+            archiveSourceURL = nil
         }
         if settings.rememberLastFolder {
             settings.lastFolderURL = url.deletingLastPathComponent()
@@ -461,6 +474,12 @@ final class ViewerModel {
 
     func openFolder(_ url: URL) {
         pickedColor = nil
+        // Clean up archive temp dir
+        if let old = archiveTempDir {
+            ArchiveScanner.cleanupTempDirectory(old)
+            archiveTempDir = nil
+            archiveSourceURL = nil
+        }
         settings.addRecentFolder(url)
         if settings.rememberLastFolder {
             settings.lastFolderURL = url
@@ -536,6 +555,111 @@ final class ViewerModel {
                 } else {
                     showToast("The folder can’t be opened")
                 }
+            }
+        }
+    }
+
+    func openArchive(_ url: URL) {
+        pickedColor = nil
+        settings.addRecentFolder(url.deletingLastPathComponent())
+        if settings.rememberLastFolder {
+            settings.lastFolderURL = url.deletingLastPathComponent()
+        }
+
+        // Clean up previous archive temp dir
+        if let old = archiveTempDir {
+            ArchiveScanner.cleanupTempDirectory(old)
+            archiveTempDir = nil
+        }
+
+        currentProxyMaxPixelSize = 2048
+        ImageCache.shared.clear()
+        loadTask?.cancel()
+        preloadTask?.cancel()
+        isLoading = true
+
+        loadTask = Task {
+            do {
+                let entries = try archiveScanner.scanArchive(url, sortMode: settings.sortMode)
+                guard !Task.isCancelled else { return }
+                guard let first = entries.first else {
+                    files = []
+                    fileListVersion &+= 1
+                    currentIndex = 0
+                    decodedImage = nil
+                    metadata = nil
+                    showToast("No supported images found in archive")
+                    isLoading = false
+                    return
+                }
+
+                // Create temp directory and extract first image
+                let tempDir = ArchiveScanner.createTempDirectory(for: url)
+                archiveTempDir = tempDir
+                archiveSourceURL = url
+
+                guard let tempDir, let firstFile = archiveScanner.extractEntry(first.path, from: url, to: tempDir) else {
+                    showToast("Failed to extract archive")
+                    isLoading = false
+                    return
+                }
+
+                // Create FileItems from extracted paths
+                let items = entries.compactMap { entry -> FileItem? in
+                    guard let extracted = archiveScanner.extractEntry(entry.path, from: url, to: tempDir) else { return nil }
+                    return FileItem(url: extracted, fileSize: entry.fileSize)
+                }
+
+                guard !Task.isCancelled else { return }
+
+                // Decode the first image
+                let image: DecodedImage
+                do {
+                    image = try await withCheckedThrowingContinuation { continuation in
+                        let op = BlockOperation {
+                            do {
+                                let result = try self.decoder.decode(url: firstFile)
+                                continuation.resume(returning: result)
+                            } catch {
+                                continuation.resume(throwing: error)
+                            }
+                        }
+                        self.decodeQueue.addOperation(op)
+                    }
+                } catch {
+                    guard !Task.isCancelled else { return }
+                    files = items
+                    fileListVersion &+= 1
+                    currentIndex = 0
+                    decodedImage = nil
+                    metadata = nil
+                    isLoading = false
+                    showDecodeError(error)
+                    return
+                }
+
+                guard !Task.isCancelled else { return }
+                files = items
+                fileListVersion &+= 1
+                isGridView = items.count > 1
+                currentIndex = 0
+                selectedGridIndices = [0]
+                ImageCache.shared.set(image)
+                decodedImage = image
+                metadata = metadataReader.read(url: image.url, pixelSize: image.pixelSize)
+                zoomMode = defaultZoomModeFromSettings
+                isLoading = false
+                if isGridView { gridPreviewImage = decodedImage?.image }
+                preloadAdjacent()
+            } catch {
+                guard !Task.isCancelled else { return }
+                files = []
+                fileListVersion &+= 1
+                currentIndex = 0
+                decodedImage = nil
+                metadata = nil
+                isLoading = false
+                showToast("Failed to open archive")
             }
         }
     }
@@ -1321,6 +1445,20 @@ final class ViewerModel {
             showToast("Metadata exported")
         } catch {
             showToast("Failed to export")
+        }
+    }
+
+    // MARK: - Wallpaper
+
+    func setDesktopWallpaper() {
+        guard let url = activeFile?.url else { return }
+        do {
+            for screen in NSScreen.screens {
+                try NSWorkspace.shared.setDesktopImageURL(url, for: screen)
+            }
+            showToast("Wallpaper set")
+        } catch {
+            showToast("Failed to set wallpaper")
         }
     }
 

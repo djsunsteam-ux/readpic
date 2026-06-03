@@ -77,8 +77,8 @@ struct ViewerRepresentable: NSViewRepresentable {
     }
 
     func updateNSView(_ nsView: ViewerNSView, context: Context) {
-        // Use original image dimensions (not proxy) so the proxy upgrade logic
-        // knows when to request higher resolution.
+        // Use original image dimensions for proxy upgrade logic.
+        // The CGImage is already oriented, so pixelSize matches image dimensions.
         let nativeSize: CGSize
         if let img = model.decodedImage {
             nativeSize = img.pixelSize

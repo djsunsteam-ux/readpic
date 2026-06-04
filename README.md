@@ -113,9 +113,6 @@ Alternatively:
 ### Build
 
 ```bash
-# Debug (via SPM)
-swift build
-
 # Release (signed)
 Scripts/build.sh
 
@@ -125,9 +122,7 @@ Scripts/package_dmg.sh
 
 ### Run Tests
 
-```bash
-swift test
-```
+Open `Readpic.xcodeproj` in Xcode and press `⌘U`.
 
 ## License
 

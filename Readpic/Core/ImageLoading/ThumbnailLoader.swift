@@ -201,6 +201,12 @@ enum ThumbnailLoader {
             kCGImageSourceShouldCache: false
         ] as CFDictionary) else { return nil }
 
+        // Skip truncated or incomplete images to avoid ImageIO console errors
+        // (e.g. kCGImageSourceErrUnexpectedEOF / error -51 on corrupt JPEGs).
+        guard CGImageSourceGetCount(source) > 0,
+              CGImageSourceGetStatusAtIndex(source, 0) == .statusComplete
+        else { return nil }
+
         let options: [CFString: Any] = [
             "kCGImageSourceCreateThumbnailFromImageIfPossible" as CFString: true,
             kCGImageSourceThumbnailMaxPixelSize: maxSize,

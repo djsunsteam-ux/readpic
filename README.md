@@ -1,6 +1,6 @@
 # Readpic
 
-A fast, lightweight image viewer for macOS.
+A fast, lightweight image viewer for macOS. **Free and open source.**
 
 English | [简体中文](README.zh-CN.md)
 

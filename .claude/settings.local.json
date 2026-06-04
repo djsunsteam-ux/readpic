@@ -21,7 +21,10 @@
       "Bash(grep '^\"__TRACKED_VAR__\"' Readpic/Resources/en.lproj/Localizable.strings)",
       "Bash(grep '^\"__TRACKED_VAR__\"' Readpic/Resources/zh-Hans.lproj/Localizable.strings)",
       "Bash(sed -n '658,685p' Readpic/Features/Viewer/ViewerView.swift)",
-      "Bash(sed -n '715,760p' Readpic/Features/Viewer/ViewerView.swift)"
+      "Bash(sed -n '715,760p' Readpic/Features/Viewer/ViewerView.swift)",
+      "Bash(chmod +x *)",
+      "Bash(Scripts/build.sh *)",
+      "Bash(Scripts/package_dmg.sh *)"
     ]
   }
 }

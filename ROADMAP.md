@@ -293,26 +293,26 @@
 
 ### 7.1 Release 构建
 
-- [ ] Release scheme 配置。
-- [ ] 构建脚本。
-- [ ] 本地/临时签名流程验证。
-- [ ] 是否启用 Hardened Runtime 的实测结论。
-- [ ] 干净 macOS 15.6 环境首次打开验证。
+- [x] Release scheme 配置。
+- [x] 构建脚本（`Scripts/build.sh`，ad-hoc 签名）。
+- [x] 本地/临时签名流程验证。
+- [x] Hardened Runtime：ad-hoc 分发不需要，暂不启用。
+- [x] 干净 macOS 15.6 环境首次打开验证。
 
 ### 7.2 DMG
 
-- [ ] DMG 制作脚本。
-- [ ] DMG 包含 Applications 快捷方式。
-- [ ] 安装后首次打开流程验证。
+- [x] DMG 制作脚本（`Scripts/package_dmg.sh`）。
+- [x] DMG 包含 Applications 快捷方式。
+- [x] 安装后首次打开流程验证。
 
 ### 7.3 文档
 
-- [ ] README 安装说明。
-- [ ] 首次右键「打开」说明。
-- [ ] 未 notarized 说明。
-- [ ] 常见问题。
-- [ ] 快捷键表。
-- [ ] 支持格式表。
+- [x] README 安装说明。
+- [x] 首次右键「打开」说明。
+- [x] 未 notarized 说明。
+- [x] 常见问题。
+- [x] 快捷键表。
+- [x] 支持格式表。
 
 ### 7.4 里程碑
 

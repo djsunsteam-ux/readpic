@@ -219,7 +219,7 @@ final class ViewerNSView: NSView {
     /// because individual GIF frames may be smaller than the canvas, which would
     /// trigger a false proxy cap in `layoutImageLayer`.
     func setAnimatedFrame(_ image: CGImage) {
-        guard let currentContents = imageLayer.contents as? CGImage, currentContents !== image else { return }
+        if let currentContents = imageLayer.contents, (currentContents as! CGImage) === image { return }
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         imageLayer.contents = image

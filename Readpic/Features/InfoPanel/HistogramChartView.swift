@@ -83,7 +83,7 @@ struct HistogramChartView: View {
     // MARK: - Drawing
 
     private func channelCurve(values: [CGFloat], color: Color, width: CGFloat, height: CGFloat) -> some View {
-        let safe = values.max() ?? 1
+        let safe = max(values.max() ?? 0, 1)
         let step = width / CGFloat(binCount)
 
         var path = Path()
@@ -128,15 +128,6 @@ private extension HistogramChartView.SoloChannel {
         case .green:     return "Green".localized
         case .blue:      return "Blue".localized
         case .luminance: return "Luminance".localized
-        }
-    }
-
-    var color: Color {
-        switch self {
-        case .red:       return .red
-        case .green:     return .green
-        case .blue:      return .blue
-        case .luminance: return .white
         }
     }
 }

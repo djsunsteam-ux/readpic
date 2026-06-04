@@ -133,14 +133,10 @@ struct ImageDecoder {
     }
 
     private func downsampleIfNeeded(_ image: CGImage, maxPixelSize: CGFloat) -> CGImage {
-        let w = CGFloat(image.width)
-        let h = CGFloat(image.height)
-        let maxDim = max(w, h)
-        guard maxDim > maxPixelSize else { return image }
-
-        let scale = maxPixelSize / maxDim
-        let targetWidth = Int((w * scale).rounded())
-        let targetHeight = Int((h * scale).rounded())
+        guard let (targetWidth, targetHeight) = Downsample.targetDimensions(
+            imageSize: CGSize(width: image.width, height: image.height),
+            maxPixelSize: Int(maxPixelSize)
+        ) else { return image }
 
         let context = CGContext(
             data: nil,

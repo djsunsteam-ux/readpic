@@ -3,13 +3,6 @@ import Foundation
 public enum SortMode: String, CaseIterable, Sendable {
     case name
     case date
-
-    public var displayName: String {
-        switch self {
-        case .name: "Sort by Name"
-        case .date: "Sort by Date"
-        }
-    }
 }
 
 public struct FileSorter {

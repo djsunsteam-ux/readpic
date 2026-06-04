@@ -85,7 +85,7 @@ struct NativeHScroll<Content: View>: NSViewRepresentable {
         let itemWidth: CGFloat = 84 // 80 + 4 spacing
         let padding: CGFloat = 8
         let targetX = padding + CGFloat(index) * itemWidth - (scrollView.bounds.width / 2) + (itemWidth / 2)
-        let maxX = max(0, scrollView.documentView!.bounds.width - scrollView.bounds.width)
+        let maxX = max(0, (scrollView.documentView?.bounds.width ?? 0) - scrollView.bounds.width)
         let clampedX = min(max(0, targetX), maxX)
         scrollView.contentView.scroll(NSPoint(x: clampedX, y: 0))
         scrollView.reflectScrolledClipView(scrollView.contentView)

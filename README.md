@@ -2,6 +2,8 @@
 
 A fast, lightweight image viewer for macOS.
 
+English | [简体中文](README.zh-CN.md)
+
 ## Features
 
 - **30+ formats**: JPEG, PNG, HEIC, WebP, GIF, TIFF, BMP, AVIF, PSD, 17 RAW formats, ZIP/CBZ

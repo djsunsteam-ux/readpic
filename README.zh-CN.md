@@ -1,6 +1,6 @@
 # Readpic
 
-快速、轻量的 macOS 图片查看器。
+快速、轻量的 macOS 图片查看器。**完全免费，开源。**
 
 [English](README.md) | 简体中文
 

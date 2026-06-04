@@ -26,9 +26,10 @@ final class ViewerNSView: NSView {
     var onToggleThumbnailStrip: (() -> Void)?
     var onToggleFullScreen: (() -> Void)?
     var onEscape: (() -> Void)?
-    var onCropRectChanged: ((CGRect) -> Void)?
     var onCropConfirm: (() -> Void)?
     var onCropCancel: (() -> Void)?
+    var onEnterCropMode: (() -> Void)?
+    var onToggleColorPickerMode: (() -> Void)?
     var onColorPicked: ((NSColor, CGPoint, String) -> Void)?
     var onColorPickerLockToggled: (() -> Void)?
     var onShare: (() -> Void)?
@@ -62,23 +63,35 @@ final class ViewerNSView: NSView {
     /// Maximum stretch factor for the proxy image before requesting a higher-res decode.
     /// Avoids displaying blurry stretched pixels while the async decode is in flight.
     private static let proxyStretchLimit: CGFloat = 1.2
+    /// Reentrancy guard for `layout()` to prevent recursive layout warnings.
+    private var isLayingOut = false
+    /// Last reported zoom percent — avoids redundant onZoomChanged callbacks.
+    private var lastReportedZoomPercent: Int = -1
 
     // MARK: - Crop
 
     private let cropOverlayView = CropOverlayView(frame: .zero)
     var isCropMode = false {
-        didSet { cropOverlayView.isHidden = !isCropMode; needsLayout = true }
+        didSet {
+            cropOverlayView.isHidden = !isCropMode
+            needsLayout = true
+            // Invalidate cursor rects when crop mode changes
+            if let window {
+                window.invalidateCursorRects(for: cropOverlayView)
+            }
+        }
     }
-    /// Ratio to lock the crop overlay (nil = free).
-    var cropLockedRatio: CGFloat? {
-        get { cropOverlayView.lockedRatio }
-        set { cropOverlayView.lockedRatio = newValue }
+    /// Aspect ratio constraint for crop (nil = free). Set by the model via ViewerRepresentable.
+    var cropRatio: CGFloat? {
+        get { cropOverlayView.cropRatio }
+        set { cropOverlayView.cropRatio = newValue }
     }
-    var cropImagePixelSize: CGSize {
-        get { cropOverlayView.imagePixelSize }
-        set { cropOverlayView.imagePixelSize = newValue }
+    /// Called when the crop rect changes during drag. ViewerRepresentable sets this
+    /// to update the model's `cropRect`.
+    var onCropRectChanged: ((CGRect) -> Void)? {
+        get { cropOverlayView.onCropRectChanged }
+        set { cropOverlayView.onCropRectChanged = newValue }
     }
-
     override var acceptsFirstResponder: Bool { true }
     override var wantsUpdateLayer: Bool { true }
 
@@ -102,9 +115,6 @@ final class ViewerNSView: NSView {
         // Crop overlay (hidden until crop mode)
         cropOverlayView.isHidden = true
         cropOverlayView.postsFrameChangedNotifications = false
-        cropOverlayView.onDragEnded = { [weak self] rect in
-            self?.onCropRectChanged?(rect)
-        }
         addSubview(cropOverlayView)
     }
 
@@ -139,6 +149,10 @@ final class ViewerNSView: NSView {
     // MARK: - Layout
 
     override func layout() {
+        guard !isLayingOut else { return }
+        isLayingOut = true
+        defer { isLayingOut = false }
+
         super.layout()
         CATransaction.begin()
         CATransaction.setDisableActions(true)
@@ -274,6 +288,8 @@ final class ViewerNSView: NSView {
         case 123: onPrevious?()
         case 124: onNext?()
         case 53:  onEscape?()
+        case 40:  onEnterCropMode?()  // K key
+        case 35:  onToggleColorPickerMode?()  // P key
         case 49:
             // Slideshow uses Space for pause — handled by ViewerView key monitor
             guard onToggleAnimationPause != nil else { fallthrough }
@@ -369,7 +385,7 @@ final class ViewerNSView: NSView {
 
         menu.addItem(withTitle: "Copy Image".localized, action: #selector(doCopyImage), keyEquivalent: "")
         menu.addItem(withTitle: "Copy File".localized, action: #selector(doCopyFile), keyEquivalent: "")
-        menu.addItem(withTitle: "Copy Path".localized, action: #selector(doCopyFilePath), keyEquivalent: "")
+        menu.addItem(withTitle: "Copy File Path".localized, action: #selector(doCopyFilePath), keyEquivalent: "")
         menu.addItem(.separator())
         menu.addItem(withTitle: "Reveal in Finder".localized, action: #selector(doRevealInFinder), keyEquivalent: "")
         menu.addItem(withTitle: "Open Externally".localized, action: #selector(doOpenExternally), keyEquivalent: "")
@@ -566,15 +582,27 @@ final class ViewerNSView: NSView {
         imageLayer.transform = zoom.layerTransform
 
         // ── Report zoom ────────────────────────────────────────────
-        onZoomChanged?(Int((zoom.zoomLevel * 100).rounded()))
+        // Defer to avoid triggering a SwiftUI Observation update inside
+        // updateNSView/layoutImageLayer, which causes a recursive
+        // "Update Constraints in Window" exception.
+        let newZoomPercent = Int((zoom.zoomLevel * 100).rounded())
+        if newZoomPercent != lastReportedZoomPercent {
+            lastReportedZoomPercent = newZoomPercent
+            DispatchQueue.main.async { [weak self] in
+                self?.onZoomChanged?(newZoomPercent)
+            }
+        }
 
         // ── Request higher-res proxy if needed ─────────────────────
+        // Defer to avoid triggering SwiftUI Observation inside updateNSView.
         if !isAtNativeRes, !hasRequestedHigherRes {
             let neededProxyWidth  = unrotatedIdeal.width  / Self.proxyStretchLimit
             let neededProxyHeight = unrotatedIdeal.height / Self.proxyStretchLimit
             if proxySize.width < neededProxyWidth || proxySize.height < neededProxyHeight {
                 hasRequestedHigherRes = true
-                onRequestHigherRes?()
+                DispatchQueue.main.async { [weak self] in
+                    self?.onRequestHigherRes?()
+                }
             }
         }
 

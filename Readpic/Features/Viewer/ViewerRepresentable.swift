@@ -46,7 +46,8 @@ struct ViewerRepresentable: NSViewRepresentable {
         view.onToggleFullScreen = { model.toggleFullScreen() }
         view.onCropConfirm = { model.applyCrop() }
         view.onCropCancel = { model.cancelCrop() }
-        view.onCropRectChanged = { rect in model.cropRect = rect }
+        view.onEnterCropMode = { model.enterCropMode() }
+        view.onToggleColorPickerMode = { model.toggleColorPickerMode() }
         view.onEscape = {
             if model.isCropMode { model.cancelCrop() }
             else if model.showShortcutsHelp { model.showShortcutsHelp = false }
@@ -72,6 +73,10 @@ struct ViewerRepresentable: NSViewRepresentable {
             } else {
                 model.open(url)
             }
+        }
+        // Crop rect drag callback — update model when user drags the crop overlay
+        view.onCropRectChanged = { newRect in
+            model.cropRect = newRect
         }
         return view
     }
@@ -198,10 +203,8 @@ struct ViewerRepresentable: NSViewRepresentable {
     private func syncCropMode(nsView: ViewerNSView, model: ViewerModel) {
         nsView.isCropMode = model.isCropMode
         guard model.isCropMode else { return }
-        nsView.cropLockedRatio = model.cropPreset.ratio
-        if let img = model.decodedImage {
-            nsView.cropImagePixelSize = CGSize(width: img.image.width, height: img.image.height)
-        }
+        // Sync aspect ratio from preset
+        nsView.cropRatio = model.cropPreset.ratio
         // Sync crop rect from model → view (e.g. when preset changes)
         let viewRect = nsView.getCropRect()
         if abs(viewRect.origin.x - model.cropRect.origin.x) > 0.001 ||

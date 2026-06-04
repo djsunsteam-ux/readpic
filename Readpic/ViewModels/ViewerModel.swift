@@ -1163,6 +1163,8 @@ final class ViewerModel {
             isColorPickerLocked = false
             pickedColor = nil
         }
+        // Reset zoom to fit window so the full image is visible for cropping
+        setFitMode()
         stopAnimation()
         if hasAnimatedFrames { isAnimationPaused = true }
         wasThumbnailStripVisibleBeforeCrop = showThumbnailStrip

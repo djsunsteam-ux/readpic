@@ -57,6 +57,9 @@ final class ViewerNSView: NSView {
 
     /// Prevents re-requesting a higher-res proxy while one is already in flight.
     private var hasRequestedHigherRes = false
+    /// Mouse-drag pan state.
+    private var isPanning = false
+    private var panStartPoint: CGPoint = .zero
     /// Accumulated horizontal scroll delta for side-wheel page navigation.
     private var horizontalScrollAccumulator: CGFloat = 0
 
@@ -238,11 +241,10 @@ final class ViewerNSView: NSView {
 
     /// Update zoom mode from the model (menu / toolbar action).
     func applyZoomMode(_ mode: ZoomGeometry.Mode) {
-        CATransaction.begin()
-        CATransaction.setDisableActions(true)
-        zoom.setMode(mode)
-        layoutImageLayer()
-        CATransaction.commit()
+        guard zoom.mode != mode else { return }
+        zoom.mode = mode
+        zoom.defaultMode = mode
+        smoothResetZoom()
     }
 
     /// Set visible insets that exclude overlaid bars / panels for fit-window calculations.
@@ -268,7 +270,8 @@ final class ViewerNSView: NSView {
         guard newInsets.top != oldInsets.top || newInsets.bottom != oldInsets.bottom || newInsets.right != oldInsets.right else { return }
         zoom.visibleInsets = newInsets
         if zoom.mode == .fitWindow || zoom.mode == .fitWidth {
-            zoom.resetZoom()
+            smoothResetZoom()
+            return
         }
         layoutImageLayer()
     }
@@ -370,7 +373,44 @@ final class ViewerNSView: NSView {
             onColorPickerLockToggled?()
             return
         }
+        if !isCropMode {
+            isPanning = true
+            panStartPoint = convert(event.locationInWindow, from: nil)
+            NSCursor.closedHand.push()
+            return
+        }
         super.mouseDown(with: event)
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        guard isPanning else { return }
+        let current = convert(event.locationInWindow, from: nil)
+        let dx = current.x - panStartPoint.x
+        let dy = current.y - panStartPoint.y
+        panStartPoint = current
+
+        zoom.panOffset.x += dx
+        zoom.panOffset.y += dy
+
+        // Fast path: only update layer position, skip proxy cap / zoom report / crop sync
+        let pan = zoom.panOffset
+        let visibleLeft = zoom.visibleInsets.left
+        let visibleRight = zoom.visibleInsets.right
+        let xCenter = (bounds.width - visibleLeft - visibleRight) / 2 + visibleLeft
+        let yCenter = bounds.midY + (zoom.visibleInsets.bottom - zoom.visibleInsets.top) / 2
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        imageLayer.position = CGPoint(x: xCenter + pan.x, y: yCenter + pan.y)
+        CATransaction.commit()
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        if isPanning {
+            isPanning = false
+            NSCursor.pop()
+            return
+        }
+        super.mouseUp(with: event)
     }
 
     override func resetCursorRects() {
@@ -430,13 +470,15 @@ final class ViewerNSView: NSView {
         horizontalScrollAccumulator = 0
 
         if event.modifierFlags.contains(.option) || event.modifierFlags.contains(.command) {
-            applyZoomDelta(event.scrollingDeltaY == 0 ? -event.scrollingDeltaX : event.scrollingDeltaY)
+            let offset = cursorOffsetFromVisibleCenter(for: event)
+            applyZoomDelta(event.scrollingDeltaY == 0 ? -event.scrollingDeltaX : event.scrollingDeltaY, cursorOffset: offset)
             return
         }
 
         switch scrollBehavior {
         case .zoom:
-            applyZoomDelta(event.scrollingDeltaY == 0 ? -event.scrollingDeltaX : event.scrollingDeltaY)
+            let offset = cursorOffsetFromVisibleCenter(for: event)
+            applyZoomDelta(event.scrollingDeltaY == 0 ? -event.scrollingDeltaX : event.scrollingDeltaY, cursorOffset: offset)
         case .browse:
             if abs(event.scrollingDeltaX) > abs(event.scrollingDeltaY) {
                 if event.scrollingDeltaX > 0 { onPrevious?() } else { onNext?() }
@@ -458,7 +500,8 @@ final class ViewerNSView: NSView {
     }
 
     override func magnify(with event: NSEvent) {
-        zoom.applyMagnification(event.magnification)
+        let offset = cursorOffsetFromVisibleCenter(for: event)
+        zoom.zoomTowardPoint(factor: 1 + event.magnification, cursorOffset: offset)
         layoutImageLayer()
     }
 
@@ -500,8 +543,56 @@ final class ViewerNSView: NSView {
     }
 
     func resetZoom() {
+        smoothResetZoom()
+    }
+
+    /// Smoothly animate the image back to fit/center (panOffset → 0, zoomLevel → default).
+    func smoothResetZoom() {
         zoom.resetZoom()
-        layoutImageLayer()
+
+        guard let proxyImage else {
+            layoutImageLayer()
+            return
+        }
+
+        let proxySize = CGSize(width: proxyImage.width, height: proxyImage.height)
+        guard proxySize.width > 0, proxySize.height > 0, bounds.width > 0, bounds.height > 0 else {
+            layoutImageLayer()
+            return
+        }
+
+        // Compute target position/bounds without calling layoutImageLayer
+        zoom.viewportSize = bounds.size
+        let targetBounds = CGRect(origin: .zero, size: zoom.displaySize)
+
+        let visibleLeft = zoom.visibleInsets.left
+        let visibleRight = zoom.visibleInsets.right
+        let xCenter = (bounds.width - visibleLeft - visibleRight) / 2 + visibleLeft
+        let yCenter = bounds.midY + (zoom.visibleInsets.bottom - zoom.visibleInsets.top) / 2
+        let targetPosition = CGPoint(x: xCenter, y: yCenter)
+
+        // Animate
+        CATransaction.begin()
+        CATransaction.setAnimationDuration(0.25)
+        CATransaction.setAnimationTimingFunction(CAMediaTimingFunction(name: .easeInEaseOut))
+        imageLayer.bounds = targetBounds
+        imageLayer.position = targetPosition
+        CATransaction.commit()
+
+        // Sync zoom percent and crop overlay without animation
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        let newPercent = Int((zoom.zoomLevel * 100).rounded())
+        if newPercent != lastReportedZoomPercent {
+            lastReportedZoomPercent = newPercent
+            DispatchQueue.main.async { [weak self] in
+                self?.onZoomChanged?(newPercent)
+            }
+        }
+        if !cropOverlayView.isHidden {
+            cropOverlayView.imageRect = imageLayer.frame
+        }
+        CATransaction.commit()
     }
 
     // MARK: - Layout
@@ -566,8 +657,10 @@ final class ViewerNSView: NSView {
         }
 
         // ── Pan ────────────────────────────────────────────────────
-        // Pan bounds use IDEAL (uncapped) size for stability across proxy upgrades.
-        let pan = zoom.clampedPan
+        // Use raw panOffset (not clamped) so zoom-toward-cursor can position
+        // the image off-center when it's smaller than the viewport.
+        // Clamping for mouse-drag panning is handled in mouseDragged().
+        let pan = zoom.panOffset
 
         // ── Position ───────────────────────────────────────────────
         imageLayer.bounds = CGRect(origin: .zero, size: displaySize)
@@ -617,8 +710,18 @@ final class ViewerNSView: NSView {
 
     // MARK: - Helpers
 
-    private func applyZoomDelta(_ delta: CGFloat) {
-        zoom.applyScrollDelta(delta)
+    /// Cursor position relative to the visible area center.
+    private func cursorOffsetFromVisibleCenter(for event: NSEvent) -> CGPoint {
+        let pt = convert(event.locationInWindow, from: nil)
+        let visibleLeft = zoom.visibleInsets.left
+        let visibleRight = zoom.visibleInsets.right
+        let xCenter = (bounds.width - visibleLeft - visibleRight) / 2 + visibleLeft
+        let yCenter = bounds.midY + (zoom.visibleInsets.bottom - zoom.visibleInsets.top) / 2
+        return CGPoint(x: pt.x - xCenter, y: pt.y - yCenter)
+    }
+
+    private func applyZoomDelta(_ delta: CGFloat, cursorOffset: CGPoint) {
+        zoom.zoomTowardPoint(factor: exp(delta * 0.01), cursorOffset: cursorOffset)
         layoutImageLayer()
     }
 

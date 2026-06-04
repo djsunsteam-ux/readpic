@@ -112,6 +112,19 @@ struct ZoomGeometry {
         zoomLevel = min(max(zoomLevel * (1 + factor), Self.minZoomLevel), Self.maxZoomLevel)
     }
 
+    /// Zoom by `factor` while keeping the point at `cursorOffset` fixed on screen.
+    /// `cursorOffset` is the cursor position relative to the visible area center, in view points.
+    mutating func zoomTowardPoint(factor: CGFloat, cursorOffset: CGPoint) {
+        let oldZoom = zoomLevel
+        mode = .custom
+        zoomLevel = min(max(oldZoom * factor, Self.minZoomLevel), Self.maxZoomLevel)
+        let r = zoomLevel / oldZoom
+        panOffset = CGPoint(
+            x: cursorOffset.x * (1 - r) + panOffset.x * r,
+            y: cursorOffset.y * (1 - r) + panOffset.y * r
+        )
+    }
+
     mutating func viewportDidChange(to newSize: CGSize) {
         guard newSize != viewportSize, newSize.width > 0, newSize.height > 0 else { return }
         viewportSize = newSize

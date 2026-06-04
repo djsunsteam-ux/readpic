@@ -98,22 +98,6 @@ final class CropOverlayView: NSView {
         )
     }
 
-    /// Convert a view-space point to normalized image-space point.
-    private func toNormalizedPoint(_ viewPoint: CGPoint) -> CGPoint {
-        CGPoint(
-            x: (viewPoint.x - imageRect.origin.x) / imageRect.width,
-            y: (imageRect.maxY - viewPoint.y) / imageRect.height
-        )
-    }
-
-    /// Convert a normalized image-space point to view-space point.
-    private func toViewPoint(_ normPoint: CGPoint) -> CGPoint {
-        CGPoint(
-            x: imageRect.origin.x + normPoint.x * imageRect.width,
-            y: imageRect.maxY - normPoint.y * imageRect.height
-        )
-    }
-
     // MARK: - Hit testing
 
     /// Determine what the user is clicking on.
@@ -371,7 +355,7 @@ final class CropOverlayView: NSView {
             if dragType == .inner {
                 result = applyBoundaryConstraintsForMove(result)
             } else {
-                result = scaleToFitBoundary(result, ratio: ratio)
+                result = scaleToFitBoundary(result)
             }
         }
 
@@ -387,28 +371,14 @@ final class CropOverlayView: NSView {
         case .top, .bottom:
             // Horizontal edge: user changes height → adjust width = height × ratio
             let newWidth = rect.height * ratio
-            if dragType == .top {
-                // Top edge: keep bottom-left fixed, expand width centered
-                let newX = rect.minX - (newWidth - rect.width) / 2
-                return CGRect(x: newX, y: rect.minY, width: newWidth, height: rect.height)
-            } else {
-                // Bottom edge: keep top-left fixed, expand width centered
-                let newX = rect.minX - (newWidth - rect.width) / 2
-                return CGRect(x: newX, y: rect.minY, width: newWidth, height: rect.height)
-            }
+            let newX = rect.minX - (newWidth - rect.width) / 2
+            return CGRect(x: newX, y: rect.minY, width: newWidth, height: rect.height)
 
         case .left, .right:
             // Vertical edge: user changes width → adjust height = width ÷ ratio
             let newHeight = rect.width / ratio
-            if dragType == .left {
-                // Left edge: keep bottom fixed, expand height centered
-                let newY = rect.minY - (newHeight - rect.height) / 2
-                return CGRect(x: rect.minX, y: newY, width: rect.width, height: newHeight)
-            } else {
-                // Right edge: keep bottom fixed, expand height centered
-                let newY = rect.minY - (newHeight - rect.height) / 2
-                return CGRect(x: rect.minX, y: newY, width: rect.width, height: newHeight)
-            }
+            let newY = rect.minY - (newHeight - rect.height) / 2
+            return CGRect(x: rect.minX, y: newY, width: rect.width, height: newHeight)
 
         case .inner, .create, .none:
             return rect
@@ -517,11 +487,11 @@ final class CropOverlayView: NSView {
         return result
     }
 
-    /// Scale rect to fit within image boundary while maintaining the given aspect ratio.
+    /// Scale rect to fit within image boundary while maintaining aspect ratio.
     /// Used after aspect ratio adjustment when the OTHER dimension may have exceeded
     /// the boundary.  Unlike `applyBoundaryConstraints` (which clamps one dimension
     /// and breaks the ratio), this scales BOTH dimensions uniformly.
-    private func scaleToFitBoundary(_ rect: CGRect, ratio: CGFloat) -> CGRect {
+    private func scaleToFitBoundary(_ rect: CGRect) -> CGRect {
         var result = rect
 
         // Already fits — nothing to do (check all four edges, not just dimensions)

@@ -158,6 +158,7 @@ struct ViewerView: View {
                 Spacer()
 
                 if model.showFrameStrip, model.hasAnimatedFrames, !model.isGridView, let frames = model.decodedImage?.animatedFrames {
+                    let wasPausedBeforeScroll = model.isAnimationPaused
                     FrameStripView(
                         frames: frames.map(\.image),
                         totalFrameCount: model.decodedImage?.frameCount ?? frames.count,
@@ -166,18 +167,19 @@ struct ViewerView: View {
                         onSelect: { model.selectFrame(at: $0) },
                         onTogglePlay: { model.toggleAnimationPause() },
                         onScrollStart: { model.isAnimationPaused = true },
-                        onScrollEnd: { model.isAnimationPaused = false }
+                        onScrollEnd: { model.isAnimationPaused = wasPausedBeforeScroll }
                     )
                     .transition(.move(edge: .bottom))
                 }
 
                 if model.navigableFiles.count > 1 && model.showThumbnailStrip && !model.isGridView {
+                    let wasPausedBeforeScroll = model.isAnimationPaused
                     ThumbnailStripView(
                         files: model.navigableFiles,
                         currentIndex: model.navigableIndex,
                         select: { model.selectFile(at: $0) },
                         onScrollStart: { if model.hasAnimatedFrames { model.isAnimationPaused = true } },
-                        onScrollEnd: { if model.hasAnimatedFrames { model.isAnimationPaused = false } }
+                        onScrollEnd: { if model.hasAnimatedFrames { model.isAnimationPaused = wasPausedBeforeScroll } }
                     )
                     .id(model.fileListVersion)
                     .transition(.move(edge: .bottom))

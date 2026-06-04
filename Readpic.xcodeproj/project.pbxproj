@@ -47,7 +47,6 @@
 		A00000000000000000000099 /* Readpic/Core/ImageLoading/Histogram.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000098 /* Readpic/Core/ImageLoading/Histogram.swift */; };
 		A00000000000000000000101 /* Readpic/Features/InfoPanel/HistogramChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000100 /* Readpic/Features/InfoPanel/HistogramChartView.swift */; };
 		A00000000000000000000102 /* ArchiveScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000103 /* ArchiveScanner.swift */; };
-		A00000000000000000000104 /* ShareService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000105 /* ShareService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -104,7 +103,7 @@
 		A00000000000000000000098 /* Readpic/Core/ImageLoading/Histogram.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Readpic/Core/ImageLoading/Histogram.swift; sourceTree = SOURCE_ROOT; };
 		A00000000000000000000100 /* Readpic/Features/InfoPanel/HistogramChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Readpic/Features/InfoPanel/HistogramChartView.swift; sourceTree = SOURCE_ROOT; };
 		A00000000000000000000103 /* ArchiveScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchiveScanner.swift; sourceTree = "<group>"; };
-		A00000000000000000000105 /* ShareService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareService.swift; sourceTree = "<group>"; };
+
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -252,7 +251,7 @@
 			isa = PBXGroup;
 			children = (
 				A0000000000000000000003D /* ClipboardService.swift */,
-				A00000000000000000000105 /* ShareService.swift */,
+
 				A0000000000000000000003E /* FinderService.swift */,
 				A0000000000000000000003F /* ExternalOpenService.swift */,
 				A00000000000000000000042 /* FileOperationService.swift */,
@@ -471,7 +470,7 @@
 				A00000000000000000000099 /* Readpic/Core/ImageLoading/Histogram.swift in Sources */,
 				A00000000000000000000101 /* Readpic/Features/InfoPanel/HistogramChartView.swift in Sources */,
 				A00000000000000000000102 /* ArchiveScanner.swift in Sources */,
-				A00000000000000000000104 /* ShareService.swift in Sources */,
+
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

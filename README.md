@@ -18,14 +18,6 @@ English | [简体中文](README.zh-CN.md)
 
 ## Installation
 
-### Homebrew (recommended)
-
-```bash
-brew install --cask readpic
-```
-
-### Manual
-
 1. Download `Readpic.dmg` from [Releases](https://github.com/djsunsteam-ux/readpic/releases)
 2. Open the DMG
 3. Drag **Readpic** to **Applications**

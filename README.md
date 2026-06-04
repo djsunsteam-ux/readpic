@@ -24,7 +24,7 @@ brew install --cask readpic
 
 ### Manual
 
-1. Download `Readpic.dmg` from [Releases](https://github.com/sunux/readpic/releases)
+1. Download `Readpic.dmg` from [Releases](https://github.com/djsunsteam-ux/readpic/releases)
 2. Open the DMG
 3. Drag **Readpic** to **Applications**
 4. Launch from Applications or Spotlight

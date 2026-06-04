@@ -24,7 +24,12 @@
       "Bash(sed -n '715,760p' Readpic/Features/Viewer/ViewerView.swift)",
       "Bash(chmod +x *)",
       "Bash(Scripts/build.sh *)",
-      "Bash(Scripts/package_dmg.sh *)"
+      "Bash(Scripts/package_dmg.sh *)",
+      "Bash(sips -z 16 16 '/Users/yh/Downloads/我在开发一款 mac-1778966500430.png' --out /Users/yh/workspace/Readpic/Resources/Assets.xcassets/AppIcon.appiconset/icon_16x16.png)",
+      "Bash(sips -z 32 32 '/Users/yh/Downloads/我在开发一款 mac-1778966500430.png' --out /Users/yh/workspace/Readpic/Resources/Assets.xcassets/AppIcon.appiconset/icon_16x16@2x.png)",
+      "Bash(sips -z 32 32 '/Users/yh/Downloads/我在开发一款 mac-1778966500430.png' --out /Users/yh/workspace/Readpic/Resources/Assets.xcassets/AppIcon.appiconset/icon_32x32.png)",
+      "Bash(sips -z 64 64 '/Users/yh/Downloads/我在开发一款 mac-1778966500430.png' --out /Users/yh/workspace/Readpic/Resources/Assets.xcassets/AppIcon.appiconset/icon_32x32@2x.png)",
+      "Bash(sips -z 128 128 '/Users/yh/Downloads/我在开发一款 mac-1778966500430.png' --out /Users/yh/workspace/Readpic/Resources/Assets.xcassets/AppIcon.appiconset/icon_128x128.png)"
     ]
   }
 }

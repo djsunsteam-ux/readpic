@@ -23,6 +23,7 @@ xcodebuild \
     -skipPackagePluginValidation \
     CODE_SIGN_IDENTITY="-" \
     CODE_SIGNING_ALLOWED=YES \
+    ASSETCATALOG_COMPILER_APPICON_NAME=AppIcon \
     2>&1 | tail -5
 
 # ── Locate .app ─────────────────────────────────────────────────

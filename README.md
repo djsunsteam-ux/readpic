@@ -37,7 +37,7 @@ Readpic is not notarized with Apple. On first launch:
 
 1. Right-click **Readpic.app** → select **Open**
 2. Click **Open** in the dialog
-3. The app will open normally此后
+3. The app will open normally from then on
 
 Alternatively:
 

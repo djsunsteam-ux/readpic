@@ -21,6 +21,7 @@ final class ThumbnailDiskCache: @unchecked Sendable {
     private let maxDiskBytes: Int64 = 100 * 1024 * 1024   // 100 MB
     private let maxFileCount = 5000
     private let fileManager = FileManager.default
+    private let lock = NSLock()
     private var setCount = 0
     private let budgetCheckInterval = 50  // Run enforceBudget every N sets
 
@@ -68,11 +69,15 @@ final class ThumbnailDiskCache: @unchecked Sendable {
         try? data.write(to: url, options: .atomic)
 
         // Amortize budget enforcement — scan directory every N writes
+        var shouldEnforce = false
+        lock.lock()
         setCount += 1
         if setCount >= budgetCheckInterval {
             setCount = 0
-            enforceBudget()
+            shouldEnforce = true
         }
+        lock.unlock()
+        if shouldEnforce { enforceBudget() }
     }
 
     /// Remove a specific thumbnail.
@@ -99,7 +104,7 @@ final class ThumbnailDiskCache: @unchecked Sendable {
         return "\(urlHash)_\(key.fileSize)_\(modMs).thumb"
     }
 
-    /// First 16 hex chars of SHA-256 — enough to avoid collision in practice.
+    /// First 16 bytes of SHA-256, rendered as 32 hex characters — enough to avoid collision in practice.
     private func sha256Prefix(_ string: String) -> String {
         let data = Data(string.utf8)
         let hash = SHA256.hash(data: data)

@@ -13,20 +13,13 @@ struct ArchiveScanner: Sendable {
         return false
         #endif
     }
-    /// Supported image extensions inside archives.
-    private static let imageExtensions: Set<String> = [
-        "jpg", "jpeg", "png",
-        "heic", "heif", "webp", "gif", "tiff", "tif", "bmp", "ico",
-        "cr2", "cr3", "nef", "arw", "dng", "orf", "rw2", "raf",
-        "srw", "pef", "srf", "sr2", "3fr", "fff", "x3f", "mef", "mos",
-        "avif", "psd", "psb",
-    ]
 
     /// An entry in the archive that can be displayed as an image.
     struct ArchiveEntry: Sendable {
         let path: String          // Path inside the archive
         let fileName: String      // Display name
         let fileSize: Int64
+        let modificationDate: Date?
     }
 
     init() {}
@@ -40,15 +33,18 @@ struct ArchiveScanner: Sendable {
         for entry in archive {
             guard entry.type == .file else { continue }
             let ext = (entry.path as NSString).pathExtension.lowercased()
-            guard Self.imageExtensions.contains(ext) else { continue }
+            guard FileItem.supportedImageExtensions.contains(ext) else { continue }
             // Skip macOS resource forks and hidden files
             let name = (entry.path as NSString).lastPathComponent
             guard !name.hasPrefix("._"), !name.hasPrefix(".") else { continue }
 
+            let modDate = entry.fileAttributes[.modificationDate] as? Date
+
             entries.append(ArchiveEntry(
                 path: entry.path,
                 fileName: name,
-                fileSize: Int64(entry.uncompressedSize)
+                fileSize: Int64(entry.uncompressedSize),
+                modificationDate: modDate
             ))
         }
 
@@ -56,7 +52,12 @@ struct ArchiveScanner: Sendable {
         case .name:
             entries.sort { $0.fileName.localizedStandardCompare($1.fileName) == .orderedAscending }
         case .date:
-            entries.sort { $0.fileName.localizedStandardCompare($1.fileName) == .orderedAscending }
+            entries.sort {
+                let d0 = $0.modificationDate ?? .distantPast
+                let d1 = $1.modificationDate ?? .distantPast
+                if d0 != d1 { return d0 < d1 }
+                return $0.fileName.localizedStandardCompare($1.fileName) == .orderedAscending
+            }
         }
 
         return entries
@@ -72,7 +73,10 @@ struct ArchiveScanner: Sendable {
             let archive = try Archive(url: archiveURL, accessMode: .read)
             guard let entry = archive[entryPath] else { return nil }
 
-            let outputURL = tempDir.appendingPathComponent((entryPath as NSString).lastPathComponent)
+            // Use a hash of the full path to avoid collisions (e.g. chapter1/image.jpg vs chapter2/image.jpg)
+            let sanitized = entryPath.replacingOccurrences(of: "/", with: "_")
+                                     .replacingOccurrences(of: "\\", with: "_")
+            let outputURL = tempDir.appendingPathComponent(sanitized)
             if FileManager.default.fileExists(atPath: outputURL.path) {
                 return outputURL
             }

@@ -73,17 +73,6 @@ enum BackgroundColor: String, CaseIterable, Sendable {
         }
     }
 
-    var nsColor: NSColor {
-        switch self {
-        case .theme: .windowBackgroundColor
-        case .black: .black
-        case .darkGray: .darkGray
-        case .lightGray: .lightGray
-        case .white: .white
-        case .custom: AppSettings.readCustomBackgroundColor()
-        }
-    }
-
     var displayName: String {
         switch self {
         case .theme: String(localized: "Follow Theme")

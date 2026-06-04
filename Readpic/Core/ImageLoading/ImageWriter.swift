@@ -34,14 +34,6 @@ struct ImageWriter {
             }
         }
 
-        /// Whether this format supports lossless encoding.
-        var isLossless: Bool {
-            switch self {
-            case .jpeg, .heic: false
-            case .png, .tiff, .bmp: true
-            }
-        }
-
         /// Whether this format supports a quality slider (JPEG / HEIC).
         var supportsQuality: Bool {
             switch self {

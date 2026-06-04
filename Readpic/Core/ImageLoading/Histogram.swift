@@ -106,14 +106,18 @@ struct Histogram {
         var hb = [vImagePixelCount](repeating: 0, count: binCount)
         var ha = [vImagePixelCount](repeating: 0, count: binCount)
 
-        let r1 = hr.withUnsafeMutableBufferPointer { $0.baseAddress }
-        let g1 = hg.withUnsafeMutableBufferPointer { $0.baseAddress }
-        let b1 = hb.withUnsafeMutableBufferPointer { $0.baseAddress }
-        let a1 = ha.withUnsafeMutableBufferPointer { $0.baseAddress }
-        var hists = [r1, g1, b1, a1]
-
-        guard vImageHistogramCalculation_ARGB8888(&src, &hists, vImage_Flags(kvImageNoFlags)) == kvImageNoError
-        else { return nil }
+        var histErr: vImage_Error = kvImageNoError
+        hr.withUnsafeMutableBufferPointer { rBuf in
+            hg.withUnsafeMutableBufferPointer { gBuf in
+                hb.withUnsafeMutableBufferPointer { bBuf in
+                    ha.withUnsafeMutableBufferPointer { aBuf in
+                        var hists = [rBuf.baseAddress, gBuf.baseAddress, bBuf.baseAddress, aBuf.baseAddress]
+                        histErr = vImageHistogramCalculation_ARGB8888(&src, &hists, vImage_Flags(kvImageNoFlags))
+                    }
+                }
+            }
+        }
+        guard histErr == kvImageNoError else { return nil }
 
         // 4. Luminance histogram
         // Compute luminance = 0.2126*R + 0.7152*G + 0.0722*B (Rec. 709)
@@ -164,15 +168,10 @@ struct Histogram {
 
     /// Downsample an image to fit within `maxPixelSize` long side.
     private static func thumbnail(from image: CGImage, maxPixelSize: CGFloat) -> CGImage? {
-        let w = CGFloat(image.width)
-        let h = CGFloat(image.height)
-        let maxDim = max(w, h)
-        guard maxDim > maxPixelSize else { return image }
-
-        let scale = maxPixelSize / maxDim
-        let tw = Int((w * scale).rounded())
-        let th = Int((h * scale).rounded())
-        guard tw > 0, th > 0 else { return nil }
+        guard let (tw, th) = Downsample.targetDimensions(
+            imageSize: CGSize(width: image.width, height: image.height),
+            maxPixelSize: Int(maxPixelSize)
+        ) else { return image }
 
         guard let ctx = CGContext(
             data: nil, width: tw, height: th,

@@ -1,17 +1,6 @@
 import Foundation
 
 public struct FolderScanner: Sendable {
-    private static let supportedExtensions: Set<String> = [
-        "jpg", "jpeg", "png",
-        "heic", "heif", "webp", "gif", "tiff", "tif", "bmp", "ico",
-        // RAW
-        "cr2", "cr3", "nef", "arw", "dng", "orf", "rw2", "raf",
-        "srw", "pef", "srf", "sr2", "3fr", "fff", "x3f", "mef", "mos",
-        // AVIF
-        "avif",
-        // PSD
-        "psd", "psb",
-    ]
 
     public init() {}
 
@@ -36,7 +25,7 @@ public struct FolderScanner: Sendable {
     }
 
     public static func supports(_ url: URL) -> Bool {
-        supportedExtensions.contains(url.pathExtension.lowercased())
+        FileItem.supportedImageExtensions.contains(url.pathExtension.lowercased())
     }
 
     /// Check if a URL is a ZIP/CBZ archive.

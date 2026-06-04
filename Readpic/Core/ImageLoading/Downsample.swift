@@ -12,6 +12,22 @@ struct Downsample {
         return orient
     }
 
+    /// Compute target width/height for downsampling an image so its longest
+    /// side fits within `maxPixelSize`. Returns `nil` when no downsampling is
+    /// needed (the image already fits).
+    static func targetDimensions(imageSize: CGSize, maxPixelSize: Int) -> (Int, Int)? {
+        let w = imageSize.width
+        let h = imageSize.height
+        let maxDim = max(w, h)
+        guard maxDim > CGFloat(maxPixelSize) else { return nil }
+
+        let scale = CGFloat(maxPixelSize) / maxDim
+        let tw = Int((w * scale).rounded())
+        let th = Int((h * scale).rounded())
+        guard tw > 0, th > 0 else { return nil }
+        return (tw, th)
+    }
+
     static func createImage(source: CGImageSource, maxPixelSize: CGFloat) throws -> CGImage {
         guard let rawImage = CGImageSourceCreateImageAtIndex(source, 0, nil) else {
             throw ImageDecodeError.noImage

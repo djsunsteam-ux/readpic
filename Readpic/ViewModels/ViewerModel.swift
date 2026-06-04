@@ -224,6 +224,7 @@ final class ViewerModel {
 
     let settings = AppSettings.shared
     private var fullscreenObserver: Any?
+    private var exitFullscreenObserver: Any?
     private var mouseMonitor: NSObjectProtocol?
     private var memorySource: DispatchSourceMemoryPressure?
 
@@ -238,7 +239,7 @@ final class ViewerModel {
                     self?.startMouseMonitor()
                 }
             }
-            _ = NotificationCenter.default.addObserver(
+            exitFullscreenObserver = NotificationCenter.default.addObserver(
                 forName: NSWindow.didExitFullScreenNotification, object: nil, queue: .main
             ) { [weak self] _ in
                 MainActor.assumeIsolated {
@@ -273,6 +274,9 @@ final class ViewerModel {
     deinit {
         MainActor.assumeIsolated {
             if let o = fullscreenObserver as? NSObjectProtocol {
+                NotificationCenter.default.removeObserver(o)
+            }
+            if let o = exitFullscreenObserver as? NSObjectProtocol {
                 NotificationCenter.default.removeObserver(o)
             }
             memorySource?.cancel()
@@ -434,9 +438,10 @@ final class ViewerModel {
                 do {
                     image = try await withCheckedThrowingContinuation { continuation in
                         let urlCopy = url
+                        let decoder = self.decoder
                         let op = BlockOperation {
                             do {
-                                let result = try self.decoder.decode(url: urlCopy)
+                                let result = try decoder.decode(url: urlCopy)
                                 continuation.resume(returning: result)
                             } catch {
                                 continuation.resume(throwing: error)
@@ -515,9 +520,10 @@ final class ViewerModel {
                 do {
                     let firstURL = first.url
                     image = try await withCheckedThrowingContinuation { continuation in
+                        let decoder = self.decoder
                         let op = BlockOperation {
                             do {
-                                let result = try self.decoder.decode(url: firstURL)
+                                let result = try decoder.decode(url: firstURL)
                                 continuation.resume(returning: result)
                             } catch {
                                 continuation.resume(throwing: error)
@@ -621,9 +627,10 @@ final class ViewerModel {
                 let image: DecodedImage
                 do {
                     image = try await withCheckedThrowingContinuation { continuation in
+                        let decoder = self.decoder
                         let op = BlockOperation {
                             do {
-                                let result = try self.decoder.decode(url: firstFile)
+                                let result = try decoder.decode(url: firstFile)
                                 continuation.resume(returning: result)
                             } catch {
                                 continuation.resume(throwing: error)
@@ -872,7 +879,9 @@ final class ViewerModel {
 
         // Fall back to on-demand decode
         Task.detached(priority: .utility) { [weak self] in
-            guard let self, let image = try? self.decoder.decode(url: currentFile.url, maxPixelSize: nextRes) else { return }
+            guard let self else { return }
+            let decoder = self.decoder
+            guard let image = try? decoder.decode(url: currentFile.url, maxPixelSize: nextRes) else { return }
             await MainActor.run {
                 guard !Task.isCancelled else { return }
                 ImageCache.shared.set(image)
@@ -1029,9 +1038,10 @@ final class ViewerModel {
         let file = files[index]
         Task.detached(priority: .utility) { [weak self] in
             guard let self else { return }
+            let decoder = self.decoder
             let meta = self.metadataReader.read(url: file.url, pixelSize: .zero)
             // Decode a small proxy for the histogram (512px is fast for all formats)
-            let preview = try? self.decoder.decode(url: file.url, maxPixelSize: 512)
+            let preview = try? decoder.decode(url: file.url, maxPixelSize: 512)
             await MainActor.run {
                 guard self.selectedGridIndices.contains(index) else { return }
                 self.metadata = meta
@@ -1133,8 +1143,9 @@ final class ViewerModel {
                 loadTask?.cancel()
                 loadTask = Task {
                     do {
+                        let decoder = self.decoder
                         let image = try await Task.detached(priority: .utility) {
-                            try self.decoder.decode(url: file.url)
+                            try decoder.decode(url: file.url)
                         }.value
                         guard !Task.isCancelled else { return }
                         ImageCache.shared.set(image)
@@ -1762,9 +1773,10 @@ final class ViewerModel {
             let image: DecodedImage
             do {
                 image = try await withCheckedThrowingContinuation { continuation in
+                    let decoder = self.decoder
                     let op = BlockOperation {
                         do {
-                            let result = try self.decoder.decode(url: currentFile.url)
+                            let result = try decoder.decode(url: currentFile.url)
                             continuation.resume(returning: result)
                         } catch {
                             continuation.resume(throwing: error)

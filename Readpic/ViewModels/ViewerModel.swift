@@ -359,7 +359,7 @@ final class ViewerModel {
         if let decodedImage {
             dimensions = "\(Int(decodedImage.pixelSize.width)) × \(Int(decodedImage.pixelSize.height))"
         } else {
-            dimensions = "Loading…"
+            dimensions = String(localized: "Loading…")
         }
         let sizeStr = fileSizeString(currentFile.fileSize)
         return "\(currentIndex + 1) / \(count)    \(currentFile.name)    \(dimensions)    \(sizeStr)    \(zoomPercent)%"

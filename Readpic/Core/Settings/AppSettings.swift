@@ -86,12 +86,12 @@ enum BackgroundColor: String, CaseIterable, Sendable {
 
     var displayName: String {
         switch self {
-        case .theme: "Follow Theme"
-        case .black: "Black"
-        case .darkGray: "Dark Gray"
-        case .lightGray: "Light Gray"
-        case .white: "White"
-        case .custom: "Custom"
+        case .theme: String(localized: "Follow Theme")
+        case .black: String(localized: "Black")
+        case .darkGray: String(localized: "Dark Gray")
+        case .lightGray: String(localized: "Light Gray")
+        case .white: String(localized: "White")
+        case .custom: String(localized: "Custom")
         }
     }
 }

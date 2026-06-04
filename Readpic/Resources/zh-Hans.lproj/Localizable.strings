@@ -337,3 +337,10 @@
 "No supported images found in archive" = "压缩包中未找到支持的图片";
 "Failed to extract archive" = "无法解压压缩包";
 "Failed to open archive" = "无法打开压缩包";
+"Permission denied — can't read this folder" = "权限被拒绝，无法读取此文件夹";
+"Permission denied — can't read this file" = "权限被拒绝，无法读取此文件";
+"The folder no longer exists" = "文件夹已不存在";
+"Unsupported or inaccessible file" = "不支持或无法访问的文件";
+"Color Picker" = "取色器";
+"Invert selection" = "反选";
+"Toggle favorite" = "切换收藏";

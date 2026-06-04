@@ -5,13 +5,25 @@ struct WindowAccessor: NSViewRepresentable {
     let onReady: (NSWindow) -> Void
 
     func makeNSView(context: Context) -> NSView {
-        let view = NSView()
-        DispatchQueue.main.async { [weak view] in
-            guard let window = view?.window else { return }
-            window.delegate = context.coordinator
-            onReady(window)
-        }
+        let view = InnerView()
+        view.onReady = onReady
+        view.coordinator = context.coordinator
         return view
+    }
+
+    /// Custom NSView that applies window configuration as soon as it is
+    /// attached to a window, before the first display pass.
+    private class InnerView: NSView {
+        var onReady: ((NSWindow) -> Void)?
+        var coordinator: Coordinator?
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            guard let window, let callback = onReady else { return }
+            window.delegate = coordinator
+            callback(window)
+            onReady = nil  // run once
+        }
     }
 
     func updateNSView(_ view: NSView, context: Context) {}

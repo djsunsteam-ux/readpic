@@ -249,6 +249,7 @@ struct ReadpicApp: App {
             // MARK: - Image
             CommandMenu("Image") {
                 Button("Crop\u{2026}") { model.enterCropMode() }
+                    .keyboardShortcut("k")
                     .disabled(!model.isGridView && model.currentFile == nil)
 
                 Button("Rotate Left") { model.rotateLeft() }
@@ -261,6 +262,10 @@ struct ReadpicApp: App {
 
                 Button("Flip Horizontal") { model.flipHorizontal() }
                     .keyboardShortcut("h", modifiers: [.command, .shift])
+                    .disabled(model.currentFile == nil)
+
+                Button("Color Picker") { model.toggleColorPickerMode() }
+                    .keyboardShortcut("p")
                     .disabled(model.currentFile == nil)
 
                 Divider()

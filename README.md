@@ -44,16 +44,21 @@ Alternatively:
 | Key | Action |
 |---|---|
 | `←` `→` | Previous / Next image |
+| `↑` `↓` | Grid: select up / down |
 | `Space` | Pause / Resume GIF |
 | `G` | Toggle grid view |
+| `Esc` | Close panel / exit fullscreen / stop slideshow |
 
 ### Zoom
 
 | Key | Action |
 |---|---|
-| `+` `-` | Zoom in / out |
-| `0` | Reset zoom (fit window) |
+| `⌘=` `⌘-` | Zoom in / out |
+| `⌘0` | Reset zoom (fit window) |
+| `+` `-` `0` | Same (no modifier) |
 | Double-click | Toggle fit / 100% |
+| Pinch | Zoom toward cursor |
+| Scroll + `⌥` | Zoom toward cursor |
 
 ### File
 
@@ -72,9 +77,11 @@ Alternatively:
 
 | Key | Action |
 |---|---|
-| `⌘I` | Toggle info panel |
-| `⌘T` | Toggle thumbnail strip |
-| `⌘F` | Toggle fullscreen |
+| `I` | Toggle info panel |
+| `T` | Toggle thumbnail strip |
+| `S` | Toggle frame strip |
+| `F` | Toggle fullscreen |
+| `⌘⌥F` | Start slideshow |
 | `?` | Keyboard shortcuts |
 
 ### Edit
@@ -84,7 +91,11 @@ Alternatively:
 | `K` | Crop |
 | `P` | Color picker |
 | `⌘⇧S` | Export image |
-| `⌘S` | Save changes (rotate/flip) |
+| `⌘[` `⌘]` | Rotate left / right |
+| `⌘⇧H` | Flip horizontal |
+| `⌘D` | Toggle favorite |
+| `⌘A` | Select all (grid) |
+| `⌘⇧A` | Invert selection (grid) |
 
 ## Supported Formats
 

@@ -211,12 +211,6 @@ struct ViewerView: View {
         .background {
             WindowAccessor { window in
                 model.window = window
-                // Paint a solid background in the title bar area by letting the
-                // content view extend behind it, then covering everything with a
-                // solid color. This avoids the system's default frosted-glass
-                // title bar appearance.
-                window.styleMask.insert(.fullSizeContentView)
-                window.titlebarAppearsTransparent = true
                 window.isOpaque = true
                 window.backgroundColor = .black
                 if !window.setFrameUsingName("mainWindow") {
@@ -663,14 +657,17 @@ private struct EmptyStateView: View {
                         shortcutItem("T", "Thumbnail strip")
                         shortcutItem("Space", "Play / Pause")
                         shortcutItem("Esc", "Close overlay")
+                        shortcutItem("?", "Help")
                     }
                     VStack(alignment: .leading, spacing: 5) {
                         shortcutItem("\u{2318}O", "Open file")
                         shortcutItem("\u{2318}\u{21E7}O", "Open folder")
                         shortcutItem("\u{2318}\u{232B}", "Move to Trash")
                         shortcutItem("\u{2318}C", "Copy image")
-                        shortcutItem("\u{2318}E", "Open externally")
-                        shortcutItem("?", "Help")
+                        shortcutItem("\u{2318}\u{21E7}C", "Copy file")
+                        shortcutItem("\u{2318}\u{2325}C", "Copy path")
+                        shortcutItem("\u{2318}\u{2325}E", "Reveal in Finder")
+                        shortcutItem("\u{2318}A", "Select All")
                     }
                     VStack(alignment: .leading, spacing: 5) {
                         shortcutItem("\u{2318}[ / \u{2318}]", "Rotate")
@@ -678,7 +675,8 @@ private struct EmptyStateView: View {
                         shortcutItem("+ / - / 0", "Zoom")
                         shortcutItem("F", "Fullscreen")
                         shortcutItem("\u{2318}\u{2325}F", "Slideshow")
-                        shortcutItem("C", "Crop")
+                        shortcutItem("K", "Crop")
+                        shortcutItem("P", "Color Picker")
                         shortcutItem("S", "Frame strip")
                     }
                 }
@@ -712,41 +710,55 @@ private struct ShortcutsHelpView: View {
                     .font(.system(size: 15, weight: .semibold))
                     .padding(.bottom, 16)
 
-                shortcutsGroup("Navigation") {
-                    shortcutRow("\u{2190} / \u{2192} / \u{2191} / \u{2193}", "Navigate images / grid")
-                    shortcutRow("Space", "Play / Pause animation")
-                    shortcutRow("G", "Toggle Grid view")
-                    shortcutRow("I", "Toggle Info panel")
-                    shortcutRow("Esc", "Close overlay / panel / window")
-                }
+                HStack(alignment: .top, spacing: 24) {
+                    // Left column
+                    VStack(alignment: .leading, spacing: 0) {
+                        shortcutsGroup("Navigation") {
+                            shortcutRow("\u{2190} / \u{2192} / \u{2191} / \u{2193}", "Navigate images / grid")
+                            shortcutRow("Space", "Play / Pause animation")
+                            shortcutRow("G", "Toggle Grid view")
+                            shortcutRow("I", "Toggle Info panel")
+                            shortcutRow("T", "Toggle thumbnail strip")
+                            shortcutRow("S", "Toggle frame strip")
+                            shortcutRow("K", "Crop")
+                            shortcutRow("P", "Color Picker")
+                            shortcutRow("Esc", "Close overlay / panel / window")
+                        }
 
-                shortcutsGroup("Zoom") {
-                    shortcutRow("+ / -", "Zoom in / out")
-                    shortcutRow("0", "Reset zoom")
-                    shortcutRow("Double-click", "Fit window / 100%")
-                }
+                        shortcutsGroup("Zoom") {
+                            shortcutRow("+ / -", "Zoom in / out")
+                            shortcutRow("0", "Reset zoom")
+                            shortcutRow("Double-click", "Fit window / 100%")
+                        }
+                    }
 
-                shortcutsGroup("File") {
-                    shortcutRow("\u{2318}O", "Open file")
-                    shortcutRow("\u{2318}\u{21E7}O", "Open folder")
-                    shortcutRow("\u{2318}C", "Copy image")
-                    shortcutRow("\u{2318}\u{21E7}C", "Copy file")
-                    shortcutRow("\u{2318}\u{2325}C", "Copy path")
-                    shortcutRow("\u{2318}\u{2325}E", "Reveal in Finder")
-                    shortcutRow("\u{2318}E", "Open externally")
-                    shortcutRow("\u{2318}\u{232B}", "Move to Trash")
-                }
+                    // Right column
+                    VStack(alignment: .leading, spacing: 0) {
+                        shortcutsGroup("File") {
+                            shortcutRow("\u{2318}O", "Open file")
+                            shortcutRow("\u{2318}\u{21E7}O", "Open folder")
+                            shortcutRow("\u{2318}C", "Copy image")
+                            shortcutRow("\u{2318}\u{21E7}C", "Copy file")
+                            shortcutRow("\u{2318}\u{2325}C", "Copy path")
+                            shortcutRow("\u{2318}\u{2325}E", "Reveal in Finder")
+                            shortcutRow("\u{2318}E", "Open externally")
+                            shortcutRow("\u{2318}\u{232B}", "Move to Trash")
+                            shortcutRow("\u{2318}\u{21E7}S", "Export / Convert")
+                            shortcutRow("\u{2318}\u{21E7}A", "Invert selection")
+                            shortcutRow("\u{2318}A", "Select All")
+                        }
 
-                shortcutsGroup("View") {
-                    shortcutRow("F", "Toggle fullscreen")
-                    shortcutRow("\u{2318}[ / \u{2318}]", "Rotate left / right")
-                    shortcutRow("\u{2318}\u{21E7}H", "Flip horizontal")
-                    shortcutRow("T", "Toggle thumbnail strip")
-                    shortcutRow("S", "Toggle frame strip")
+                        shortcutsGroup("View") {
+                            shortcutRow("F", "Toggle fullscreen")
+                            shortcutRow("\u{2318}[ / \u{2318}]", "Rotate left / right")
+                            shortcutRow("\u{2318}\u{21E7}H", "Flip horizontal")
+                            shortcutRow("\u{2318}D", "Toggle favorite")
+                        }
+                    }
                 }
             }
             .padding(24)
-            .frame(width: 380)
+            .frame(width: 680)
             .background(.ultraThickMaterial, in: RoundedRectangle(cornerRadius: 14))
             .offset(y: -20)
         }

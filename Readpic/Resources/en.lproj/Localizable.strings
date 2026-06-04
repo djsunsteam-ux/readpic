@@ -337,3 +337,10 @@
 "No supported images found in archive" = "No supported images found in archive";
 "Failed to extract archive" = "Failed to extract archive";
 "Failed to open archive" = "Failed to open archive";
+"Permission denied — can't read this folder" = "Permission denied — can't read this folder";
+"Permission denied — can't read this file" = "Permission denied — can't read this file";
+"The folder no longer exists" = "The folder no longer exists";
+"Unsupported or inaccessible file" = "Unsupported or inaccessible file";
+"Color Picker" = "Color Picker";
+"Invert selection" = "Invert selection";
+"Toggle favorite" = "Toggle favorite";

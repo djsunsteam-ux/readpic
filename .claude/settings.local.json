@@ -16,7 +16,12 @@
       "Bash(grep -rn \"showOpenPanel\\\\|showOpenFolderPanel\" --include=\"*.swift\" *.swift Core/ Services/ ViewModels/ Features/ App/)",
       "Bash(xxd /Users/yh/workspace/Readpic/Features/Viewer/ViewerView.swift)",
       "Bash(xxd)",
-      "Bash(sysctl -n hw.memsize)"
+      "Bash(sysctl -n hw.memsize)",
+      "Bash(grep -q '^\"__TRACKED_VAR__\"' Readpic/Resources/en.lproj/Localizable.strings)",
+      "Bash(grep '^\"__TRACKED_VAR__\"' Readpic/Resources/en.lproj/Localizable.strings)",
+      "Bash(grep '^\"__TRACKED_VAR__\"' Readpic/Resources/zh-Hans.lproj/Localizable.strings)",
+      "Bash(sed -n '658,685p' Readpic/Features/Viewer/ViewerView.swift)",
+      "Bash(sed -n '715,760p' Readpic/Features/Viewer/ViewerView.swift)"
     ]
   }
 }

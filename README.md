@@ -133,7 +133,7 @@ Open `Readpic.xcodeproj` in Xcode and press `⌘U`.
 
 ## Support
 
-Readpic is completely free and open source. It is also a vibe coding project: built by combining product taste, existing viewer ideas, and a lot of AI-assisted iteration.
+Readpic is completely free and open source. It is also a vibe coding project, built in public spirit and kept simple on purpose.
 
 If Readpic is useful to you, a small sponsorship helps cover the author's token budget and keeps the next macOS project moving:
 

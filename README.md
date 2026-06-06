@@ -140,6 +140,16 @@ If Readpic is useful to you, a small sponsorship helps cover the author's token 
 - [Sponsor on GitHub](https://github.com/sponsors/djsunsteam-ux)
 - [Support on Ko-fi](https://ko-fi.com/djsunsteam)
 
+For users in China:
+
+| WeChat Pay | Alipay |
+|---|---|
+| <img src=".github/assets/donate-wechat.png" width="180" alt="WeChat Pay donation QR code"> | <img src=".github/assets/donate-alipay.jpg" width="180" alt="Alipay donation QR code"> |
+
+Crypto:
+
+- USDT TRC20: `TShU1sP4vaDNQhZuV1JDjpZyqVxn7fESy9`
+
 ## License
 
 MIT

@@ -131,10 +131,6 @@ Scripts/build.sh
 Scripts/package_dmg.sh
 ```
 
-### Run Tests
-
-Open `Readpic.xcodeproj` in Xcode and press `⌘U`.
-
 ## Support
 
 Readpic is completely free and open source. It is also a vibe coding project that started from a simple frustration: most good macOS image viewers are paid, so I wanted to make a genuinely free one.

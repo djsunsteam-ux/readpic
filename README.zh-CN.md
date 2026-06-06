@@ -133,7 +133,9 @@ Scripts/package_dmg.sh
 
 ## 支持项目
 
-Readpic 完全免费、开源。如果它节省了你的时间，或者让 macOS 上的看图体验更顺手，可以通过下面的方式支持后续维护：
+Readpic 完全免费、开源。它也是一个 vibe coding 产品：把作者对看图工具的体验判断、已有优秀工具的优点，以及大量 AI 辅助迭代揉在一起做出来。
+
+如果你觉得它有用，可以顺手支持一下，帮作者回回血，买点 token，继续折腾下一个 macOS 小工具：
 
 - [GitHub Sponsors](https://github.com/sponsors/djsunsteam-ux)
 - [Ko-fi](https://ko-fi.com/djsunsteam)

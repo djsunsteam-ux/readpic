@@ -131,6 +131,13 @@ Scripts/package_dmg.sh
 
 Open `Readpic.xcodeproj` in Xcode and press `⌘U`.
 
+## Support
+
+Readpic is completely free and open source. If it saves you time or makes image browsing on macOS more pleasant, you can support its development:
+
+- [Sponsor on GitHub](https://github.com/sponsors/djsunsteam-ux)
+- [Support on Ko-fi](https://ko-fi.com/djsunsteam)
+
 ## License
 
 MIT

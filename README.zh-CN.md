@@ -131,6 +131,13 @@ Scripts/package_dmg.sh
 
 在 Xcode 中打开 `Readpic.xcodeproj`，按 `⌘U`。
 
+## 支持项目
+
+Readpic 完全免费、开源。如果它节省了你的时间，或者让 macOS 上的看图体验更顺手，可以通过下面的方式支持后续维护：
+
+- [GitHub Sponsors](https://github.com/sponsors/djsunsteam-ux)
+- [Ko-fi](https://ko-fi.com/djsunsteam)
+
 ## 许可证
 
 MIT

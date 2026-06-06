@@ -131,10 +131,6 @@ Scripts/build.sh
 Scripts/package_dmg.sh
 ```
 
-### 运行测试
-
-在 Xcode 中打开 `Readpic.xcodeproj`，按 `⌘U`。
-
 ## 支持项目
 
 Readpic 完全免费、开源。它也是一个 vibe coding 产品，最初的想法很简单：macOS 上好用的看图软件几乎都要收费，所以我想做一个真正免费的看图软件。

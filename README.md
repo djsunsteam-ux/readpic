@@ -39,6 +39,10 @@ Alternatively:
 2. Go to **System Settings → Privacy & Security**
 3. Click **Open Anyway** next to "Readpic was blocked"
 
+## Privacy & Security
+
+Readpic does not include any networking features and does not request network access. It does not collect, upload, or analyze any personal data, image files, or image contents. All image decoding, browsing, metadata reading, and editing happen locally on your Mac.
+
 ## Keyboard Shortcuts
 
 ### Navigation
@@ -127,9 +131,24 @@ Scripts/build.sh
 Scripts/package_dmg.sh
 ```
 
-### Run Tests
+## Support
 
-Open `Readpic.xcodeproj` in Xcode and press `⌘U`.
+Readpic is completely free and open source. It is also a vibe coding project that started from a simple frustration: most good macOS image viewers are paid, so I wanted to make a genuinely free one.
+
+If you are willing and have a little room to spare, you can choose to support the project. Donation or not, every feature stays exactly the same. Thank you for using Readpic either way.
+
+- [Sponsor on GitHub](https://github.com/sponsors/djsunsteam-ux)
+- [Support on Ko-fi](https://ko-fi.com/djsunsteam)
+
+For users in China:
+
+| WeChat Pay | Alipay |
+|---|---|
+| <img src=".github/assets/donate-wechat.png" width="180" alt="WeChat Pay donation QR code"> | <img src=".github/assets/donate-alipay.jpg" width="180" alt="Alipay donation QR code"> |
+
+Crypto:
+
+- USDT TRC20: `TShU1sP4vaDNQhZuV1JDjpZyqVxn7fESy9`
 
 ## License
 

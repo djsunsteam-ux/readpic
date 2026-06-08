@@ -28,7 +28,6 @@ struct ImageDecoder {
     private static let minFrameDelay: TimeInterval = 1.0 / maxFPS
 
     func decode(url: URL, maxPixelSize: CGFloat? = nil) throws -> DecodedImage {
-        let pixelSize = maxPixelSize ?? (isLowMemoryMode ? 1024 : 2048)
         guard let source = CGImageSourceCreateWithURL(url as CFURL, [
             kCGImageSourceShouldCache: false
         ] as CFDictionary) else {
@@ -43,12 +42,46 @@ struct ImageDecoder {
         let height = properties[kCGImagePropertyPixelHeight] as? CGFloat ?? 0
         let frameCount = CGImageSourceGetCount(source)
         let orientation = Downsample.readOrientation(source: source)
-        let image = try Downsample.createImage(source: source, maxPixelSize: pixelSize)
-        let animatedFrames: [AnimationFrame]?
 
+        var image: CGImage
+        if let maxPixelSize {
+            // Downsample for small proxy use (e.g. grid histogram preview)
+            guard let raw = CGImageSourceCreateImageAtIndex(source, 0, nil) else {
+                throw ImageDecodeError.noImage
+            }
+            let w = CGFloat(raw.width)
+            let h = CGFloat(raw.height)
+            let maxDim = max(w, h)
+            if maxDim > maxPixelSize {
+                let scale = maxPixelSize / maxDim
+                let tw = Int((w * scale).rounded())
+                let th = Int((h * scale).rounded())
+                if tw > 0, th > 0,
+                   let ctx = CGContext(data: nil, width: tw, height: th,
+                                       bitsPerComponent: 8, bytesPerRow: 0,
+                                       space: CGColorSpaceCreateDeviceRGB(),
+                                       bitmapInfo: CGBitmapInfo.byteOrder32Little.rawValue | CGImageAlphaInfo.noneSkipFirst.rawValue) {
+                    ctx.interpolationQuality = .high
+                    ctx.draw(raw, in: CGRect(x: 0, y: 0, width: tw, height: th))
+                    image = ctx.makeImage() ?? raw
+                } else {
+                    image = raw
+                }
+            } else {
+                image = raw
+            }
+        } else {
+            // Full resolution decode
+            guard let raw = CGImageSourceCreateImageAtIndex(source, 0, nil) else {
+                throw ImageDecodeError.noImage
+            }
+            image = raw
+        }
+
+        let animatedFrames: [AnimationFrame]?
         if frameCount > 1 {
             let maxFrames = min(frameCount, Self.maxAnimationFrames)
-            animatedFrames = decodeFrames(source: source, frameCount: maxFrames, maxPixelSize: pixelSize)
+            animatedFrames = decodeFrames(source: source, frameCount: maxFrames)
         } else {
             animatedFrames = nil
         }
@@ -63,7 +96,7 @@ struct ImageDecoder {
         )
     }
 
-    private func decodeFrames(source: CGImageSource, frameCount: Int, maxPixelSize: CGFloat) -> [AnimationFrame]? {
+    private func decodeFrames(source: CGImageSource, frameCount: Int) -> [AnimationFrame]? {
         var frames: [AnimationFrame] = []
         var previousFrame: CGImage?
 
@@ -102,8 +135,7 @@ struct ImageDecoder {
                 }
             }
 
-            let resized = downsampleIfNeeded(frameImage, maxPixelSize: maxPixelSize)
-            frames.append(AnimationFrame(image: resized, delay: delay))
+            frames.append(AnimationFrame(image: frameImage, delay: delay))
 
             if disposal != 3 {
                 previousFrame = frameImage
@@ -132,24 +164,4 @@ struct ImageDecoder {
         return ctx.makeImage() ?? current
     }
 
-    private func downsampleIfNeeded(_ image: CGImage, maxPixelSize: CGFloat) -> CGImage {
-        guard let (targetWidth, targetHeight) = Downsample.targetDimensions(
-            imageSize: CGSize(width: image.width, height: image.height),
-            maxPixelSize: Int(maxPixelSize)
-        ) else { return image }
-
-        let context = CGContext(
-            data: nil,
-            width: targetWidth,
-            height: targetHeight,
-            bitsPerComponent: image.bitsPerComponent,
-            bytesPerRow: 0,
-            space: image.colorSpace ?? CGColorSpaceCreateDeviceRGB(),
-            bitmapInfo: image.bitmapInfo.rawValue
-        )
-        guard let ctx = context else { return image }
-        ctx.interpolationQuality = .high
-        ctx.draw(image, in: CGRect(x: 0, y: 0, width: targetWidth, height: targetHeight))
-        return ctx.makeImage() ?? image
-    }
 }

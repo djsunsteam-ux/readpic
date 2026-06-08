@@ -23,7 +23,6 @@
 		A0000000000000000000003B /* FinderService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000003E /* FinderService.swift */; };
 		A0000000000000000000003C /* ExternalOpenService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000003F /* ExternalOpenService.swift */; };
 		A00000000000000000000041 /* FileOperationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000042 /* FileOperationService.swift */; };
-		A00000000000000000000043 /* ReadpicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000044 /* ReadpicTests.swift */; };
 		A00000000000000000000050 /* MetadataReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000052 /* MetadataReader.swift */; };
 		A00000000000000000000051 /* InfoPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000053 /* InfoPanelView.swift */; };
 		A00000000000000000000056 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000058 /* AppSettings.swift */; };
@@ -49,15 +48,6 @@
 		A00000000000000000000102 /* ArchiveScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000103 /* ArchiveScanner.swift */; };
 /* End PBXBuildFile section */
 
-/* Begin PBXContainerItemProxy section */
-		A00000000000000000000046 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = A00000000000000000000034 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = A00000000000000000000030;
-			remoteInfo = Readpic;
-		};
-/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		A0000000000000000000000D /* Readpic.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Readpic.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -78,8 +68,6 @@
 		A0000000000000000000003E /* FinderService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinderService.swift; sourceTree = "<group>"; };
 		A0000000000000000000003F /* ExternalOpenService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExternalOpenService.swift; sourceTree = "<group>"; };
 		A00000000000000000000042 /* FileOperationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileOperationService.swift; sourceTree = "<group>"; };
-		A00000000000000000000044 /* ReadpicTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadpicTests.swift; sourceTree = "<group>"; };
-		A00000000000000000000045 /* ReadpicTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ReadpicTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A00000000000000000000052 /* MetadataReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetadataReader.swift; sourceTree = "<group>"; };
 		A00000000000000000000053 /* InfoPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InfoPanelView.swift; sourceTree = "<group>"; };
 		A00000000000000000000058 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
@@ -100,21 +88,14 @@
 		A00000000000000000000093 /* NativeHScroll.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeHScroll.swift; sourceTree = "<group>"; };
 		A00000000000000000000095 /* BatchRenameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatchRenameView.swift; sourceTree = "<group>"; };
 		A00000000000000000000097 /* SlideshowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlideshowView.swift; sourceTree = "<group>"; };
-		A00000000000000000000098 /* Readpic/Core/ImageLoading/Histogram.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Readpic/Core/ImageLoading/Histogram.swift; sourceTree = SOURCE_ROOT; };
-		A00000000000000000000100 /* Readpic/Features/InfoPanel/HistogramChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Readpic/Features/InfoPanel/HistogramChartView.swift; sourceTree = SOURCE_ROOT; };
+		A00000000000000000000098 /* Histogram.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Histogram.swift; sourceTree = "<group>"; };
+		A00000000000000000000100 /* HistogramChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistogramChartView.swift; sourceTree = "<group>"; };
 		A00000000000000000000103 /* ArchiveScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchiveScanner.swift; sourceTree = "<group>"; };
 
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		A00000000000000000000020 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		A00000000000000000000047 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -128,7 +109,6 @@
 			isa = PBXGroup;
 			children = (
 				A00000000000000000000022 /* Readpic */,
-				A00000000000000000000048 /* Tests */,
 				A00000000000000000000023 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -150,7 +130,6 @@
 			isa = PBXGroup;
 			children = (
 				A0000000000000000000000D /* Readpic.app */,
-				A00000000000000000000045 /* ReadpicTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -214,6 +193,7 @@
 				A00000000000000000000060 /* ThumbnailLoader.swift */,
 				A00000000000000000000070 /* ThumbnailDiskCache.swift */,
 				A00000000000000000000084 /* ImageWriter.swift */,
+				A00000000000000000000098 /* Histogram.swift */,
 			);
 			path = ImageLoading;
 			sourceTree = "<group>";
@@ -236,8 +216,6 @@
 				A00000000000000000000019 /* ViewerRepresentable.swift */,
 				A0000000000000000000001A /* ViewerNSView.swift */,
 				A00000000000000000000097 /* SlideshowView.swift */,
-				A00000000000000000000098 /* Readpic/Core/ImageLoading/Histogram.swift */,
-				A00000000000000000000100 /* Readpic/Features/InfoPanel/HistogramChartView.swift */,
 				A00000000000000000000062 /* ThumbnailStripView.swift */,
 				A00000000000000000000064 /* GridView.swift */,
 				A00000000000000000000072 /* FrameStripView.swift */,
@@ -259,22 +237,6 @@
 			path = Services;
 			sourceTree = "<group>";
 		};
-		A00000000000000000000048 /* Tests */ = {
-			isa = PBXGroup;
-			children = (
-				A00000000000000000000049 /* ReadpicTests */,
-			);
-			path = Tests;
-			sourceTree = "<group>";
-		};
-		A00000000000000000000049 /* ReadpicTests */ = {
-			isa = PBXGroup;
-			children = (
-				A00000000000000000000044 /* ReadpicTests.swift */,
-			);
-			path = ReadpicTests;
-			sourceTree = "<group>";
-		};
 		A00000000000000000000054 /* Metadata */ = {
 			isa = PBXGroup;
 			children = (
@@ -287,6 +249,7 @@
 			isa = PBXGroup;
 			children = (
 				A00000000000000000000053 /* InfoPanelView.swift */,
+				A00000000000000000000100 /* HistogramChartView.swift */,
 			);
 			path = InfoPanel;
 			sourceTree = "<group>";
@@ -356,23 +319,6 @@
 			productReference = A0000000000000000000000D /* Readpic.app */;
 			productType = "com.apple.product-type.application";
 		};
-		A0000000000000000000004A /* ReadpicTests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = A0000000000000000000004B /* Build configuration list for PBXNativeTarget "ReadpicTests" */;
-			buildPhases = (
-				A0000000000000000000004C /* Sources */,
-				A00000000000000000000047 /* Frameworks */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				A0000000000000000000004D /* PBXTargetDependency */,
-			);
-			name = ReadpicTests;
-			productName = ReadpicTests;
-			productReference = A00000000000000000000045 /* ReadpicTests.xctest */;
-			productType = "com.apple.product-type.bundle.unit-test";
-		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -385,10 +331,6 @@
 				TargetAttributes = {
 					A00000000000000000000030 = {
 						CreatedOnToolsVersion = 26.5;
-					};
-					A0000000000000000000004A = {
-						CreatedOnToolsVersion = 26.5;
-						TestTargetID = A00000000000000000000030;
 					};
 				};
 			};
@@ -411,7 +353,6 @@
 			projectRoot = "";
 			targets = (
 				A00000000000000000000030 /* Readpic */,
-				A0000000000000000000004A /* ReadpicTests */,
 			);
 		};
 /* End PBXProject section */
@@ -474,23 +415,8 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		A0000000000000000000004C /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				A00000000000000000000043 /* ReadpicTests.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXSourcesBuildPhase section */
 
-/* Begin PBXTargetDependency section */
-		A0000000000000000000004D /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = A00000000000000000000030 /* Readpic */;
-			targetProxy = A00000000000000000000046 /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
 		A0000000000000000000001E /* Localizable.strings */ = {
@@ -667,39 +593,6 @@
 			};
 			name = Release;
 		};
-		A0000000000000000000004E /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.readpic.ReadpicTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = macosx;
-				SWIFT_VERSION = 6.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Readpic.app/Contents/MacOS/Readpic";
-			};
-			name = Debug;
-		};
-		A0000000000000000000004F /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 0.1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.readpic.ReadpicTests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = macosx;
-				SWIFT_VERSION = 6.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Readpic.app/Contents/MacOS/Readpic";
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -717,15 +610,6 @@
 			buildConfigurations = (
 				A00000000000000000000036 /* Debug */,
 				A00000000000000000000037 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		A0000000000000000000004B /* Build configuration list for PBXNativeTarget "ReadpicTests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				A0000000000000000000004E /* Debug */,
-				A0000000000000000000004F /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

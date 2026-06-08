@@ -210,9 +210,6 @@ final class ViewerModel {
     private var toastTask: Task<Void, Never>?
     private var animationTask: Task<Void, Never>?
     private var metadataTask: Task<Void, Never>?
-    /// Background preload chain for higher-resolution proxies of the current image.
-    private var preloadTask: Task<Void, Never>?
-
     /// Serializes decodes — only one runs at a time regardless of navigation speed.
     /// This bounds concurrent memory to a single decode's buffer.
     private let decodeQueue: OperationQueue = {
@@ -226,8 +223,6 @@ final class ViewerModel {
     private var fullscreenObserver: Any?
     private var exitFullscreenObserver: Any?
     private var mouseMonitor: NSObjectProtocol?
-    private var memorySource: DispatchSourceMemoryPressure?
-
     init() {
         MainActor.assumeIsolated {
             fullscreenObserver = NotificationCenter.default.addObserver(
@@ -250,24 +245,6 @@ final class ViewerModel {
                     if self?.isGridView == true { self?.needsGridScroll &+= 1 }
                 }
             }
-
-            let source = DispatchSource.makeMemoryPressureSource(eventMask: .all, queue: .main)
-            source.setEventHandler { [weak self] in
-                let pressure = source.data
-                if pressure == .critical || pressure == .warning {
-                    self?.handleMemoryWarning()
-                } else if pressure == .normal {
-                    self?.handleMemoryRestore()
-                }
-            }
-            source.resume()
-            memorySource = source
-
-            // Proactive low memory mode on ≤8GB machines
-            let physicalMemory = ProcessInfo.processInfo.physicalMemory
-            if physicalMemory <= 8_589_934_592 { // 8 GB
-                isLowMemoryMode = true
-            }
         }
     }
 
@@ -279,7 +256,6 @@ final class ViewerModel {
             if let o = exitFullscreenObserver as? NSObjectProtocol {
                 NotificationCenter.default.removeObserver(o)
             }
-            memorySource?.cancel()
         }
     }
 
@@ -298,20 +274,6 @@ final class ViewerModel {
             return event
         }
         mouseMonitor = monitor as? NSObjectProtocol
-    }
-
-    private func handleMemoryWarning() {
-        isLowMemoryMode = true
-        ThumbnailCache.shared.halveCapacity()
-        ImageCache.shared.clear()
-        ThumbnailCache.shared.clear()
-        preloadTask?.cancel()
-    }
-
-    private func handleMemoryRestore() {
-        guard ProcessInfo.processInfo.physicalMemory > 8_589_934_592 else { return }
-        isLowMemoryMode = false
-        ThumbnailCache.shared.restoreCapacity()
     }
 
     private func stopMouseMonitor() {
@@ -427,10 +389,8 @@ final class ViewerModel {
 
         ImageCache.shared.clear()
         loadTask?.cancel()
-        preloadTask?.cancel()
         isGridView = false
         isLoading = true
-        currentProxyMaxPixelSize = 2048
         loadTask = Task {
             do {
                 // Serialise through decodeQueue so concurrent opens don't blow memory
@@ -494,10 +454,8 @@ final class ViewerModel {
         if settings.rememberLastFolder {
             settings.lastFolderURL = url
         }
-        currentProxyMaxPixelSize = 2048
         ImageCache.shared.clear()
         loadTask?.cancel()
-        preloadTask?.cancel()
         isLoading = true
         let mode = settings.sortMode
         loadTask = Task {
@@ -583,10 +541,8 @@ final class ViewerModel {
             archiveTempDir = nil
         }
 
-        currentProxyMaxPixelSize = 2048
         ImageCache.shared.clear()
         loadTask?.cancel()
-        preloadTask?.cancel()
         isLoading = true
 
         loadTask = Task {
@@ -858,41 +814,6 @@ final class ViewerModel {
         isInfoPanelVisible.toggle()
     }
 
-    func requestHigherResolution() {
-        guard let currentFile, let currentDecoded = decodedImage else { return }
-        guard currentDecoded.animatedFrames == nil else { return }
-
-        let nativeMax = max(currentDecoded.pixelSize.width, currentDecoded.pixelSize.height)
-        let nextRes = min(currentProxyMaxPixelSize * 2, nativeMax)
-        guard nextRes > currentProxyMaxPixelSize else { return }
-
-        // Preloaded version already sitting in cache?
-        if let cached = ImageCache.shared.get(currentFile.url),
-           cached.animatedFrames == nil {
-            let cachedMax = max(cached.pixelSize.width, cached.pixelSize.height)
-            if cachedMax >= nextRes {
-                decodedImage = cached
-                currentProxyMaxPixelSize = nextRes
-                return
-            }
-        }
-
-        // Fall back to on-demand decode
-        Task.detached(priority: .utility) { [weak self] in
-            guard let self else { return }
-            let decoder = self.decoder
-            guard let image = try? decoder.decode(url: currentFile.url, maxPixelSize: nextRes) else { return }
-            await MainActor.run {
-                guard !Task.isCancelled else { return }
-                ImageCache.shared.set(image)
-                self.decodedImage = image
-                self.currentProxyMaxPixelSize = nextRes
-            }
-        }
-    }
-
-    /// Tracks the proxy decode size for the current image (used by ViewerNSView adaptive zoom).
-    var currentProxyMaxPixelSize: CGFloat = 2048
     /// Incremented whenever `files` changes to force thumbnail strip / grid rebuild.
     var fileListVersion: UInt = 0
 
@@ -1753,7 +1674,6 @@ final class ViewerModel {
     func loadCurrentImage() {
         guard let currentFile else { return }
         loadTask?.cancel()
-        preloadTask?.cancel()
 
         if let cached = ImageCache.shared.get(currentFile.url) {
             decodedImage = cached
@@ -1761,12 +1681,18 @@ final class ViewerModel {
             zoomMode = defaultZoomModeFromSettings
             isLoading = false
             preloadAdjacent()
-            preloadHigherResolutions()
+            let nav = navigableFiles
+            if let pos = nav.firstIndex(where: { $0.url == currentFile.url }) {
+                let windowURLs = Set((-2...2).compactMap { offset -> URL? in
+                    let p = pos + offset
+                    return nav.indices.contains(p) ? nav[p].url : nil
+                })
+                ImageCache.shared.evictOutside(window: windowURLs)
+            }
             if isCropMode { reapplyCropPreset() }
             return
         }
 
-        currentProxyMaxPixelSize = 2048
         isLoading = true
 
         loadTask = Task {
@@ -1800,7 +1726,14 @@ final class ViewerModel {
             zoomMode = defaultZoomModeFromSettings
             isLoading = false
             preloadAdjacent()
-            preloadHigherResolutions()
+            let nav = navigableFiles
+            if let pos = nav.firstIndex(where: { $0.url == currentFile.url }) {
+                let windowURLs = Set((-2...2).compactMap { offset -> URL? in
+                    let p = pos + offset
+                    return nav.indices.contains(p) ? nav[p].url : nil
+                })
+                ImageCache.shared.evictOutside(window: windowURLs)
+            }
             if isCropMode { reapplyCropPreset() }
         }
     }
@@ -1809,60 +1742,17 @@ final class ViewerModel {
         let decoder = self.decoder
         let nav = navigableFiles
         guard let url = currentFile?.url, let pos = nav.firstIndex(where: { $0.url == url }) else { return }
-        let adjPositions = [pos - 1, pos + 1].filter { nav.indices.contains($0) }
+        let adjPositions = (-2...2).compactMap { offset -> Int? in
+            guard offset != 0 else { return nil }
+            let p = pos + offset
+            return nav.indices.contains(p) ? p : nil
+        }
         for p in adjPositions {
             let file = nav[p]
             guard ImageCache.shared.get(file.url) == nil else { continue }
             Task.detached(priority: .low) {
                 guard let image = try? decoder.decode(url: file.url) else { return }
                 await MainActor.run { ImageCache.shared.set(image) }
-            }
-        }
-    }
-
-    /// Start background preloading higher-resolution proxies for the current image.
-    ///
-    /// Each step doubles the proxy resolution and stores the result in `ImageCache`
-    /// (replacing the previous entry for the same URL). When the user zooms past the
-    /// stretch cap, `requestHigherResolution()` finds the pre-decoded level in cache
-    /// instantly — no decode-induced stutter during zoom.
-    private func preloadHigherResolutions() {
-        guard let currentFile, let currentDecoded = decodedImage else { return }
-        // Preloading animated images is destructive: re-decoding loses animatedFrames.
-        // GIF/APNG frames are already at their native resolution.
-        guard currentDecoded.animatedFrames == nil else { return }
-
-        let nativeMax = max(currentDecoded.pixelSize.width, currentDecoded.pixelSize.height)
-        let startSize = currentProxyMaxPixelSize
-
-        preloadTask?.cancel()
-        preloadTask = Task.detached(priority: .low) { [weak self] in
-            var size = startSize
-            // Low memory: only 1 level ahead. Normal: up to 3 levels (2×, 4×, 8×).
-            let maxLevels = isLowMemoryMode ? 1 : 3
-            let url = currentFile.url
-            let decoder = self?.decoder
-
-            for _ in 0..<maxLevels {
-                guard !Task.isCancelled else { break }
-
-                let nextSize = min(size * 2, nativeMax)
-                guard nextSize > size else { break }
-
-                guard let d = decoder,
-                      let image = try? d.decode(url: url, maxPixelSize: nextSize)
-                else { break }
-
-                let proceed = await MainActor.run {
-                    guard let self, !Task.isCancelled else { return false }
-                    // Only store if still viewing the same image
-                    guard self.currentFile?.url == url else { return false }
-                    ImageCache.shared.set(image)
-                    return true
-                }
-
-                guard proceed else { break }
-                size = nextSize
             }
         }
     }

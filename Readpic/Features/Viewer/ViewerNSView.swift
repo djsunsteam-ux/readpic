@@ -18,7 +18,6 @@ final class ViewerNSView: NSView {
     var onRotateLeft: (() -> Void)?
     var onRotateRight: (() -> Void)?
     var onFlipHorizontal: (() -> Void)?
-    var onRequestHigherRes: (() -> Void)?
     var onToggleInfoPanel: (() -> Void)?
     var onToggleGridView: (() -> Void)?
     var onToggleShortcutsHelp: (() -> Void)?
@@ -55,17 +54,11 @@ final class ViewerNSView: NSView {
 
     private let imageLayer = CALayer()
 
-    /// Prevents re-requesting a higher-res proxy while one is already in flight.
-    private var hasRequestedHigherRes = false
-    /// Mouse-drag pan state.
     private var isPanning = false
     private var panStartPoint: CGPoint = .zero
     /// Accumulated horizontal scroll delta for side-wheel page navigation.
     private var horizontalScrollAccumulator: CGFloat = 0
 
-    /// Maximum stretch factor for the proxy image before requesting a higher-res decode.
-    /// Avoids displaying blurry stretched pixels while the async decode is in flight.
-    private static let proxyStretchLimit: CGFloat = 1.2
     /// Reentrancy guard for `layout()` to prevent recursive layout warnings.
     private var isLayingOut = false
     /// Last reported zoom percent — avoids redundant onZoomChanged callbacks.
@@ -192,23 +185,20 @@ final class ViewerNSView: NSView {
         zoom.rotation = 0
         zoom.isFlipped = false
         zoom.resetZoom()
-        hasRequestedHigherRes = false
 
         imageLayer.transform = CATransform3DIdentity
         layoutImageLayer()
         CATransaction.commit()
     }
 
-    /// Upgrade proxy resolution for the same image — preserves zoom level and mode.
-    func upgradeImage(_ image: CGImage, nativeSize: CGSize) {
+    /// Update the displayed image — preserves zoom level and mode.
+    func updateImage(_ image: CGImage, nativeSize: CGSize) {
         CATransaction.begin()
         CATransaction.setDisableActions(true)
 
         proxyImage = image
         imageLayer.contents = image
         zoom.imageSize = nativeSize
-        // Proxy just arrived — allow re-requesting a higher one if still needed.
-        hasRequestedHigherRes = false
         // zoomLevel, mode, pan, rotation, flip all preserved
         layoutImageLayer()
         CATransaction.commit()
@@ -598,15 +588,6 @@ final class ViewerNSView: NSView {
     // MARK: - Layout
 
     /// Core layout routine.
-    ///
-    /// **Geometry vs. proxy cap separation:**
-    /// - `zoom` computes the ideal display size from pure geometry (native size × zoomLevel,
-    ///   accounting for rotation).
-    /// - This method applies a proxy stretch cap so the proxy CGImage is never stretched
-    ///   beyond `proxyStretchLimit` × its pixel dimensions, preventing blur while a
-    ///   higher-res decode is in flight.
-    /// - **Pan bounds always use the ideal (uncapped) size** so they don't jump when the
-    ///   proxy upgrades.
     private func layoutImageLayer() {
         guard let proxyImage else {
             imageLayer.frame = .zero
@@ -622,39 +603,8 @@ final class ViewerNSView: NSView {
         // Ensure zoom sees the latest viewport size
         zoom.viewportSize = bounds.size
 
-        // ── Proxy cap ──────────────────────────────────────────────
-        // The layer's bounds are in the UNROTATED coordinate frame
-        // (the CATransform3D handles rotation visually).
-        let idealDisplay = zoom.displaySize
-        let unrotatedIdeal: CGSize
-        if zoom.rotation % 180 == 0 {
-            unrotatedIdeal = idealDisplay
-        } else {
-            unrotatedIdeal = CGSize(width: idealDisplay.height, height: idealDisplay.width)
-        }
-
-        // When the proxy already covers the full native resolution, skip the stretch cap.
-        // The image will get pixelated at high zoom — that's expected and standard.
-        // EXIF orientation may swap dimensions (e.g. 4032×3024 image with orientation=6
-        // produces a 3024×4032 CGImage), so we check both orderings.
-        let imageW = zoom.imageSize.width
-        let imageH = zoom.imageSize.height
-        let isAtNativeRes = (proxySize.width >= imageW && proxySize.height >= imageH)
-                         || (proxySize.width >= imageH && proxySize.height >= imageW)
-
-        let displaySize: CGSize
-        if isAtNativeRes {
-            displaySize = unrotatedIdeal
-        } else {
-            let maxStretch = CGSize(
-                width:  proxySize.width  * Self.proxyStretchLimit,
-                height: proxySize.height * Self.proxyStretchLimit
-            )
-            displaySize = CGSize(
-                width:  min(unrotatedIdeal.width,  maxStretch.width),
-                height: min(unrotatedIdeal.height, maxStretch.height)
-            )
-        }
+        let ds = zoom.displaySize
+        let displaySize = (zoom.rotation % 180 == 0) ? ds : CGSize(width: ds.height, height: ds.width)
 
         // ── Pan ────────────────────────────────────────────────────
         // Use raw panOffset (not clamped) so zoom-toward-cursor can position
@@ -683,19 +633,6 @@ final class ViewerNSView: NSView {
             lastReportedZoomPercent = newZoomPercent
             DispatchQueue.main.async { [weak self] in
                 self?.onZoomChanged?(newZoomPercent)
-            }
-        }
-
-        // ── Request higher-res proxy if needed ─────────────────────
-        // Defer to avoid triggering SwiftUI Observation inside updateNSView.
-        if !isAtNativeRes, !hasRequestedHigherRes {
-            let neededProxyWidth  = unrotatedIdeal.width  / Self.proxyStretchLimit
-            let neededProxyHeight = unrotatedIdeal.height / Self.proxyStretchLimit
-            if proxySize.width < neededProxyWidth || proxySize.height < neededProxyHeight {
-                hasRequestedHigherRes = true
-                DispatchQueue.main.async { [weak self] in
-                    self?.onRequestHigherRes?()
-                }
             }
         }
 

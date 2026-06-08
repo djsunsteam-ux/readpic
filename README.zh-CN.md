@@ -39,6 +39,10 @@ Readpic 未经 Apple 公证。首次启动时：
 2. 前往 **系统设置 → 隐私与安全性**
 3. 在 "Readpic 已被阻止" 旁点击 **仍要打开**
 
+## 隐私与安全
+
+Readpic 不包含任何联网功能，也不会请求网络访问。它不会收集、上传或分析任何个人数据、图片文件或图片内容。所有图片解码、浏览、元数据读取和编辑操作都在你的 Mac 本地完成，请放心使用。
+
 ## 快捷键
 
 ### 导航
@@ -127,9 +131,24 @@ Scripts/build.sh
 Scripts/package_dmg.sh
 ```
 
-### 运行测试
+## 支持项目
 
-在 Xcode 中打开 `Readpic.xcodeproj`，按 `⌘U`。
+Readpic 完全免费、开源。它也是一个 vibe coding 产品，最初的想法很简单：macOS 上好用的看图软件几乎都要收费，所以我想做一个真正免费的看图软件。
+
+不过，如果你愿意且手头宽裕的话，也可以选择支持一下。无论是否捐赠，功能完全一样，也感谢你的使用。
+
+- [GitHub Sponsors](https://github.com/sponsors/djsunsteam-ux)
+- [Ko-fi](https://ko-fi.com/djsunsteam)
+
+国内用户也可以用微信或支付宝：
+
+| 微信支付 | 支付宝 |
+|---|---|
+| <img src=".github/assets/donate-wechat.png" width="180" alt="微信支付捐赠二维码"> | <img src=".github/assets/donate-alipay.jpg" width="180" alt="支付宝捐赠二维码"> |
+
+也支持区块链捐赠：
+
+- USDT TRC20：`TShU1sP4vaDNQhZuV1JDjpZyqVxn7fESy9`
 
 ## 许可证
 

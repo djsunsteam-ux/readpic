@@ -28,4 +28,9 @@ final class ImageCache {
     func clear() {
         entries.removeAll()
     }
+
+    /// Remove all entries whose URL is not in the given window set.
+    func evictOutside(window: Set<URL>) {
+        entries.removeAll { !window.contains($0.url) }
+    }
 }

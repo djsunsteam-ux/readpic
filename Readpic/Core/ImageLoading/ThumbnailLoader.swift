@@ -2,15 +2,6 @@ import AppKit
 import CoreGraphics
 import Foundation
 import ImageIO
-import os
-
-/// Global low-memory flag — checked by ImageDecoder and ThumbnailLoader.
-/// Written from @MainActor, read from background queues. Thread-safe via unfair lock.
-private let _isLowMemoryMode = OSAllocatedUnfairLock(initialState: false)
-var isLowMemoryMode: Bool {
-    get { _isLowMemoryMode.withLock { $0 } }
-    set { _isLowMemoryMode.withLock { $0 = newValue } }
-}
 
 /// Composite key for thumbnail cache using multiple file identity factors.
 struct ThumbnailCacheKey: Hashable, Sendable {
@@ -69,17 +60,6 @@ final class ThumbnailCache {
     func clear() {
         cache.removeAll()
         accessOrder.removeAll()
-    }
-
-    func halveCapacity() {
-        maxCount = max(maxCount / 2, 50)
-        if cache.count > maxCount {
-            evictLRU()
-        }
-    }
-
-    func restoreCapacity() {
-        maxCount = 200
     }
 
     /// Evicts the least-recently-used entries (front of accessOrder).
@@ -146,7 +126,7 @@ final class ThumbnailQueueManager: @unchecked Sendable {
             }
 
             // 2. Generate thumbnail via ImageIO
-            let maxSize: CGFloat = isLowMemoryMode ? 128 : 160
+            let maxSize: CGFloat = 160
             guard let thumbnail = ThumbnailLoader.generateThumbnail(url: url, maxSize: maxSize) else {
                 DispatchQueue.main.async { completion(nil) }
                 return

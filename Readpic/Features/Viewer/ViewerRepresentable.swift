@@ -37,7 +37,6 @@ struct ViewerRepresentable: NSViewRepresentable {
         view.onRotateRight = { model.rotateRight() }
         view.onFlipHorizontal = { model.flipHorizontal() }
         view.onMoveToTrash = { model.moveCurrentFileToTrash() }
-        view.onRequestHigherRes = { model.requestHigherResolution() }
         view.onToggleInfoPanel = { model.toggleInfoPanel() }
         view.onToggleGridView = { model.toggleGridView() }
         view.onToggleShortcutsHelp = { model.toggleShortcutsHelp() }
@@ -147,8 +146,8 @@ struct ViewerRepresentable: NSViewRepresentable {
         context.coordinator.currentZoomMode = model.zoomMode
 
         if isSameImage {
-            // Same image — preserve zoom/pan/rotation state, just upgrade proxy if available
-            nsView.upgradeImage(displayImage, nativeSize: nativeSize)
+            // Same image — preserve zoom/pan/rotation state
+            nsView.updateImage(displayImage, nativeSize: nativeSize)
             if zoomModeChanged {
                 nsView.applyZoomMode(zoomMode)
             }

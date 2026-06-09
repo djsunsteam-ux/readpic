@@ -18,6 +18,11 @@ English | [简体中文](README.zh-CN.md)
 - **Fullscreen**: Auto-hiding toolbar, slideshow mode
 - **Localization**: English, 简体中文
 
+## Requirements
+
+- macOS 15.6+
+- Apple Silicon (M1 or later). Intel Macs are not supported.
+
 ## Installation
 
 1. Download `Readpic.dmg` from [Releases](https://github.com/djsunsteam-ux/readpic/releases)

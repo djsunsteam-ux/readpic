@@ -18,6 +18,11 @@
 - **全屏模式**：自动隐藏工具栏、幻灯片放映
 - **界面语言**：English、简体中文
 
+## 系统要求
+
+- macOS 15.6+
+- Apple Silicon（M1 及更新机型），不支持 Intel Mac
+
 ## 安装
 
 1. 从 [Releases](https://github.com/djsunsteam-ux/readpic/releases) 下载 `Readpic.dmg`

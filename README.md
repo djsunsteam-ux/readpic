@@ -90,6 +90,10 @@ Readpic does not include any networking features and does not request network ac
 
 ## Keyboard Shortcuts
 
+<table>
+<tr>
+<td>
+
 ### Navigation
 
 | Key | Action |
@@ -110,6 +114,20 @@ Readpic does not include any networking features and does not request network ac
 | Double-click | Toggle fit / 100% |
 | Pinch | Zoom toward cursor |
 | Scroll + `⌥` | Zoom toward cursor |
+
+### Edit
+
+| Key | Action |
+|---|---|
+| `K` | Crop |
+| `P` | Color picker |
+| `⌘⇧S` | Export image |
+| `⌘[` `⌘]` | Rotate left / right |
+| `⌘⇧H` | Flip horizontal |
+| `⌘D` | Toggle favorite |
+
+</td>
+<td>
 
 ### File
 
@@ -135,18 +153,16 @@ Readpic does not include any networking features and does not request network ac
 | `⌘⌥F` | Start slideshow |
 | `?` | Keyboard shortcuts |
 
-### Edit
+### Grid Selection
 
 | Key | Action |
 |---|---|
-| `K` | Crop |
-| `P` | Color picker |
-| `⌘⇧S` | Export image |
-| `⌘[` `⌘]` | Rotate left / right |
-| `⌘⇧H` | Flip horizontal |
-| `⌘D` | Toggle favorite |
-| `⌘A` | Select all (grid) |
-| `⌘⇧A` | Invert selection (grid) |
+| `⌘A` | Select all |
+| `⌘⇧A` | Invert selection |
+
+</td>
+</tr>
+</table>
 
 ## Supported Formats
 

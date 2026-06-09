@@ -197,6 +197,39 @@ final class ViewerModel {
 
     private let scanner = FolderScanner()
     private let archiveScanner = ArchiveScanner()
+    /// The root folder URL passed to the most recent `openFolder(_:)` call.
+    /// Used by `rescanCurrentFolder()` to avoid deriving the root from the first
+    /// file (which may reside in a subfolder when recursive scanning is active).
+    private(set) var currentFolderURL: URL?
+
+    /// Display name of the current root folder (for GridView section header).
+    var rootFolderName: String {
+        currentFolderURL?.lastPathComponent ?? ""
+    }
+
+    /// Actual column count of the grid, updated by ViewerView via onGeometryChange.
+    var gridColumnsCount: Int = 1
+
+    /// Folder sections for the toolbar jump menu.
+    /// Returns `[(displayName, firstFileIndex)]` grouped by `relativeFolder`.
+    var folderSections: [(name: String, firstFileIndex: Int)] {
+        let hasSub = files.contains(where: { !$0.relativeFolder.isEmpty })
+        guard hasSub else { return [] }
+        var result: [(String, Int)] = []
+        var lastFolder = "\0"
+        for idx in filteredIndices {
+            let folder = files[idx].relativeFolder
+            if folder != lastFolder {
+                let name = folder.isEmpty ? rootFolderName : folder
+                result.append((name, idx))
+                lastFolder = folder
+            }
+        }
+        return result
+    }
+
+    /// Set by the toolbar jump menu; GridView observes and scrolls to this index.
+    var gridScrollTarget: Int?
     private let decoder = ImageDecoder()
     private let metadataReader = MetadataReader()
     private let clipboardService = ClipboardService()
@@ -437,8 +470,7 @@ final class ViewerModel {
 
     /// Rescan the folder containing the current files, preserving the current selection.
     func rescanCurrentFolder() {
-        guard let first = files.first else { return }
-        let folderURL = first.url.deletingLastPathComponent()
+        guard let folderURL = currentFolderURL else { return }
         openFolder(folderURL)
     }
 
@@ -458,9 +490,11 @@ final class ViewerModel {
         loadTask?.cancel()
         isLoading = true
         let mode = settings.sortMode
+        let recursive = settings.loadSubfolders
+        currentFolderURL = url
         loadTask = Task {
             do {
-                let items = try await scanner.scanFolder(url, sortMode: mode)
+                let items = try await scanner.scanFolder(url, sortMode: mode, recursive: recursive)
                 guard !Task.isCancelled else { return }
                 guard let first = items.first else {
                     files = []
@@ -971,36 +1005,136 @@ final class ViewerModel {
         }
     }
 
+    /// Build a 2-D visual grid layout that mirrors LazyVGrid's Section rendering.
+    /// Each folder group starts on a new row; partial last rows within a group
+    /// are padded with `nil` so that column alignment matches the visual layout.
+    var visualGridLayout: [[Int?]] {
+        let cols = max(1, gridColumnsCount)
+        let hasSub = files.contains(where: { !$0.relativeFolder.isEmpty })
+
+        // Non-subfolder mode: single flat sequence, pad only the final row
+        guard hasSub else {
+            let items = filteredIndices
+            guard !items.isEmpty else { return [] }
+            var rows: [[Int?]] = []
+            var row: [Int?] = []
+            for idx in items {
+                row.append(idx)
+                if row.count == cols { rows.append(row); row = [] }
+            }
+            if !row.isEmpty {
+                row.append(contentsOf: Array(repeating: nil, count: cols - row.count))
+                rows.append(row)
+            }
+            return rows
+        }
+
+        // Subfolder mode: build per-group rows with nil padding between groups
+        var rows: [[Int?]] = []
+        var currentRow: [Int?] = []
+        var lastFolder = "\0"
+
+        for idx in filteredIndices {
+            let folder = files[idx].relativeFolder
+            if folder != lastFolder && lastFolder != "\0" && !currentRow.isEmpty {
+                // New group — pad previous partial row
+                currentRow.append(contentsOf: Array(repeating: nil, count: cols - currentRow.count))
+                rows.append(currentRow)
+                currentRow = []
+            }
+            currentRow.append(idx)
+            if currentRow.count == cols {
+                rows.append(currentRow)
+                currentRow = []
+            }
+            lastFolder = folder
+        }
+        // Flush remaining items
+        if !currentRow.isEmpty {
+            currentRow.append(contentsOf: Array(repeating: nil, count: cols - currentRow.count))
+            rows.append(currentRow)
+        }
+        return rows
+    }
+
     func gridSelectPrevious() {
         let idx = selectedGridIndices.first ?? currentIndex
-        let filtered = filteredIndices
-        guard let pos = filtered.firstIndex(of: idx), pos > 0 else { return }
-        selectInGrid(at: filtered[pos - 1])
+        let grid = visualGridLayout
+        guard let (r, c) = findInVisualGrid(idx, grid: grid) else { return }
+        // Scan backwards for nearest non-nil
+        var col = c - 1, row = r
+        while row >= 0 {
+            while col >= 0 {
+                if let target = grid[row][col] { selectInGrid(at: target); return }
+                col -= 1
+            }
+            row -= 1
+            col = (grid.first?.count ?? 1) - 1
+        }
     }
 
     func gridSelectNext() {
         let idx = selectedGridIndices.first ?? currentIndex
-        let filtered = filteredIndices
-        guard let pos = filtered.firstIndex(of: idx), pos < filtered.count - 1 else { return }
-        selectInGrid(at: filtered[pos + 1])
+        let grid = visualGridLayout
+        guard let (r, c) = findInVisualGrid(idx, grid: grid) else { return }
+        let colCount = grid.first?.count ?? 1
+        // Scan forwards for nearest non-nil
+        var col = c + 1, row = r
+        while row < grid.count {
+            while col < colCount {
+                if let target = grid[row][col] { selectInGrid(at: target); return }
+                col += 1
+            }
+            row += 1
+            col = 0
+        }
     }
 
-    func gridSelectUp(columns: Int) {
+    func gridSelectUp() {
         let idx = selectedGridIndices.first ?? currentIndex
-        let filtered = filteredIndices
-        guard let pos = filtered.firstIndex(of: idx) else { return }
-        let targetPos = pos - columns
-        guard filtered.indices.contains(targetPos) else { return }
-        selectInGrid(at: filtered[targetPos])
+        let grid = visualGridLayout
+        guard let (r, c) = findInVisualGrid(idx, grid: grid) else { return }
+        let targetRow = r - 1
+        guard targetRow >= 0 else { return }
+        // Exact column match first
+        if let target = grid[targetRow][c] { selectInGrid(at: target); return }
+        // Nearest non-nil in same row
+        if let nearest = nearestNonNil(in: grid[targetRow], near: c) {
+            selectInGrid(at: nearest)
+        }
     }
 
-    func gridSelectDown(columns: Int) {
+    func gridSelectDown() {
         let idx = selectedGridIndices.first ?? currentIndex
-        let filtered = filteredIndices
-        guard let pos = filtered.firstIndex(of: idx) else { return }
-        let targetPos = pos + columns
-        guard filtered.indices.contains(targetPos) else { return }
-        selectInGrid(at: filtered[targetPos])
+        let grid = visualGridLayout
+        guard let (r, c) = findInVisualGrid(idx, grid: grid) else { return }
+        let targetRow = r + 1
+        guard targetRow < grid.count else { return }
+        // Exact column match first
+        if let target = grid[targetRow][c] { selectInGrid(at: target); return }
+        // Nearest non-nil in same row
+        if let nearest = nearestNonNil(in: grid[targetRow], near: c) {
+            selectInGrid(at: nearest)
+        }
+    }
+
+    /// Find the nearest non-nil value in `row` to the given column index.
+    private func nearestNonNil(in row: [Int?], near col: Int) -> Int? {
+        for d in 1..<row.count {
+            if col - d >= 0, let v = row[col - d] { return v }
+            if col + d < row.count, let v = row[col + d] { return v }
+        }
+        return nil
+    }
+
+    /// Find the (row, column) position of a file index in the visual grid layout.
+    private func findInVisualGrid(_ idx: Int, grid: [[Int?]]) -> (Int, Int)? {
+        for (r, row) in grid.enumerated() {
+            for (c, val) in row.enumerated() where val == idx {
+                return (r, c)
+            }
+        }
+        return nil
     }
 
     func openFromGrid(at index: Int) {

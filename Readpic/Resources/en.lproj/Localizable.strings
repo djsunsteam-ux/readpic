@@ -83,6 +83,9 @@
 "Custom Color" = "Custom Color";
 "Session" = "Session";
 "Remember Last Folder" = "Remember Last Folder";
+"Load Subfolders" = "Load Subfolders";
+"Recursively scan subfolders up to 10 levels deep." = "Recursively scan subfolders up to 10 levels deep.";
+"Jump to Folder" = "Jump to Folder";
 /* ---------- Language ---------- */
 "Language" = "Language";
 /* ---------- Status Bar ---------- */

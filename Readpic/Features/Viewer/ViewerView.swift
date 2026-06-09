@@ -39,6 +39,7 @@ struct ViewerView: View {
                         filteredIndices: model.filteredIndices,
                         currentIndex: model.currentIndex,
                         selectedIndices: model.selectedGridIndices,
+                        rootFolderName: model.rootFolderName,
                         handleClick: { index, isCmd, isShift in
                             if isCmd {
                                 model.toggleGridSelection(at: index)
@@ -51,13 +52,24 @@ struct ViewerView: View {
                         open: { model.openFromGrid(at: $0) },
                         topInset: gridTopInset,
                         bottomInset: gridBottomInset,
-                        infoPanelVisible: model.isInfoPanelVisible,
-                        needsGridScroll: model.needsGridScroll
+                        needsGridScroll: model.needsGridScroll,
+                        gridScrollTarget: model.gridScrollTarget,
+                        onScrollTargetConsumed: { model.gridScrollTarget = nil }
                     )
                     .id(model.fileListVersion)
                     .opacity(model.isGridView ? 1 : 0)
                     .allowsHitTesting(model.isGridView)
-                    .padding(.trailing, model.isInfoPanelVisible ? 300 : 0)
+                    .onGeometryChange(for: CGFloat.self) { geo in
+                        // Calculate actual column count from available width.
+                        // Grid padding: 16*2, cell min: 150, spacing: 12
+                        let available = geo.size.width - 32
+                        let minCellWidth: CGFloat = 150
+                        let spacing: CGFloat = 12
+                        let cols = max(1, Int((available + spacing) / (minCellWidth + spacing)))
+                        return CGFloat(cols)
+                    } action: { newValue in
+                        model.gridColumnsCount = Int(newValue)
+                    }
 
                     ViewerRepresentable(model: model)
                         .opacity(model.isGridView ? 0 : 1)
@@ -124,6 +136,7 @@ struct ViewerView: View {
                     InfoPanelView(model: model)
                         .transition(.move(edge: .trailing))
                 }
+                .zIndex(1)
             }
 
             // ── Toolbar overlaid at top ──
@@ -246,22 +259,8 @@ struct ViewerView: View {
                     switch event.keyCode {
                     case 123: model.gridSelectPrevious(); return nil
                     case 124: model.gridSelectNext(); return nil
-                    case 125:
-                        let infoWidth: CGFloat = model.isInfoPanelVisible ? 300 : 0
-                        if let window = NSApp.keyWindow, let content = window.contentView {
-                            let available = content.frame.width - 32 - infoWidth
-                            let columns = max(1, Int(available / 162))
-                            model.gridSelectDown(columns: columns)
-                        }
-                        return nil
-                    case 126:
-                        let infoWidth: CGFloat = model.isInfoPanelVisible ? 300 : 0
-                        if let window = NSApp.keyWindow, let content = window.contentView {
-                            let available = content.frame.width - 32 - infoWidth
-                            let columns = max(1, Int(available / 162))
-                            model.gridSelectUp(columns: columns)
-                        }
-                        return nil
+                    case 125: model.gridSelectDown(); return nil
+                    case 126: model.gridSelectUp(); return nil
                     default: break
                     }
                 }
@@ -492,6 +491,23 @@ private struct ViewerToolbar: View {
                     }
                     .pickerStyle(.menu)
                     .menuIndicator(.visible)
+
+                    // Jump-to-folder menu (only when subfolder sections exist)
+                    let sections = model.folderSections
+                    if !sections.isEmpty {
+                        Menu {
+                            ForEach(Array(sections.enumerated()), id: \.offset) { _, section in
+                                Button(section.name) {
+                                    model.gridScrollTarget = section.firstFileIndex
+                                }
+                            }
+                        } label: {
+                            Label("Jump to Folder", systemImage: "folder.badge.gearshape")
+                        }
+                        .menuStyle(.borderlessButton)
+                        .menuIndicator(.visible)
+                        .fixedSize()
+                    }
                 }
 
                 Spacer()

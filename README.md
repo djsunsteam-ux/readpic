@@ -36,11 +36,13 @@ English | [简体中文](README.zh-CN.md)
 | **Batch convert & rename** | ✅ | ❌ | ❌ | ✅ | ❌ |
 | **Slideshow** | ✅ | ✅ | ❌ | ✅ | ❌ |
 | **Set as wallpaper** | ✅ | ❌ | ❌ | ✅ | ❌ |
+| **UI design** | Clean, native | Clean, minimal | Minimal | Complex, dated | Clean |
 
 Readpic sits in the sweet spot between macOS Preview and heavyweight tools like XnView — **more capable than any free native viewer, lighter and faster than any cross-platform alternative**.
 
 Highlights:
 
+- **Polished, intuitive UI** — clean and minimal interface built with SwiftUI, following macOS design conventions; XnView MP offers more features but its interface feels cluttered and dated with a Windows-era layout
 - **Free + open source + full-featured** — the only macOS image viewer that combines MIT license, 30+ formats, batch operations, and a pro-level info panel at zero cost
 - **Zero network, total privacy** — no telemetry, no update checks, no data collection; everything runs locally
 - **M-chip only optimization** — built exclusively for Apple Silicon, no Intel compatibility overhead; faster startup, lower memory, smoother scrolling
@@ -169,11 +171,13 @@ Readpic does not include any networking features and does not request network ac
 | **Batch convert & rename** | ✅ | ❌ | ❌ | ✅ | ❌ |
 | **Slideshow** | ✅ | ✅ | ❌ | ✅ | ❌ |
 | **Set as wallpaper** | ✅ | ❌ | ❌ | ✅ | ❌ |
+| **UI design** | Clean, native | Clean, minimal | Minimal | Complex, dated | Clean |
 
 Readpic sits in the sweet spot between macOS Preview and heavyweight tools like XnView — **more capable than any free native viewer, lighter and faster than any cross-platform alternative**.
 
 Highlights:
 
+- **Polished, intuitive UI** — clean and minimal interface built with SwiftUI, following macOS design conventions; XnView MP offers more features but its interface feels cluttered and dated with a Windows-era layout
 - **Free + open source + full-featured** — the only macOS image viewer that combines MIT license, 30+ formats, batch operations, and a pro-level info panel at zero cost
 - **Zero network, total privacy** — no telemetry, no update checks, no data collection; everything runs locally
 - **M-chip only optimization** — built exclusively for Apple Silicon, no Intel compatibility overhead; faster startup, lower memory, smoother scrolling

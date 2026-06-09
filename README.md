@@ -38,6 +38,8 @@ English | [简体中文](README.zh-CN.md)
 | **Set as wallpaper** | ✅ | ❌ | ❌ | ✅ | ❌ |
 | **UI design** | Clean, native | Clean, minimal | Minimal | Complex, dated | Clean |
 
+macOS image viewers are almost always paid — Pixave ($9.99), PicView ($9.99), Lynx ($16.99), ApolloOne ($14.99), Photo Mechanic ($139). Readpic delivers the same (or better) capability set **for free**.
+
 Readpic sits in the sweet spot between macOS Preview and heavyweight tools like XnView — **more capable than any free native viewer, lighter and faster than any cross-platform alternative**.
 
 Highlights:
@@ -172,6 +174,8 @@ Readpic does not include any networking features and does not request network ac
 | **Slideshow** | ✅ | ✅ | ❌ | ✅ | ❌ |
 | **Set as wallpaper** | ✅ | ❌ | ❌ | ✅ | ❌ |
 | **UI design** | Clean, native | Clean, minimal | Minimal | Complex, dated | Clean |
+
+macOS image viewers are almost always paid — Pixave ($9.99), PicView ($9.99), Lynx ($16.99), ApolloOne ($14.99), Photo Mechanic ($139). Readpic delivers the same (or better) capability set **for free**.
 
 Readpic sits in the sweet spot between macOS Preview and heavyweight tools like XnView — **more capable than any free native viewer, lighter and faster than any cross-platform alternative**.
 

@@ -119,7 +119,6 @@ Readpic does not include any networking features and does not request network ac
 
 | Key | Action |
 |---|---|
-| `K` | Crop |
 | `C` | Toggle crop mode |
 | `P` | Color picker |
 | `⌘⇧S` | Export image |

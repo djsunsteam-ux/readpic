@@ -10,6 +10,7 @@ struct GridView: View {
     let open: (Int) -> Void
     let topInset: CGFloat
     let bottomInset: CGFloat
+    var trailingInset: CGFloat = 0
     let needsGridScroll: UInt
     let gridScrollTarget: Int?
     let onScrollTargetConsumed: () -> Void
@@ -91,6 +92,7 @@ struct GridView: View {
             }
             .contentMargins(.top, topInset, for: .scrollContent)
             .contentMargins(.bottom, bottomInset, for: .scrollContent)
+            .contentMargins(.trailing, trailingInset, for: .scrollContent)
 
             .onAppear {
                 scrollToCurrent(proxy: proxy)
@@ -103,6 +105,11 @@ struct GridView: View {
             }
             .onChange(of: needsGridScroll) { _, _ in
                 scrollToCurrent(proxy: proxy)
+            }
+            .onChange(of: trailingInset) { _, _ in
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    scrollToCurrent(proxy: proxy)
+                }
             }
             .onChange(of: gridScrollTarget) { _, newValue in
                 guard let target = newValue else { return }
@@ -119,8 +126,6 @@ struct GridView: View {
     }
 
     private func scrollToCurrent(proxy: ScrollViewProxy) {
-        // Don't auto-scroll during multi-select to avoid view jumping
-        guard selectedIndices.count <= 1 else { return }
         let target = selectedIndices.sorted().first ?? currentIndex
         guard files.indices.contains(target), filteredIndices.contains(target) else { return }
         withAnimation(.easeOut(duration: 0.2)) {

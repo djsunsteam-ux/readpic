@@ -52,6 +52,7 @@ struct ViewerView: View {
                         open: { model.openFromGrid(at: $0) },
                         topInset: gridTopInset,
                         bottomInset: gridBottomInset,
+                        trailingInset: model.isGridView && model.isInfoPanelVisible ? 316 : 0,
                         needsGridScroll: model.needsGridScroll,
                         gridScrollTarget: model.gridScrollTarget,
                         onScrollTargetConsumed: { model.gridScrollTarget = nil }
@@ -129,15 +130,14 @@ struct ViewerView: View {
                 return true
             }
 
-            // ── Info Panel floats over the canvas, right-aligned ──
-            if model.isInfoPanelVisible {
-                HStack(spacing: 0) {
-                    Spacer()
-                    InfoPanelView(model: model)
-                        .transition(.move(edge: .trailing))
-                }
-                .zIndex(1)
+            // ── Info Panel: slides in from the right ──
+            HStack(spacing: 0) {
+                Spacer()
+                InfoPanelView(model: model)
             }
+            .offset(x: model.isInfoPanelVisible ? 0 : 320)
+            .animation(.easeInOut(duration: 0.25), value: model.isInfoPanelVisible)
+            .zIndex(1)
 
             // ── Toolbar overlaid at top ──
             ViewerToolbar(model: model)
@@ -274,7 +274,7 @@ struct ViewerView: View {
                 if chars?.lowercased() == "i" {
                     let mods = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
                     if mods.isEmpty || mods == .shift || mods == .capsLock {
-                        withAnimation(.easeInOut(duration: 0.2)) { model.toggleInfoPanel() }
+                        withAnimation(.easeInOut(duration: 0.25)) { model.toggleInfoPanel() }
                         return nil
                     }
                 }
@@ -320,7 +320,7 @@ struct ViewerView: View {
                         return nil
                     }
                     if model.isInfoPanelVisible {
-                        withAnimation(.easeInOut(duration: 0.2)) { model.isInfoPanelVisible = false }
+                        withAnimation(.easeInOut(duration: 0.25)) { model.isInfoPanelVisible = false }
                         return nil
                     }
                     if model.isFullScreen { model.toggleFullScreen(); return nil }
@@ -446,7 +446,7 @@ private struct ViewerToolbar: View {
                 .disabled(disabled)
 
                 ToolbarButton(title: "Info", systemImage: "info.circle") {
-                    withAnimation(.easeInOut(duration: 0.2)) { model.toggleInfoPanel() }
+                    withAnimation(.easeInOut(duration: 0.25)) { model.toggleInfoPanel() }
                 }
                 .disabled(!model.isGridView && model.currentFile == nil)
 

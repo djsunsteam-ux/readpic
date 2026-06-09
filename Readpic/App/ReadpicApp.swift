@@ -201,7 +201,7 @@ struct ReadpicApp: App {
                 .disabled(!model.hasAnimatedFrames || model.isGridView)
 
                 Button("Info Panel") {
-                    withAnimation(.easeInOut(duration: 0.2)) {
+                    withAnimation(.easeInOut(duration: 0.25)) {
                         model.toggleInfoPanel()
                     }
                 }

@@ -480,25 +480,43 @@ private struct ViewerToolbar: View {
                     .padding(.vertical, 3)
                     .background(Color.secondary.opacity(0.12), in: RoundedRectangle(cornerRadius: 5))
 
-                    Picker(selection: $model.formatFilter) {
+                    Menu {
                         ForEach(ViewerModel.FileFormatFilter.allCases, id: \.rawValue) { fmt in
-                            Text(fmt.rawValue.localized).tag(fmt)
+                            Button {
+                                model.formatFilter = fmt
+                            } label: {
+                                HStack {
+                                    Text(fmt.rawValue.localized)
+                                    if model.formatFilter == fmt {
+                                        Image(systemName: "checkmark")
+                                    }
+                                }
+                            }
                         }
                     } label: {
                         Label("Format", systemImage: "line.3.horizontal.decrease.circle")
                     }
-                    .pickerStyle(.menu)
+                    .menuStyle(.borderlessButton)
                     .menuIndicator(.visible)
                     .fixedSize()
 
-                    Picker(selection: $model.dateFilter) {
+                    Menu {
                         ForEach(ViewerModel.DateFilter.allCases, id: \.rawValue) { d in
-                            Text(d.rawValue.localized).tag(d)
+                            Button {
+                                model.dateFilter = d
+                            } label: {
+                                HStack {
+                                    Text(d.rawValue.localized)
+                                    if model.dateFilter == d {
+                                        Image(systemName: "checkmark")
+                                    }
+                                }
+                            }
                         }
                     } label: {
                         Label("Date", systemImage: "calendar")
                     }
-                    .pickerStyle(.menu)
+                    .menuStyle(.borderlessButton)
                     .menuIndicator(.visible)
                     .fixedSize()
 

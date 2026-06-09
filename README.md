@@ -186,47 +186,7 @@ Readpic does not include any networking features and does not request network ac
 
 ## Building from Source
 
-### Why Readpic
-
-| Feature | Readpic | macOS Preview | qView | XnView MP | Pixea |
-|---|:---:|:---:|:---:|:---:|:---:|
-| **Price** | Free (MIT) | Free | Free (GPL) | Personal free | Free |
-| **Native Apple Silicon** | ✅ | ✅ | ❌ | ❌ | ✅ |
-| **Zero network access** | ✅ | ✅ | ✅ | ❌ | ✅ |
-| **Formats** | 30+ | ~15 | ~20 | 500+ | ~20 |
-| **RAW (17 types)** | ✅ | Limited | ❌ | ✅ | ❌ |
-| **PSD / PSB** | ✅ | ❌ | ❌ | ✅ | ❌ |
-| **ZIP / CBZ** | ✅ | ❌ | ❌ | ✅ | ❌ |
-| **Thumbnail grid** | ✅ | ❌ | ❌ | ✅ | ❌ |
-| **Subfolder grouping** | ✅ | ❌ | ❌ | ✅ | ❌ |
-| **EXIF + Histogram + Color picker** | ✅ | Partial | ❌ | ✅ | ❌ |
-| **Crop** | ✅ | ✅ | ❌ | ✅ | ❌ |
-| **Batch convert & rename** | ✅ | ❌ | ❌ | ✅ | ❌ |
-| **Slideshow** | ✅ | ✅ | ❌ | ✅ | ❌ |
-| **Set as wallpaper** | ✅ | ❌ | ❌ | ✅ | ❌ |
-| **UI design** | Clean, native | Clean, minimal | Minimal | Complex, dated | Clean |
-
-macOS image viewers are almost always paid — Pixave ($9.99), PicView ($9.99), Lynx ($16.99), ApolloOne ($14.99), Photo Mechanic ($139). Readpic delivers the same (or better) capability set **for free**.
-
-Readpic sits in the sweet spot between macOS Preview and heavyweight tools like XnView — **more capable than any free native viewer, lighter and faster than any cross-platform alternative**.
-
-### App size comparison
-
-| Readpic | PicView | Pixave | qView | ApolloOne | Pixea | XnView MP |
-|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| **4 MB** | ~6 MB | ~7 MB | ~44 MB | ~32 MB | ~194 MB | ~103 MB |
-
-Highlights:
-
-- **Polished, intuitive UI** — clean and minimal interface built with SwiftUI, following macOS design conventions; XnView MP offers more features but its interface feels cluttered and dated with a Windows-era layout
-- **Free + open source + full-featured** — the only macOS image viewer that combines MIT license, 30+ formats, batch operations, and a pro-level info panel at zero cost
-- **Zero network, total privacy** — no telemetry, no update checks, no data collection; everything runs locally
-- **M-chip only optimization** — built exclusively for Apple Silicon, no Intel compatibility overhead; faster startup, lower memory, smoother scrolling
-- **ZIP / CBZ browsing** — open comic archives directly without extraction
-- **Pro tools built in** — histogram, color picker, EXIF/IPTC/XMP metadata, batch convert, batch rename — all in one free package
-- **Subfolder recursive scanning** — open a parent folder and browse all nested images, auto-grouped by subfolder
-
-## Requirements
+### Requirements
 
 - macOS 15.6+
 - Xcode 26.5+

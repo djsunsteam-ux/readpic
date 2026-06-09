@@ -131,6 +131,10 @@ final class AppSettings {
         }
     }
 
+    var loadSubfolders: Bool {
+        didSet { UserDefaults.standard.set(loadSubfolders, forKey: Self.loadSubfoldersKey) }
+    }
+
     var language: LanguageMode {
         didSet { UserDefaults.standard.set(language.rawValue, forKey: Self.languageKey) }
     }
@@ -193,6 +197,7 @@ final class AppSettings {
         backgroundColor = Self.read(key: Self.bgColorKey, fallback: BackgroundColor.black)
         sortMode = Self.read(key: Self.sortModeKey, fallback: SortMode.name)
         rememberLastFolder = UserDefaults.standard.object(forKey: Self.rememberFolderKey) as? Bool ?? false
+        loadSubfolders = UserDefaults.standard.object(forKey: Self.loadSubfoldersKey) as? Bool ?? false
         language = Self.read(key: Self.languageKey, fallback: LanguageMode.system)
     }
 
@@ -219,6 +224,6 @@ final class AppSettings {
     private static let recentFoldersKey = "recentFolders"
     private static let sortModeKey = "sortMode"
     private static let languageKey = "LanguageMode"
-
+    private static let loadSubfoldersKey = "loadSubfolders"
 
 }

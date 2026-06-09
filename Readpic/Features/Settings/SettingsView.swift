@@ -28,6 +28,10 @@ struct SettingsView: View {
 
                 Section {
                     Toggle("Remember Last Folder", isOn: $settings.rememberLastFolder)
+                    Toggle("Load Subfolders", isOn: $settings.loadSubfolders)
+                    Text.loc("Recursively scan subfolders up to 10 levels deep.")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.tertiary)
                 }
             }
             .padding(20)

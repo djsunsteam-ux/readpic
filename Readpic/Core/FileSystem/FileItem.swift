@@ -6,6 +6,9 @@ public struct FileItem: Identifiable, Equatable, Sendable {
     public let name: String
     public let fileSize: Int64
     public let modificationDate: Date?
+    /// Relative folder path from the scan root (empty for root-level files).
+    /// e.g. "vacation/beach" for a file inside /root/vacation/beach/
+    public let relativeFolder: String
 
     public static let supportedImageExtensions: Set<String> = [
         "jpg", "jpeg", "png",
@@ -19,11 +22,12 @@ public struct FileItem: Identifiable, Equatable, Sendable {
         "psd", "psb",
     ]
 
-    public init(url: URL, fileSize: Int64 = 0, modificationDate: Date? = nil) {
+    public init(url: URL, fileSize: Int64 = 0, modificationDate: Date? = nil, relativeFolder: String = "") {
         self.url = url
         self.id = url
         self.name = url.lastPathComponent
         self.fileSize = fileSize
         self.modificationDate = modificationDate
+        self.relativeFolder = relativeFolder
     }
 }

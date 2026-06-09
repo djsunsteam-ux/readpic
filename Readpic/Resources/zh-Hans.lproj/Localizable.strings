@@ -83,6 +83,9 @@
 "Custom Color" = "自定义颜色";
 "Session" = "会话";
 "Remember Last Folder" = "记住上次打开的文件夹";
+"Load Subfolders" = "加载子文件夹";
+"Recursively scan subfolders up to 10 levels deep." = "递归扫描子文件夹，最多 10 层。";
+"Jump to Folder" = "跳转到文件夹";
 /* ---------- Language ---------- */
 "Language" = "语言";
 /* ---------- Status Bar ---------- */

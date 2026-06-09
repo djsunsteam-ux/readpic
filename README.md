@@ -18,6 +18,36 @@ English | [简体中文](README.zh-CN.md)
 - **Fullscreen**: Auto-hiding toolbar, slideshow mode
 - **Localization**: English, 简体中文
 
+## Why Readpic
+
+| Feature | Readpic | macOS Preview | qView | XnView MP | Pixea |
+|---|:---:|:---:|:---:|:---:|:---:|
+| **Price** | Free (MIT) | Free | Free (GPL) | Personal free | Free |
+| **Native Apple Silicon** | ✅ | ✅ | ❌ | ❌ | ✅ |
+| **Zero network access** | ✅ | ✅ | ✅ | ❌ | ✅ |
+| **Formats** | 30+ | ~15 | ~20 | 500+ | ~20 |
+| **RAW (17 types)** | ✅ | Limited | ❌ | ✅ | ❌ |
+| **PSD / PSB** | ✅ | ❌ | ❌ | ✅ | ❌ |
+| **ZIP / CBZ** | ✅ | ❌ | ❌ | ✅ | ❌ |
+| **Thumbnail grid** | ✅ | ❌ | ❌ | ✅ | ❌ |
+| **Subfolder grouping** | ✅ | ❌ | ❌ | ✅ | ❌ |
+| **EXIF + Histogram + Color picker** | ✅ | Partial | ❌ | ✅ | ❌ |
+| **Crop** | ✅ | ✅ | ❌ | ✅ | ❌ |
+| **Batch convert & rename** | ✅ | ❌ | ❌ | ✅ | ❌ |
+| **Slideshow** | ✅ | ✅ | ❌ | ✅ | ❌ |
+| **Set as wallpaper** | ✅ | ❌ | ❌ | ✅ | ❌ |
+
+Readpic sits in the sweet spot between macOS Preview and heavyweight tools like XnView — **more capable than any free native viewer, lighter and faster than any cross-platform alternative**.
+
+Highlights:
+
+- **Free + open source + full-featured** — the only macOS image viewer that combines MIT license, 30+ formats, batch operations, and a pro-level info panel at zero cost
+- **Zero network, total privacy** — no telemetry, no update checks, no data collection; everything runs locally
+- **M-chip only optimization** — built exclusively for Apple Silicon, no Intel compatibility overhead; faster startup, lower memory, smoother scrolling
+- **ZIP / CBZ browsing** — open comic archives directly without extraction
+- **Pro tools built in** — histogram, color picker, EXIF/IPTC/XMP metadata, batch convert, batch rename — all in one free package
+- **Subfolder recursive scanning** — open a parent folder and browse all nested images, auto-grouped by subfolder
+
 ## Requirements
 
 - macOS 15.6+
@@ -121,7 +151,37 @@ Readpic does not include any networking features and does not request network ac
 
 ## Building from Source
 
-### Requirements
+### Why Readpic
+
+| Feature | Readpic | macOS Preview | qView | XnView MP | Pixea |
+|---|:---:|:---:|:---:|:---:|:---:|
+| **Price** | Free (MIT) | Free | Free (GPL) | Personal free | Free |
+| **Native Apple Silicon** | ✅ | ✅ | ❌ | ❌ | ✅ |
+| **Zero network access** | ✅ | ✅ | ✅ | ❌ | ✅ |
+| **Formats** | 30+ | ~15 | ~20 | 500+ | ~20 |
+| **RAW (17 types)** | ✅ | Limited | ❌ | ✅ | ❌ |
+| **PSD / PSB** | ✅ | ❌ | ❌ | ✅ | ❌ |
+| **ZIP / CBZ** | ✅ | ❌ | ❌ | ✅ | ❌ |
+| **Thumbnail grid** | ✅ | ❌ | ❌ | ✅ | ❌ |
+| **Subfolder grouping** | ✅ | ❌ | ❌ | ✅ | ❌ |
+| **EXIF + Histogram + Color picker** | ✅ | Partial | ❌ | ✅ | ❌ |
+| **Crop** | ✅ | ✅ | ❌ | ✅ | ❌ |
+| **Batch convert & rename** | ✅ | ❌ | ❌ | ✅ | ❌ |
+| **Slideshow** | ✅ | ✅ | ❌ | ✅ | ❌ |
+| **Set as wallpaper** | ✅ | ❌ | ❌ | ✅ | ❌ |
+
+Readpic sits in the sweet spot between macOS Preview and heavyweight tools like XnView — **more capable than any free native viewer, lighter and faster than any cross-platform alternative**.
+
+Highlights:
+
+- **Free + open source + full-featured** — the only macOS image viewer that combines MIT license, 30+ formats, batch operations, and a pro-level info panel at zero cost
+- **Zero network, total privacy** — no telemetry, no update checks, no data collection; everything runs locally
+- **M-chip only optimization** — built exclusively for Apple Silicon, no Intel compatibility overhead; faster startup, lower memory, smoother scrolling
+- **ZIP / CBZ browsing** — open comic archives directly without extraction
+- **Pro tools built in** — histogram, color picker, EXIF/IPTC/XMP metadata, batch convert, batch rename — all in one free package
+- **Subfolder recursive scanning** — open a parent folder and browse all nested images, auto-grouped by subfolder
+
+## Requirements
 
 - macOS 15.6+
 - Xcode 26.5+

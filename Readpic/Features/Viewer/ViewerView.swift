@@ -57,6 +57,8 @@ struct ViewerView: View {
                         gridScrollTarget: model.gridScrollTarget,
                         onScrollTargetConsumed: { model.gridScrollTarget = nil }
                     )
+                    .padding(.top, gridTopInset)
+                    .padding(.bottom, gridBottomInset)
                     .id(model.fileListVersion)
                     .opacity(model.isGridView ? 1 : 0)
                     .allowsHitTesting(model.isGridView)

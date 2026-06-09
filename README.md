@@ -42,6 +42,12 @@ macOS image viewers are almost always paid — Pixave ($9.99), PicView ($9.99), 
 
 Readpic sits in the sweet spot between macOS Preview and heavyweight tools like XnView — **more capable than any free native viewer, lighter and faster than any cross-platform alternative**.
 
+### App size comparison
+
+| Readpic | PicView | Pixave | qView | ApolloOne | Pixea | XnView MP |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| **4 MB** | ~6 MB | ~7 MB | ~44 MB | ~32 MB | ~194 MB | ~103 MB |
+
 Highlights:
 
 - **Polished, intuitive UI** — clean and minimal interface built with SwiftUI, following macOS design conventions; XnView MP offers more features but its interface feels cluttered and dated with a Windows-era layout
@@ -178,6 +184,12 @@ Readpic does not include any networking features and does not request network ac
 macOS image viewers are almost always paid — Pixave ($9.99), PicView ($9.99), Lynx ($16.99), ApolloOne ($14.99), Photo Mechanic ($139). Readpic delivers the same (or better) capability set **for free**.
 
 Readpic sits in the sweet spot between macOS Preview and heavyweight tools like XnView — **more capable than any free native viewer, lighter and faster than any cross-platform alternative**.
+
+### App size comparison
+
+| Readpic | PicView | Pixave | qView | ApolloOne | Pixea | XnView MP |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| **4 MB** | ~6 MB | ~7 MB | ~44 MB | ~32 MB | ~194 MB | ~103 MB |
 
 Highlights:
 

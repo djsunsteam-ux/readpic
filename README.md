@@ -120,6 +120,7 @@ Readpic does not include any networking features and does not request network ac
 | Key | Action |
 |---|---|
 | `K` | Crop |
+| `C` | Toggle crop mode |
 | `P` | Color picker |
 | `⌘⇧S` | Export image |
 | `⌘[` `⌘]` | Rotate left / right |
@@ -152,6 +153,15 @@ Readpic does not include any networking features and does not request network ac
 | `F` | Toggle fullscreen |
 | `⌘⌥F` | Start slideshow |
 | `?` | Keyboard shortcuts |
+
+### Slideshow
+
+| Key | Action |
+|---|---|
+| `←` `→` | Previous / Next slide |
+| `Space` | Pause / Resume |
+| Swipe left/right | Previous / Next slide |
+| `Esc` | Stop slideshow |
 
 ### Grid Selection
 

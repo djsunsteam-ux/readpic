@@ -489,6 +489,7 @@ private struct ViewerToolbar: View {
                     }
                     .pickerStyle(.menu)
                     .menuIndicator(.visible)
+                    .fixedSize()
 
                     Picker(selection: $model.dateFilter) {
                         ForEach(ViewerModel.DateFilter.allCases, id: \.rawValue) { d in
@@ -499,6 +500,7 @@ private struct ViewerToolbar: View {
                     }
                     .pickerStyle(.menu)
                     .menuIndicator(.visible)
+                    .fixedSize()
 
                     // Jump-to-folder menu (only when subfolder sections exist)
                     let sections = model.folderSections

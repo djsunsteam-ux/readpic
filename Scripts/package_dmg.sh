@@ -4,8 +4,11 @@ set -euo pipefail
 # ── Configuration ───────────────────────────────────────────────
 APP_NAME="Readpic"
 BUILD_DIR=".build/release"
-DMG_NAME="Readpic.dmg"
 VOLUME_NAME="Readpic"
+
+# ── Read version from Xcode project ─────────────────────────────
+VERSION=$(grep -m1 'MARKETING_VERSION' Readpic.xcodeproj/project.pbxproj | sed 's/.*= *\(.*\);/\1/')
+DMG_NAME="${APP_NAME}-v${VERSION}.dmg"
 
 # ── Locate .app ─────────────────────────────────────────────────
 APP_PATH=$(find "$BUILD_DIR" -name "$APP_NAME.app" -type d | head -1)

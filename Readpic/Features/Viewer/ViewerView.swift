@@ -23,6 +23,11 @@ struct ViewerView: View {
         return height
     }
 
+    private var trailingInset: CGFloat {
+        guard model.isGridView && model.isInfoPanelVisible else { return 0 }
+        return 300
+    }
+
     var body: some View {
         ZStack(alignment: .top) {
             // Canvas fills the entire ZStack
@@ -52,13 +57,14 @@ struct ViewerView: View {
                         open: { model.openFromGrid(at: $0) },
                         topInset: gridTopInset,
                         bottomInset: gridBottomInset,
-                        trailingInset: model.isGridView && model.isInfoPanelVisible ? 300 : 0,
+                        trailingInset: 0,
                         needsGridScroll: model.needsGridScroll,
                         gridScrollTarget: model.gridScrollTarget,
                         onScrollTargetConsumed: { model.gridScrollTarget = nil }
                     )
                     .padding(.top, gridTopInset)
                     .padding(.bottom, gridBottomInset)
+                    .padding(.trailing, trailingInset)
                     .id(model.fileListVersion)
                     .opacity(model.isGridView ? 1 : 0)
                     .allowsHitTesting(model.isGridView)

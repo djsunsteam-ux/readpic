@@ -90,8 +90,6 @@ struct GridView: View {
                     }
                 }
             }
-            .contentMargins(.trailing, trailingInset, for: .scrollContent)
-
 
             .onAppear {
                 scrollToCurrent(proxy: proxy)

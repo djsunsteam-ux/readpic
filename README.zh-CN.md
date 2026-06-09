@@ -42,6 +42,12 @@ macOS 上好用的看图工具几乎都要付费 — Pixave（$9.99）、PicView
 
 Readpic 定位在 macOS「预览」和 XnView 等重量级工具之间的空白地带 — **比任何免费原生看图工具更强大，比任何跨平台替代方案更轻量更快**。
 
+### 安装包大小对比
+
+| Readpic | PicView | Pixave | qView | ApolloOne | Pixea | XnView MP |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| **4 MB** | ~6 MB | ~7 MB | ~44 MB | ~32 MB | ~194 MB | ~103 MB |
+
 亮点：
 
 - **精致简洁的 UI** — 基于 SwiftUI 构建的简洁原生界面，遵循 macOS 设计规范；XnView MP 功能更多，但界面复杂陈旧，仍停留在 Windows 时代的布局风格

@@ -52,7 +52,7 @@ struct ViewerView: View {
                         open: { model.openFromGrid(at: $0) },
                         topInset: gridTopInset,
                         bottomInset: gridBottomInset,
-                        trailingInset: model.isGridView && model.isInfoPanelVisible ? 316 : 0,
+                        trailingInset: model.isGridView && model.isInfoPanelVisible ? 300 : 0,
                         needsGridScroll: model.needsGridScroll,
                         gridScrollTarget: model.gridScrollTarget,
                         onScrollTargetConsumed: { model.gridScrollTarget = nil }

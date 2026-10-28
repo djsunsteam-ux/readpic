@@ -1,8 +1,46 @@
 import SwiftUI
 
+@MainActor
 private final class AppDelegate: NSObject, NSApplicationDelegate {
+    static weak var model: ViewerModel?
+    private var pendingURLs: [URL] = []
+
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         true
+    }
+
+    /// Called once the scene's model exists; replays URLs delivered at launch.
+    func attach(_ model: ViewerModel) {
+        Self.model = model
+        guard !pendingURLs.isEmpty else { return }
+        let urls = pendingURLs
+        pendingURLs.removeAll()
+        model.open(urls: urls)
+        NSApp.activate()
+    }
+
+    private func deliver(_ urls: [URL]) {
+        guard !urls.isEmpty else { return }
+        guard let model = Self.model else {
+            pendingURLs.append(contentsOf: urls)
+            return
+        }
+        model.open(urls: urls)
+        NSApp.activate()
+    }
+
+    func application(_ application: NSApplication, open urls: [URL]) {
+        deliver(urls)
+    }
+
+    func application(_ sender: NSApplication, openFiles filenames: [String]) {
+        deliver(filenames.map { URL(fileURLWithPath: $0) })
+        sender.reply(toOpenOrPrint: .success)
+    }
+
+    func application(_ sender: NSApplication, openFile filename: String) -> Bool {
+        deliver([URL(fileURLWithPath: filename)])
+        return true
     }
 }
 
@@ -46,9 +84,7 @@ struct ReadpicApp: App {
                 .frame(minWidth: 720, minHeight: 480)
                 .environment(\.locale, currentLocale)
                 .preferredColorScheme(model.settings.theme == .dark ? .dark : model.settings.theme == .light ? .light : nil)
-                .onOpenURL { url in
-                    model.open(url)
-                }
+                .onAppear { appDelegate.attach(model) }
         }
         .commands {
             // MARK: - File

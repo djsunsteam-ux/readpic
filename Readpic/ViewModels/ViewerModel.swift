@@ -400,6 +400,16 @@ final class ViewerModel {
         }
     }
 
+    /// Entry point for documents handed over by the system (Open With, Dock drops).
+    func open(urls: [URL]) {
+        guard let first = urls.first else { return }
+        if urls.count == 1, (try? first.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true {
+            openFolder(first)
+            return
+        }
+        open(urls.first(where: FolderScanner.supports) ?? first)
+    }
+
     func open(_ url: URL) {
         pickedColor = nil
         if FolderScanner.isArchive(url) {

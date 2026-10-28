@@ -158,7 +158,7 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
         let urls = pendingURLs
         pendingURLs.removeAll()
         model.open(urls: urls)
-        NSApp.activate()
+        activateApp()
     }
 
     private func deliver(_ urls: [URL]) {
@@ -168,7 +168,42 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
         model.open(urls: urls)
-        NSApp.activate()
+        activateApp()
+    }
+
+    /// Brings the app and its viewer window forward after a document open.
+    /// A launch driven by an open event can leave the scene's window created
+    /// but never ordered front (`isVisible == false`, and such a window even
+    /// reports `canBecomeMain == false`), so activation alone doesn't show it.
+    /// Retried because the window appears asynchronously.
+    private func activateApp() {
+        for delay in [0, 200, 600, 1200] {
+            Task { @MainActor in
+                if delay > 0 { try? await Task.sleep(for: .milliseconds(delay)) }
+                NSApp.unhide(nil)
+                NSApp.activate()
+                NSRunningApplication.current.activate(options: [.activateAllWindows])
+                guard let window = self.largestWindow() else { return }
+                if window.isMiniaturized { window.deminiaturize(nil) }
+                if !window.isVisible || !window.isKeyWindow {
+                    window.makeKeyAndOrderFront(nil)
+                }
+            }
+        }
+    }
+
+    /// The viewer is the largest window; menu bar strips, Settings and panels
+    /// are smaller, so this avoids raising them over the image being opened.
+    private func largestWindow() -> NSWindow? {
+        NSApp.windows
+            .max { $0.frame.width * $0.frame.height < $1.frame.width * $1.frame.height }
+    }
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        if !flag {
+            activateApp()
+        }
+        return true
     }
 
     func application(_ application: NSApplication, open urls: [URL]) {

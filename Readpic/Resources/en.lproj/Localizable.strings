@@ -347,3 +347,29 @@
 "Color Picker" = "Color Picker";
 "Invert selection" = "Invert selection";
 "Toggle favorite" = "Toggle favorite";
+"Rate %d stars" = "Rate %d stars";
+"Rate %d star" = "Rate %d star";
+"%d of %d" = "%d of %d";
+
+/* EXIF metadata values */
+"Fired" = "Fired";
+"Did not fire" = "Did not fire";
+"Strobe return light not detected" = "Strobe return light not detected";
+"Strobe return light detected" = "Strobe return light detected";
+"Compulsory flash firing" = "Compulsory flash firing";
+"Compulsory flash suppression" = "Compulsory flash suppression";
+"Auto mode" = "Auto mode";
+"Flash function present" = "Flash function present";
+"No red-eye reduction" = "No red-eye reduction";
+"Red-eye reduction" = "Red-eye reduction";
+"Average" = "Average";
+"Center-weighted average" = "Center-weighted average";
+"Spot" = "Spot";
+"Multi-spot" = "Multi-spot";
+"Multi-segment" = "Multi-segment";
+"Partial" = "Partial";
+"Other" = "Other";
+"Auto" = "Auto";
+"Manual" = "Manual";
+"Auto bracket" = "Auto bracket";
+"Unknown" = "Unknown";

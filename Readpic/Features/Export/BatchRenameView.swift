@@ -42,7 +42,7 @@ struct BatchRenameView: View {
                 Text.loc("Batch Rename")
                     .font(.system(size: 15, weight: .semibold))
                 Spacer()
-                Text("\(files.count) files")
+                Text(Lf("%d files", files.count))
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
             }
@@ -61,7 +61,7 @@ struct BatchRenameView: View {
                             Image(systemName: "exclamationmark.triangle.fill")
                                 .foregroundStyle(.red)
                                 .font(.system(size: 12))
-                            Text(error)
+                            Text(L(error))
                                 .font(.system(size: 12))
                                 .foregroundStyle(.red)
                         }
@@ -73,7 +73,7 @@ struct BatchRenameView: View {
             Divider()
 
             HStack(spacing: 10) {
-                Button("Cancel") { onComplete() }
+                Button(L("Cancel")) { onComplete() }
                     .keyboardShortcut(.escape)
 
                 Spacer()
@@ -81,7 +81,7 @@ struct BatchRenameView: View {
                 Button(action: apply) {
                     HStack(spacing: 6) {
                         if isApplying { ProgressView().controlSize(.mini) }
-                        Text(isApplying ? String(localized: "Renaming...") : String(format: String(localized: "Rename %d Files"), files.count))
+                        Text(isApplying ? L("Renaming...") : Lf("Rename %d Files", files.count))
                     }
                     .frame(minWidth: 100)
                 }
@@ -130,7 +130,7 @@ struct BatchRenameView: View {
 
             HStack(spacing: 8) {
                 VStack(alignment: .leading, spacing: 2) {
-                    TextField("Base name", text: $baseName)
+                    TextField(L("Base name"), text: $baseName)
                         .textFieldStyle(.roundedBorder)
                         .font(.system(size: 13, design: .monospaced))
                         .frame(width: 200)
@@ -142,7 +142,7 @@ struct BatchRenameView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 4) {
                         Stepper(value: $startNumber, in: 1...9999) {
-                            TextField("Start", value: $startNumber, format: .number)
+                            TextField(L("Start"), value: $startNumber, format: .number)
                                 .textFieldStyle(.roundedBorder)
                                 .font(.system(size: 13, design: .monospaced))
                                 .frame(width: 60)
@@ -188,14 +188,14 @@ struct BatchRenameView: View {
 
     private var findReplaceSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Find & Replace")
+            Text.loc("Find & Replace")
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             HStack(spacing: 8) {
                 VStack(alignment: .leading, spacing: 2) {
-                    TextField("Find", text: $findText)
+                    TextField(L("Find"), text: $findText)
                         .textFieldStyle(.roundedBorder)
                         .font(.system(size: 13, design: .monospaced))
                         .frame(width: 200)
@@ -205,7 +205,7 @@ struct BatchRenameView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
-                    TextField("Replace with", text: $replaceText)
+                    TextField(L("Replace with"), text: $replaceText)
                         .textFieldStyle(.roundedBorder)
                         .font(.system(size: 13, design: .monospaced))
                         .frame(width: 200)
@@ -225,7 +225,7 @@ struct BatchRenameView: View {
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.secondary)
                 Spacer()
-                Text("\(previewItems.filter { !$0.isConflict }.count) OK · \(previewItems.filter(\.isConflict).count) conflicts")
+                Text("\(previewItems.filter { !$0.isConflict }.count) \(L("OK")) · \(previewItems.filter(\.isConflict).count) \(L("conflicts"))")
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             }
@@ -412,7 +412,7 @@ struct BatchRenameView: View {
                 if results.count == toRename.count {
                     onComplete()
                 } else {
-                    errorMessage = String(format: String(localized: "Renamed %d of %d files"), results.count, toRename.count)
+                    errorMessage = Lf("Renamed %d of %d files", results.count, toRename.count)
                 }
             }
         }

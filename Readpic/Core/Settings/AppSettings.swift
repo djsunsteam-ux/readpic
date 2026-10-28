@@ -2,34 +2,6 @@ import AppKit
 import Foundation
 import SwiftUI
 
-// MARK: - Localization helpers (SPM + Xcode cross-build)
-extension Bundle {
-    /// The bundle containing localized strings. SPM uses .module; Xcode uses .main.
-    static let loc: Bundle = {
-        #if SWIFT_PACKAGE
-        return .module
-        #else
-        // Xcode builds: the .lproj are copied by the Resources build phase
-        return .main
-        #endif
-    }()
-}
-
-extension String {
-    /// Returns the localized version from the correct bundle.
-    var localized: String {
-        NSLocalizedString(self, bundle: .loc, comment: "")
-    }
-}
-
-extension Text {
-    /// Creates a localized Text using the correct bundle.
-    /// Replace `Text("key")` with `Text.loc("key")`.
-    static func loc(_ key: String) -> Text {
-        Text(LocalizedStringKey(key), bundle: .loc)
-    }
-}
-
 enum ScrollBehavior: String, CaseIterable, Sendable {
     case scrollPan
     case browse
@@ -75,12 +47,12 @@ enum BackgroundColor: String, CaseIterable, Sendable {
 
     var displayName: String {
         switch self {
-        case .theme: String(localized: "Follow Theme")
-        case .black: String(localized: "Black")
-        case .darkGray: String(localized: "Dark Gray")
-        case .lightGray: String(localized: "Light Gray")
-        case .white: String(localized: "White")
-        case .custom: String(localized: "Custom")
+        case .theme: L("Follow Theme")
+        case .black: L("Black")
+        case .darkGray: L("Dark Gray")
+        case .lightGray: L("Light Gray")
+        case .white: L("White")
+        case .custom: L("Custom")
         }
     }
 }
@@ -136,7 +108,10 @@ final class AppSettings {
     }
 
     var language: LanguageMode {
-        didSet { UserDefaults.standard.set(language.rawValue, forKey: Self.languageKey) }
+        didSet {
+            UserDefaults.standard.set(language.rawValue, forKey: Self.languageKey)
+            Localizer.shared.apply(mode: language)
+        }
     }
 
     var lastFolderURL: URL? {
@@ -199,6 +174,7 @@ final class AppSettings {
         rememberLastFolder = UserDefaults.standard.object(forKey: Self.rememberFolderKey) as? Bool ?? false
         loadSubfolders = UserDefaults.standard.object(forKey: Self.loadSubfoldersKey) as? Bool ?? false
         language = Self.read(key: Self.languageKey, fallback: LanguageMode.system)
+        Localizer.shared.apply(mode: language)
     }
 
     private static func read<T: RawRepresentable>(key: String, fallback: T) -> T where T.RawValue == String {

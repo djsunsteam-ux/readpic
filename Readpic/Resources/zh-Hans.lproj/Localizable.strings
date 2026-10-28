@@ -347,3 +347,29 @@
 "Color Picker" = "取色器";
 "Invert selection" = "反选";
 "Toggle favorite" = "切换收藏";
+"Rate %d stars" = "评分 %d 星";
+"Rate %d star" = "评分 %d 星";
+"%d of %d" = "%d / %d";
+
+/* EXIF metadata values */
+"Fired" = "已闪光";
+"Did not fire" = "未闪光";
+"Strobe return light not detected" = "未检测到频闪回光";
+"Strobe return light detected" = "检测到频闪回光";
+"Compulsory flash firing" = "强制闪光";
+"Compulsory flash suppression" = "强制不闪光";
+"Auto mode" = "自动模式";
+"Flash function present" = "支持闪光灯功能";
+"No red-eye reduction" = "无红眼消除";
+"Red-eye reduction" = "红眼消除";
+"Average" = "平均测光";
+"Center-weighted average" = "中央重点平均测光";
+"Spot" = "点测光";
+"Multi-spot" = "多点测光";
+"Multi-segment" = "多分区测光";
+"Partial" = "局部测光";
+"Other" = "其他";
+"Auto" = "自动";
+"Manual" = "手动";
+"Auto bracket" = "自动包围曝光";
+"Unknown" = "未知";

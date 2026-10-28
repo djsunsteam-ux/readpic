@@ -20,14 +20,6 @@ struct ReadpicApp: App {
             "NSApplicationSupportsSecureRestorableState": true
         ])
 
-        let lang = UserDefaults.standard.string(forKey: "LanguageMode")
-        let langs: [String]
-        switch lang {
-        case "English":     langs = ["en"]
-        case "简体中文":    langs = ["zh-Hans"]
-        default:            langs = []
-        }
-        UserDefaults.standard.set(langs, forKey: "AppleLanguages")
         #if SWIFT_PACKAGE
         // Copy .lproj from module bundle to main bundle so Text("key") resolves
         let fm = FileManager.default
@@ -44,12 +36,8 @@ struct ReadpicApp: App {
         #endif
     }
 
-    var currentLocale: Locale {
-        switch model.settings.language {
-        case .english: Locale(identifier: "en")
-        case .chinese: Locale(identifier: "zh-Hans")
-        case .system:  .current
-        }
+    private var currentLocale: Locale {
+        Localizer.shared.locale
     }
 
     var body: some Scene {
@@ -57,15 +45,6 @@ struct ReadpicApp: App {
             ViewerView(model: model)
                 .frame(minWidth: 720, minHeight: 480)
                 .environment(\.locale, currentLocale)
-                .onChange(of: model.settings.language) { _, newValue in
-                    let langs: [String]
-                    switch newValue {
-                    case .english: langs = ["en"]
-                    case .chinese: langs = ["zh-Hans"]
-                    case .system:  langs = []
-                    }
-                    UserDefaults.standard.set(langs, forKey: "AppleLanguages")
-                }
                 .preferredColorScheme(model.settings.theme == .dark ? .dark : model.settings.theme == .light ? .light : nil)
                 .onOpenURL { url in
                     model.open(url)
@@ -74,15 +53,15 @@ struct ReadpicApp: App {
         .commands {
             // MARK: - File
             CommandGroup(replacing: .newItem) {
-                Button("Open Image\u{2026}") { model.showOpenPanel() }
+                Button(L("Open Image\u{2026}")) { model.showOpenPanel() }
                     .keyboardShortcut("o", modifiers: .command)
 
-                Button("Open Folder\u{2026}") { model.showOpenFolderPanel() }
+                Button(L("Open Folder\u{2026}")) { model.showOpenFolderPanel() }
                     .keyboardShortcut("o", modifiers: [.command, .shift])
             }
 
             CommandGroup(after: .newItem) {
-                Menu("Open Recent") {
+                Menu(L("Open Recent")) {
                     let recents = model.settings.recentFolders
                     if recents.isEmpty {
                         Text.loc("No Recent Folders")
@@ -92,114 +71,114 @@ struct ReadpicApp: App {
                     }
                     if !recents.isEmpty {
                         Divider()
-                        Button("Clear Recent") { model.settings.clearRecentFolders() }
+                        Button(L("Clear Recent")) { model.settings.clearRecentFolders() }
                     }
                 }
 
-                Button("Export / Convert\u{2026}") { model.showExport() }
+                Button(L("Export / Convert\u{2026}")) { model.showExport() }
                     .keyboardShortcut("s", modifiers: [.command, .shift])
                     .disabled(model.currentFile == nil || (model.isGridView && model.selectedGridIndices.isEmpty))
 
                 Divider()
 
-                Button("Move to Trash") { model.moveCurrentFileToTrash() }
+                Button(L("Move to Trash")) { model.moveCurrentFileToTrash() }
                     .keyboardShortcut(.delete, modifiers: .command)
 
                 Divider()
 
-                Button("Reveal in Finder") { model.revealInFinder() }
+                Button(L("Reveal in Finder")) { model.revealInFinder() }
                     .keyboardShortcut("e", modifiers: [.command, .option])
                     .disabled(model.currentFile == nil)
 
-                Button("Open Externally") { model.openExternally() }
+                Button(L("Open Externally")) { model.openExternally() }
                     .keyboardShortcut("e", modifiers: .command)
                     .disabled(model.currentFile == nil)
 
                 Divider()
 
-                Button("Batch Convert / Export\u{2026}") { model.showBatchExport() }
+                Button(L("Batch Convert / Export\u{2026}")) { model.showBatchExport() }
                     .disabled(!model.isGridView || model.selectedGridIndices.count < 2)
 
-                Button("Batch Rename\u{2026}") { model.showBatchRename() }
+                Button(L("Batch Rename\u{2026}")) { model.showBatchRename() }
                     .disabled(!model.isGridView || model.selectedGridIndices.count < 2)
             }
 
             // MARK: - App Info
             CommandGroup(replacing: .appInfo) {
-                Button("About Readpic") { NSApp.orderFrontStandardAboutPanel(nil) }
+                Button(L("About Readpic")) { NSApp.orderFrontStandardAboutPanel(nil) }
             }
 
             // MARK: - Edit
             CommandGroup(replacing: .pasteboard) {
-                Button("Copy Image") { model.copyImage() }
+                Button(L("Copy Image")) { model.copyImage() }
                     .keyboardShortcut("c", modifiers: .command)
                     .disabled(model.decodedImage == nil)
 
-                Button("Copy File") { model.copyFile() }
+                Button(L("Copy File")) { model.copyFile() }
                     .keyboardShortcut("c", modifiers: [.command, .shift])
                     .disabled(model.currentFile == nil)
 
-                Button("Copy File Path") { model.copyFilePath() }
+                Button(L("Copy File Path")) { model.copyFilePath() }
                     .keyboardShortcut("c", modifiers: [.command, .option])
                     .disabled(model.currentFile == nil)
 
                 Divider()
 
-                Button("Select All") { model.selectAllGrid() }
+                Button(L("Select All")) { model.selectAllGrid() }
                     .keyboardShortcut("a", modifiers: .command)
                     .disabled(!model.isGridView || model.files.isEmpty)
 
-                Button("Invert Selection") { model.invertGridSelection() }
+                Button(L("Invert Selection")) { model.invertGridSelection() }
                     .keyboardShortcut("a", modifiers: [.command, .shift])
                     .disabled(!model.isGridView || model.files.isEmpty)
 
                 Divider()
 
-                Button("Copy Metadata") { model.copyMetadata() }
+                Button(L("Copy Metadata")) { model.copyMetadata() }
                     .disabled(model.metadata == nil)
             }
 
             // MARK: - View
-            CommandMenu("Navigate") {
-                Button("Grid View") { model.toggleGridView() }
+            CommandMenu(L("Navigate")) {
+                Button(L("Grid View")) { model.toggleGridView() }
                     .keyboardShortcut("g")
                     .disabled(model.currentFile == nil && !model.isGridView)
 
                 Divider()
 
-                Button("Fit Window") { model.setFitMode() }
+                Button(L("Fit Window")) { model.setFitMode() }
                     .disabled(model.currentFile == nil)
 
-                Button("Fit Width") { model.setFitWidthMode() }
+                Button(L("Fit Width")) { model.setFitWidthMode() }
                     .disabled(model.currentFile == nil)
 
-                Button("Actual Size") { model.setActualSizeMode() }
+                Button(L("Actual Size")) { model.setActualSizeMode() }
                     .disabled(model.currentFile == nil)
 
                 Divider()
 
-                Button("Zoom In") { model.zoomIn() }
+                Button(L("Zoom In")) { model.zoomIn() }
                     .keyboardShortcut("=", modifiers: .command)
                     .disabled(model.currentFile == nil)
 
-                Button("Zoom Out") { model.zoomOut() }
+                Button(L("Zoom Out")) { model.zoomOut() }
                     .keyboardShortcut("-", modifiers: .command)
                     .disabled(model.currentFile == nil)
 
-                Button("Reset Zoom") { model.resetZoom() }
+                Button(L("Reset Zoom")) { model.resetZoom() }
                     .keyboardShortcut("0", modifiers: .command)
                     .disabled(model.currentFile == nil)
 
                 Divider()
 
-                Button("Thumbnail Strip") {
+                Button(L("Thumbnail Strip")) {
                     withAnimation(.easeInOut(duration: 0.2)) {
                         model.toggleThumbnailStrip()
                     }
                 }
                 .disabled(model.currentFile == nil)
 
-                Button("Frame Strip") {
+                Button(L("Frame Strip")) {
                     withAnimation(.easeInOut(duration: 0.2)) {
                         model.toggleFrameStrip()
                     }
@@ -207,7 +186,7 @@ struct ReadpicApp: App {
                 .keyboardShortcut("s")
                 .disabled(!model.hasAnimatedFrames || model.isGridView)
 
-                Button("Info Panel") {
+                Button(L("Info Panel")) {
                     withAnimation(.easeInOut(duration: 0.25)) {
                         model.toggleInfoPanel()
                     }
@@ -216,21 +195,21 @@ struct ReadpicApp: App {
 
                 Divider()
 
-                Menu("Sort By") {
-                    Button("Name") { model.setSortMode(.name) }
-                    Button("Date") { model.setSortMode(.date) }
+                Menu(L("Sort By")) {
+                    Button(L("Name")) { model.setSortMode(.name) }
+                    Button(L("Date")) { model.setSortMode(.date) }
                 }
 
                 if model.isGridView {
-                    Menu("Filter By") {
-                        Menu("Format") {
+                    Menu(L("Filter By")) {
+                        Menu(L("Format")) {
                             ForEach(ViewerModel.FileFormatFilter.allCases, id: \.rawValue) { fmt in
-                                Button(fmt.rawValue) { model.formatFilter = fmt }
+                                Button(L(fmt.rawValue)) { model.formatFilter = fmt }
                             }
                         }
-                        Menu("Date") {
+                        Menu(L("Date")) {
                             ForEach(ViewerModel.DateFilter.allCases, id: \.rawValue) { d in
-                                Button(d.rawValue) { model.dateFilter = d }
+                                Button(L(d.rawValue)) { model.dateFilter = d }
                             }
                         }
                     }
@@ -239,46 +218,46 @@ struct ReadpicApp: App {
 
                 Divider()
 
-                Button("Show Status Bar") { model.settings.showStatusBar.toggle() }
+                Button(L("Show Status Bar")) { model.settings.showStatusBar.toggle() }
 
                 Divider()
 
-                Button("Fullscreen") { model.toggleFullScreen() }
+                Button(L("Fullscreen")) { model.toggleFullScreen() }
                     .keyboardShortcut("f")
 
                 Divider()
 
-                Button("Start Slideshow") { model.toggleSlideshow() }
+                Button(L("Start Slideshow")) { model.toggleSlideshow() }
                     .keyboardShortcut("f", modifiers: [.command, .option])
                     .disabled(model.activeFile == nil || (model.activeFile?.url.pathExtension.lowercased() == "gif"))
             }
 
             // MARK: - Image
-            CommandMenu("Image") {
-                Button("Crop\u{2026}") { model.enterCropMode() }
+            CommandMenu(L("Image")) {
+                Button(L("Crop\u{2026}")) { model.enterCropMode() }
                     .keyboardShortcut("k")
                     .disabled(!model.isGridView && model.currentFile == nil)
 
-                Button("Rotate Left") { model.rotateLeft() }
+                Button(L("Rotate Left")) { model.rotateLeft() }
                     .keyboardShortcut("[", modifiers: .command)
                     .disabled(model.currentFile == nil)
 
-                Button("Rotate Right") { model.rotateRight() }
+                Button(L("Rotate Right")) { model.rotateRight() }
                     .keyboardShortcut("]", modifiers: .command)
                     .disabled(model.currentFile == nil)
 
-                Button("Flip Horizontal") { model.flipHorizontal() }
+                Button(L("Flip Horizontal")) { model.flipHorizontal() }
                     .keyboardShortcut("h", modifiers: [.command, .shift])
                     .disabled(model.currentFile == nil)
 
-                Button("Color Picker") { model.toggleColorPickerMode() }
+                Button(L("Color Picker")) { model.toggleColorPickerMode() }
                     .keyboardShortcut("p")
                     .disabled(model.currentFile == nil)
 
                 Divider()
 
-                Menu("Rate") {
-                    Button("None") { model.rateCurrentFile(0) }
+                Menu(L("Rate")) {
+                    Button(L("None")) { model.rateCurrentFile(0) }
                     Divider()
                     ForEach(1...5, id: \.self) { rating in
                         Button(String(repeating: "★", count: rating)) {
@@ -288,32 +267,32 @@ struct ReadpicApp: App {
                 }
                 .disabled(model.currentFile == nil)
 
-                Button("Toggle Favorite") { model.toggleFavorite() }
+                Button(L("Toggle Favorite")) { model.toggleFavorite() }
                     .keyboardShortcut("d", modifiers: .command)
                     .disabled(model.currentFile == nil)
 
                 Divider()
 
-                Button("Save Changes") { model.saveChanges() }
+                Button(L("Save Changes")) { model.saveChanges() }
                     .disabled(model.currentFile == nil || (model.rotation == 0 && !model.isFlippedHorizontally))
 
                 Divider()
 
-                Button("Set as Desktop Wallpaper") { model.setDesktopWallpaper() }
+                Button(L("Set as Desktop Wallpaper")) { model.setDesktopWallpaper() }
                     .disabled(model.currentFile == nil)
 
                 Divider()
 
-                Button("Batch Convert / Export\u{2026}") { model.showBatchExport() }
+                Button(L("Batch Convert / Export\u{2026}")) { model.showBatchExport() }
                     .disabled(!model.isGridView || model.selectedGridIndices.count < 2)
 
-                Button("Batch Rename\u{2026}") { model.showBatchRename() }
+                Button(L("Batch Rename\u{2026}")) { model.showBatchRename() }
                     .disabled(!model.isGridView || model.selectedGridIndices.count < 2)
             }
 
             // MARK: - Help
-            CommandMenu("Help") {
-                Button("Keyboard Shortcuts") { model.toggleShortcutsHelp() }
+            CommandMenu(L("Help")) {
+                Button(L("Keyboard Shortcuts")) { model.toggleShortcutsHelp() }
                     .keyboardShortcut("?", modifiers: [])
             }
         }

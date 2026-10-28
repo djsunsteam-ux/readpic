@@ -86,7 +86,7 @@ struct SlideshowView: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(.white)
-            .help("Exit slideshow (Esc)")
+            .help(L("Exit slideshow (Esc)"))
 
             Divider().frame(height: 20)
 
@@ -96,7 +96,7 @@ struct SlideshowView: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(.white)
-            .help("Previous")
+            .help(L("Previous"))
 
             Button { togglePlayPause() } label: {
                 Image(systemName: model.isAnimationPaused ? "play.fill" : "pause.fill")
@@ -113,7 +113,7 @@ struct SlideshowView: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(.white)
-            .help("Next")
+            .help(L("Next"))
 
             if let url = model.currentFile?.url,
                let idx = model.navigableFiles.firstIndex(where: { $0.url == url }) {

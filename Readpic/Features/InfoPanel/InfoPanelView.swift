@@ -40,7 +40,7 @@ struct InfoPanelView: View {
                     GroupSection(title: "Image") {
                         InfoRow(label: "Dimensions", value: metadata.dimensionsText)
                         InfoRow(label: "Format", value: metadata.format)
-                        InfoRow(label: "Color Space", value: metadata.colorSpace)
+                        InfoRow(label: "Color Space", value: metadata.colorSpaceText)
                         if let bitDepth = metadata.bitDepth {
                             InfoRow(label: "Bit Depth", value: "\(bitDepth)-bit")
                         }
@@ -72,20 +72,20 @@ struct InfoPanelView: View {
                             if let ev = metadata.exposureCompensation {
                                 InfoRow(label: "Exposure Comp.", value: "\(String(format: "%+.1f", ev)) EV")
                             }
-                            if let flash = metadata.flash {
+                            if let flash = metadata.flashText {
                                 InfoRow(label: "Flash", value: flash)
                             }
                         }
                     }
                     if metadata.meteringMode != nil || metadata.whiteBalance != nil || metadata.exposureMode != nil || metadata.subjectDistance != nil || metadata.digitalZoomRatio != nil {
                         GroupSection(title: "Advanced") {
-                            if let mode = metadata.meteringMode {
+                            if let mode = metadata.meteringModeText {
                                 InfoRow(label: "Metering Mode", value: mode)
                             }
-                            if let wb = metadata.whiteBalance {
+                            if let wb = metadata.whiteBalanceText {
                                 InfoRow(label: "White Balance", value: wb)
                             }
-                            if let em = metadata.exposureMode {
+                            if let em = metadata.exposureModeText {
                                 InfoRow(label: "Exposure Mode", value: em)
                             }
                             if let dist = metadata.subjectDistance {
@@ -165,7 +165,7 @@ struct InfoPanelView: View {
                                 .foregroundStyle(model.isCurrentFileFavorite ? .red : .secondary)
                         }
                         .buttonStyle(.plain)
-                        .help(model.isCurrentFileFavorite ? "Remove from Favorites" : "Add to Favorites")
+                        .help(L(model.isCurrentFileFavorite ? "Remove from Favorites" : "Add to Favorites"))
                         .padding(.vertical, 2)
                     }
 
@@ -182,14 +182,14 @@ struct InfoPanelView: View {
                                         .foregroundStyle(star <= model.currentFileRating ? Color.yellow : Color.secondary)
                                 }
                                 .buttonStyle(.plain)
-                                .help("Rate \(star) star\(star == 1 ? "" : "s")")
+                                .help(Lf(star == 1 ? "Rate %d star" : "Rate %d stars", star))
                             }
                         }
                         .padding(.vertical, 2)
                     }
 
                     Button(action: { model.exportMetadata() }) {
-                        Label("Export Info", systemImage: "square.and.arrow.up")
+                        Label(L("Export Info"), systemImage: "square.and.arrow.up")
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .buttonStyle(.borderless)

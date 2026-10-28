@@ -341,14 +341,14 @@ final class ViewerModel {
             let totalCount = files.count
             if selectedGridIndices.isEmpty {
                 if isFilterActive {
-                    return String(format: String(localized: "%d images (filtered from %d)"), filteredCount, totalCount)
+                    return Lf("%d images (filtered from %d)", filteredCount, totalCount)
                 }
-                return String(format: String(localized: "%d images"), filteredCount)
+                return Lf("%d images", filteredCount)
             } else {
                 if isFilterActive {
-                    return String(format: String(localized: "%d of %d selected (filtered from %d)"), selectedGridIndices.count, filteredCount, totalCount)
+                    return Lf("%d of %d selected (filtered from %d)", selectedGridIndices.count, filteredCount, totalCount)
                 }
-                return String(format: String(localized: "%d of %d selected"), selectedGridIndices.count, filteredCount)
+                return Lf("%d of %d selected", selectedGridIndices.count, filteredCount)
             }
         }
         guard let currentFile else { return "" }
@@ -358,7 +358,7 @@ final class ViewerModel {
         if let decodedImage {
             dimensions = "\(Int(decodedImage.pixelSize.width)) × \(Int(decodedImage.pixelSize.height))"
         } else {
-            dimensions = String(localized: "Loading…")
+            dimensions = L("Loading…")
         }
         let sizeStr = fileSizeString(currentFile.fileSize)
         return "\(currentIndex + 1) / \(count)    \(currentFile.name)    \(dimensions)    \(sizeStr)    \(zoomPercent)%"
@@ -552,7 +552,7 @@ final class ViewerModel {
                 isLoading = false
                 let nsError = error as NSError
                 if nsError.domain == NSCocoaErrorDomain, nsError.code == NSFileReadNoPermissionError {
-                    showToast("Permission denied — can’t read this folder")
+                    showToast("Permission denied — can't read this folder")
                 } else if nsError.domain == NSCocoaErrorDomain, nsError.code == NSFileReadNoSuchFileError {
                     showToast("The folder no longer exists")
                 } else {
@@ -1316,7 +1316,7 @@ final class ViewerModel {
             wasInGridViewBeforeCrop = false
         }
 
-        showToast(String(format: String(localized: "Saved as %@"), outputName))
+        showToast(Lf("Saved as %@", outputName))
     }
 
     func cancelCrop() {
@@ -1522,7 +1522,7 @@ final class ViewerModel {
         let content = meta.exportText
 
         let panel = NSSavePanel()
-        panel.title = "Export Metadata"
+        panel.title = L("Export Metadata")
         panel.nameFieldStringValue = "\(meta.name).metadata.txt"
         panel.allowedContentTypes = [.plainText]
         panel.canCreateDirectories = true
@@ -1565,7 +1565,7 @@ final class ViewerModel {
         guard let url = currentFile?.url else { return }
         FavoritesManager.shared.setRating(rating, for: url)
         if rating > 0 {
-            showToast(String(format: String(localized: "Rated %d ★"), rating))
+            showToast(Lf("Rated %d ★", rating))
         } else {
             showToast("Rating cleared")
         }
@@ -1622,10 +1622,10 @@ final class ViewerModel {
         }
 
         let alert = NSAlert()
-        alert.messageText = "Save changes to original file?"
-        alert.informativeText = "This will overwrite \"\(currentFile.name)\" with the rotated/flipped version."
-        alert.addButton(withTitle: "Save")
-        alert.addButton(withTitle: "Cancel")
+        alert.messageText = L("Save changes to original file?")
+        alert.informativeText = Lf("This will overwrite \"%@\" with the rotated/flipped version.", currentFile.name)
+        alert.addButton(withTitle: L("Save"))
+        alert.addButton(withTitle: L("Cancel"))
         alert.alertStyle = .warning
 
         guard alert.runModal() == .alertFirstButtonReturn else { return }
@@ -1774,13 +1774,13 @@ final class ViewerModel {
         case ImageDecodeError.unsupported:
             showToast("Unsupported or inaccessible file")
         case ImageDecodeError.noImage:
-            showToast("The file is damaged and can't be displayed")
+            showToast("The file is damaged and can’t be displayed")
         default:
             let nsError = error as NSError
             if nsError.domain == NSCocoaErrorDomain, nsError.code == NSFileReadNoPermissionError {
                 showToast("Permission denied — can't read this file")
             } else {
-                showToast("The file is damaged and can't be displayed")
+                showToast("The file is damaged and can’t be displayed")
             }
         }
     }

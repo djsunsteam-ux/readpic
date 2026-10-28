@@ -96,6 +96,18 @@ public struct ImageMetadata: Equatable, Sendable {
         dateTaken.map { DateFormatter.localizedString(from: $0, dateStyle: .medium, timeStyle: .short) }
     }
 
+    // EXIF enum values are stored as English keys so they can be localized
+    // at display time and follow runtime language switches.
+    public var colorSpaceText: String { colorSpace.localized }
+
+    public var flashText: String? {
+        flash?.split(separator: ", ").map { String($0).localized }.joined(separator: ", ")
+    }
+
+    public var meteringModeText: String? { meteringMode?.localized }
+    public var whiteBalanceText: String? { whiteBalance?.localized }
+    public var exposureModeText: String? { exposureMode?.localized }
+
     /// Human-readable plain-text representation for export.
     public var exportText: String {
         var lines: [String] = []

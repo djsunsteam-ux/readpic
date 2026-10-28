@@ -44,7 +44,7 @@ struct BatchConvertView: View {
                 Text.loc("Batch Convert / Export")
                     .font(.system(size: 15, weight: .semibold))
                 Spacer()
-                Text(String(localized: "%d files").replacingOccurrences(of: "%d", with: "\(totalCount)"))
+                Text(Lf("%d files", totalCount))
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
             }
@@ -65,19 +65,19 @@ struct BatchConvertView: View {
             Divider()
 
             HStack(spacing: 10) {
-                Button("Cancel") { onComplete() }
+                Button(L("Cancel")) { onComplete() }
                     .keyboardShortcut(.escape)
                 Spacer()
 
                 if isConverting {
-                    Button("Cancel Conversion") { isCancelled = true }
+                    Button(L("Cancel Conversion")) { isCancelled = true }
                         .keyboardShortcut(.escape)
                 }
 
                 Button(action: convert) {
                     HStack(spacing: 6) {
                         if isConverting { ProgressView().controlSize(.mini) }
-                        Text(isConverting ? String(localized: "Converting...") : String(format: String(localized: "Export %d Files"), totalCount))
+                        Text(isConverting ? L("Converting...") : Lf("Export %d Files", totalCount))
                     }
                     .frame(minWidth: 120)
                 }
@@ -142,7 +142,7 @@ struct BatchConvertView: View {
 
             HStack(spacing: 10) {
                 VStack(spacing: 2) {
-                    TextField("Width", value: $config.exportWidth, format: .number)
+                    TextField(L("Width"), value: $config.exportWidth, format: .number)
                         .textFieldStyle(.roundedBorder)
                         .font(.system(size: 13, design: .monospaced))
                         .multilineTextAlignment(.center)
@@ -163,7 +163,7 @@ struct BatchConvertView: View {
                     .padding(.top, -12)
 
                 VStack(spacing: 2) {
-                    TextField("Height", value: $config.exportHeight, format: .number)
+                    TextField(L("Height"), value: $config.exportHeight, format: .number)
                         .textFieldStyle(.roundedBorder)
                         .font(.system(size: 13, design: .monospaced))
                         .multilineTextAlignment(.center)
@@ -183,7 +183,7 @@ struct BatchConvertView: View {
                         .font(.system(size: 13))
                 }
                 .toggleStyle(.button)
-                .help("Lock aspect ratio")
+                .help(L("Lock aspect ratio"))
                 .padding(.top, -12)
             }
 
@@ -227,11 +227,11 @@ struct BatchConvertView: View {
                     .lineLimit(1)
                     .truncationMode(.middle)
                 Spacer()
-                Button("Choose...") { selectOutputFolder() }
+                Button(L("Choose...")) { selectOutputFolder() }
                     .font(.system(size: 12))
             }
 
-            Toggle("Open folder after export", isOn: $openFolderAfterExport)
+            Toggle(L("Open folder after export"), isOn: $openFolderAfterExport)
                 .font(.system(size: 11))
                 .toggleStyle(.checkbox)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -251,17 +251,17 @@ struct BatchConvertView: View {
                 )
 
                 HStack {
-                    Text("\(convertedCount + failedCount) of \(totalCount)")
+                    Text(Lf("%d of %d", convertedCount + failedCount, totalCount))
                         .font(.system(size: 11, design: .monospaced))
                         .foregroundStyle(.secondary)
                     Spacer()
                     if failedCount > 0 {
-                        Text("\(failedCount) failed")
+                        Text("\(failedCount) \(L("failed"))")
                             .font(.system(size: 11))
                             .foregroundStyle(.red)
                     }
                     if convertedCount > 0 {
-                        Text("\(convertedCount) converted")
+                        Text("\(convertedCount) \(L("converted"))")
                             .font(.system(size: 11))
                             .foregroundStyle(.green)
                     }
@@ -281,7 +281,7 @@ struct BatchConvertView: View {
                                     .truncationMode(.middle)
                                     .foregroundStyle(textColor(for: state.status))
                                 if case .failed(let msg) = state.status {
-                                    Text(msg)
+                                    Text(L(msg))
                                         .font(.system(size: 10))
                                         .foregroundStyle(.red)
                                         .lineLimit(1)
@@ -333,8 +333,8 @@ struct BatchConvertView: View {
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.canCreateDirectories = true
-        panel.message = "Choose export destination folder"
-        panel.prompt = "Select"
+        panel.message = L("Choose export destination folder")
+        panel.prompt = L("Select")
 
         guard panel.runModal() == .OK, let url = panel.url else { return }
         outputFolder = url

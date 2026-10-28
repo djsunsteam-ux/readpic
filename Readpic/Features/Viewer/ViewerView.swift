@@ -99,11 +99,11 @@ struct ViewerView: View {
 
                 if let toastMessage = model.toastMessage {
                     HStack(spacing: 12) {
-                        Text(LocalizedStringKey(toastMessage))
+                        Text(L(toastMessage))
                             .font(.system(size: 13))
 
                         if let actionTitle = model.toastActionTitle {
-                            Button(LocalizedStringKey(actionTitle)) {
+                            Button(L(actionTitle)) {
                                 model.performToastAction()
                             }
                             .buttonStyle(.borderless)
@@ -463,7 +463,7 @@ private struct ViewerToolbar: View {
                         Image(systemName: "magnifyingglass")
                             .font(.system(size: 11))
                             .foregroundStyle(.secondary)
-                        TextField("Search", text: $model.searchText)
+                        TextField(L("Search"), text: $model.searchText)
                             .textFieldStyle(.plain)
                             .font(.system(size: 11))
                             .frame(maxWidth: 140)
@@ -494,7 +494,7 @@ private struct ViewerToolbar: View {
                             }
                         }
                     } label: {
-                        Label("Format", systemImage: "line.3.horizontal.decrease.circle")
+                        Label(L("Format"), systemImage: "line.3.horizontal.decrease.circle")
                     }
                     .menuStyle(.borderlessButton)
                     .menuIndicator(.visible)
@@ -514,7 +514,7 @@ private struct ViewerToolbar: View {
                             }
                         }
                     } label: {
-                        Label("Date", systemImage: "calendar")
+                        Label(L("Date"), systemImage: "calendar")
                     }
                     .menuStyle(.borderlessButton)
                     .menuIndicator(.visible)
@@ -530,7 +530,7 @@ private struct ViewerToolbar: View {
                                 }
                             }
                         } label: {
-                            Label("Jump to Folder", systemImage: "folder.badge.gearshape")
+                            Label(L("Jump to Folder"), systemImage: "folder.badge.gearshape")
                         }
                         .menuStyle(.borderlessButton)
                         .menuIndicator(.visible)
@@ -550,11 +550,11 @@ private struct ViewerToolbar: View {
 
     private var cropToolbar: some View {
         HStack(spacing: 8) {
-            Button("Apply") { model.applyCrop() }
+            Button(L("Apply")) { model.applyCrop() }
                 .font(.system(size: 12, weight: .medium))
                 .keyboardShortcut(.return, modifiers: [])
 
-            Button("Cancel") { model.cancelCrop() }
+            Button(L("Cancel")) { model.cancelCrop() }
                 .font(.system(size: 12))
                 .keyboardShortcut(.escape, modifiers: [])
 
@@ -593,13 +593,14 @@ private struct ToolbarButton: View {
     let action: () -> Void
 
     var body: some View {
+        let localizedTitle = title.localized
         Button(action: action) {
-            Label(title, systemImage: systemImage)
+            Label(localizedTitle, systemImage: systemImage)
                 .labelStyle(.iconOnly)
                 .frame(width: 28, height: 28)
         }
         .buttonStyle(.borderless)
-        .help(title.localized)
+        .help(localizedTitle)
     }
 }
 
@@ -638,12 +639,12 @@ private struct EmptyStateView: View {
                 }
 
                 HStack(spacing: 10) {
-                    Button("Open Image") {
+                    Button(L("Open Image")) {
                         model.showOpenPanel()
                     }
                     .keyboardShortcut("o", modifiers: .command)
 
-                    Button("Open Folder") {
+                    Button(L("Open Folder")) {
                         model.showOpenFolderPanel()
                     }
                 }
@@ -676,9 +677,9 @@ private struct EmptyStateView: View {
                                     Button(url.lastPathComponent) { model.openFolder(url) }
                                 }
                                 Divider()
-                                Button("Clear Recent") { model.settings.clearRecentFolders() }
+                                Button(L("Clear Recent")) { model.settings.clearRecentFolders() }
                             } label: {
-                                Text("More\u{2026}")
+                                Text.loc("More\u{2026}")
                                     .font(.system(size: 11))
                             }
                             .buttonStyle(.plain)
@@ -687,7 +688,7 @@ private struct EmptyStateView: View {
                     }
                 }
 
-                Text("Supports JPEG, PNG, HEIC, WebP, GIF, TIFF, BMP, ICO")
+                Text.loc("Supports JPEG, PNG, HEIC, WebP, GIF, TIFF, BMP, ICO")
                     .font(.system(size: 12))
                     .foregroundStyle(.tertiary)
 
@@ -893,7 +894,7 @@ private struct ColorInfoOverlay: View {
                     }
                 }
             } else {
-                Text("Move over image")
+                Text.loc("Move over image")
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
             }
@@ -902,7 +903,7 @@ private struct ColorInfoOverlay: View {
             Image(systemName: isLocked ? "lock.fill" : "lock.open")
                 .font(.system(size: 11))
                 .foregroundStyle(isLocked ? Color.accentColor : .secondary)
-                .help(isLocked ? "Click to unlock" : "Click to lock")
+                .help(L(isLocked ? "Click to unlock" : "Click to lock"))
 
             Button(action: onDismiss) {
                 Image(systemName: "xmark.circle.fill")

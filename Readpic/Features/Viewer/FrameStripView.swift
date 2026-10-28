@@ -19,7 +19,7 @@ struct FrameStripView: View {
         VStack(spacing: 0) {
             // Header row
             HStack {
-                Text(String(format: String.localizedStringWithFormat(NSLocalizedString("Frame %d of %d", bundle: .loc, comment: ""), currentIndex + 1, totalFrameCount)))
+                Text(Lf("Frame %d of %d", currentIndex + 1, totalFrameCount))
                     .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(.secondary)
                 Spacer()

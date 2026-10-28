@@ -46,6 +46,7 @@
 		A00000000000000000000099 /* Readpic/Core/ImageLoading/Histogram.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000098 /* Readpic/Core/ImageLoading/Histogram.swift */; };
 		A00000000000000000000101 /* Readpic/Features/InfoPanel/HistogramChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000100 /* Readpic/Features/InfoPanel/HistogramChartView.swift */; };
 		A00000000000000000000102 /* ArchiveScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000103 /* ArchiveScanner.swift */; };
+		A00000000000000000000104 /* Localizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000105 /* Localizer.swift */; };
 /* End PBXBuildFile section */
 
 
@@ -91,6 +92,7 @@
 		A00000000000000000000098 /* Histogram.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Histogram.swift; sourceTree = "<group>"; };
 		A00000000000000000000100 /* HistogramChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistogramChartView.swift; sourceTree = "<group>"; };
 		A00000000000000000000103 /* ArchiveScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchiveScanner.swift; sourceTree = "<group>"; };
+		A00000000000000000000105 /* Localizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Localizer.swift; sourceTree = "<group>"; };
 
 /* End PBXFileReference section */
 
@@ -152,6 +154,7 @@
 				A0000000000000000000002A /* FileSystem */,
 				A00000000000000000000054 /* Metadata */,
 				A0000000000000000000005A /* Settings */,
+				A00000000000000000000106 /* Localization */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -260,6 +263,14 @@
 				A00000000000000000000058 /* AppSettings.swift */,
 			);
 			path = Settings;
+			sourceTree = "<group>";
+		};
+		A00000000000000000000106 /* Localization */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000105 /* Localizer.swift */,
+			);
+			path = Localization;
 			sourceTree = "<group>";
 		};
 		A0000000000000000000005B /* Settings */ = {
@@ -411,6 +422,7 @@
 				A00000000000000000000099 /* Readpic/Core/ImageLoading/Histogram.swift in Sources */,
 				A00000000000000000000101 /* Readpic/Features/InfoPanel/HistogramChartView.swift in Sources */,
 				A00000000000000000000102 /* ArchiveScanner.swift in Sources */,
+				A00000000000000000000104 /* Localizer.swift in Sources */,
 
 			);
 			runOnlyForDeploymentPostprocessing = 0;

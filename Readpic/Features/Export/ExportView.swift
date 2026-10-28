@@ -83,7 +83,7 @@ struct ExportView: View {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundStyle(.red)
                         .font(.system(size: 12))
-                    Text(error)
+                    Text(L(error))
                         .font(.system(size: 12))
                         .foregroundStyle(.red)
                 }
@@ -93,7 +93,7 @@ struct ExportView: View {
 
             // Buttons
             HStack(spacing: 10) {
-                Button("Cancel") { onComplete() }
+                Button(L("Cancel")) { onComplete() }
                     .keyboardShortcut(.escape)
                 Spacer()
                 Button(action: export) {
@@ -180,7 +180,7 @@ struct ExportView: View {
 
             HStack(spacing: 10) {
                         VStack(spacing: 2) {
-                            TextField("Width", value: $config.exportWidth, format: .number)
+                            TextField(L("Width"), value: $config.exportWidth, format: .number)
                                 .textFieldStyle(.roundedBorder)
                                 .font(.system(size: 13, design: .monospaced))
                                 .multilineTextAlignment(.center)
@@ -201,7 +201,7 @@ struct ExportView: View {
                             .padding(.top, -12)
 
                         VStack(spacing: 2) {
-                            TextField("Height", value: $config.exportHeight, format: .number)
+                            TextField(L("Height"), value: $config.exportHeight, format: .number)
                                 .textFieldStyle(.roundedBorder)
                                 .font(.system(size: 13, design: .monospaced))
                                 .multilineTextAlignment(.center)
@@ -221,13 +221,13 @@ struct ExportView: View {
                                 .font(.system(size: 13))
                         }
                         .toggleStyle(.button)
-                        .help("Lock aspect ratio")
+                        .help(L("Lock aspect ratio"))
                         .padding(.top, -12)
                     }
 
                     // Original size reference
                     HStack {
-                        Text(String(format: String(localized: "Original: %d × %d"), sourceWidth, sourceHeight))
+                        Text(Lf("Original: %d × %d", sourceWidth, sourceHeight))
                             .font(.system(size: 11))
                             .foregroundStyle(.tertiary)
                         Spacer()
@@ -265,7 +265,7 @@ struct ExportView: View {
 
             VStack(spacing: 8) {
                 HStack {
-                    TextField("File name", text: $config.fileName)
+                    TextField(L("File name"), text: $config.fileName)
                         .textFieldStyle(.roundedBorder)
                         .font(.system(size: 13, design: .monospaced))
                     Text(".\(config.fileExtension)")
@@ -283,11 +283,11 @@ struct ExportView: View {
                         .lineLimit(1)
                         .truncationMode(.middle)
                     Spacer()
-                    Button("Choose...") { selectOutputFolder() }
+                    Button(L("Choose...")) { selectOutputFolder() }
                         .font(.system(size: 12))
                 }
 
-                Toggle("Open folder after export", isOn: $openFolderAfterExport)
+                Toggle(L("Open folder after export"), isOn: $openFolderAfterExport)
                     .font(.system(size: 11))
                     .toggleStyle(.checkbox)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -325,8 +325,8 @@ struct ExportView: View {
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.canCreateDirectories = true
-        panel.message = "Choose export destination folder"
-        panel.prompt = "Select"
+        panel.message = L("Choose export destination folder")
+        panel.prompt = L("Select")
 
         guard panel.runModal() == .OK, let url = panel.url else { return }
         config.outputFolder = url

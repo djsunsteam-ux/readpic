@@ -373,3 +373,25 @@
 "Manual" = "Manual";
 "Auto bracket" = "Auto bracket";
 "Unknown" = "Unknown";
+
+/* ---------- AppKit Menu Bar ---------- */
+"Edit" = "Edit";
+"Window" = "Window";
+"Settings…" = "Settings…";
+"Services" = "Services";
+"Hide Readpic" = "Hide Readpic";
+"Hide Others" = "Hide Others";
+"Show All" = "Show All";
+"Quit Readpic" = "Quit Readpic";
+"Close" = "Close";
+"Close All" = "Close All";
+"Redo" = "Redo";
+"AutoFill" = "AutoFill";
+"Contact…" = "Contact…";
+"Passwords…" = "Passwords…";
+"Credit Card…" = "Credit Card…";
+"Start Dictation…" = "Start Dictation…";
+"Emoji & Symbols" = "Emoji & Symbols";
+"Minimize" = "Minimize";
+"Bring All to Front" = "Bring All to Front";
+"Readpic Help" = "Readpic Help";

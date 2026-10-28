@@ -9,6 +9,148 @@ private final class AppDelegate: NSObject, NSApplicationDelegate {
         true
     }
 
+    /// AppKit-supplied menu titles are resolved once at launch, so they don't
+    /// follow runtime language switches. Each known title (in either language)
+    /// maps to its localization key so the whole bar can be patched in place.
+    private static let menuTitleKeys: [String: String] = [
+        // App menu
+        "About Readpic": "About Readpic", "关于 Readpic": "About Readpic",
+        "Settings…": "Settings…", "设置…": "Settings…",
+        "Services": "Services", "服务": "Services",
+        "Hide Readpic": "Hide Readpic", "隐藏Readpic": "Hide Readpic",
+        "Hide Others": "Hide Others", "隐藏其他": "Hide Others",
+        "Show All": "Show All", "全部显示": "Show All",
+        "Quit Readpic": "Quit Readpic", "退出Readpic": "Quit Readpic",
+        // File
+        "File": "File", "文件": "File",
+        "Open Image…": "Open Image…", "打开图片…": "Open Image…",
+        "Open Folder…": "Open Folder…", "打开文件夹…": "Open Folder…",
+        "Open Recent": "Open Recent", "最近打开": "Open Recent",
+        "Clear Recent": "Clear Recent", "清除最近": "Clear Recent",
+        "Export / Convert…": "Export / Convert…", "导出 / 转换…": "Export / Convert…",
+        "Move to Trash": "Move to Trash", "移到废纸篓": "Move to Trash",
+        "Reveal in Finder": "Reveal in Finder", "在 Finder 中显示": "Reveal in Finder",
+        "Open Externally": "Open Externally", "用外部应用打开": "Open Externally",
+        "Batch Convert / Export…": "Batch Convert / Export…", "批量转换 / 导出…": "Batch Convert / Export…",
+        "Batch Rename…": "Batch Rename…", "批量重命名…": "Batch Rename…",
+        "Close": "Close", "关闭": "Close",
+        "Close All": "Close All", "全部关闭": "Close All",
+        // Edit
+        "Edit": "Edit", "编辑": "Edit",
+        "Undo": "Undo", "撤销": "Undo",
+        "Redo": "Redo", "重做": "Redo",
+        "Copy Image": "Copy Image", "复制图片": "Copy Image",
+        "Copy File": "Copy File", "复制文件": "Copy File",
+        "Copy File Path": "Copy File Path", "复制文件路径": "Copy File Path",
+        "Select All": "Select All", "全选": "Select All",
+        "Invert Selection": "Invert Selection", "反选": "Invert Selection",
+        "Copy Metadata": "Copy Metadata", "复制元数据": "Copy Metadata",
+        "AutoFill": "AutoFill", "自动填充": "AutoFill",
+        "Contact…": "Contact…", "通讯录…": "Contact…",
+        "Passwords…": "Passwords…", "密码…": "Passwords…",
+        "Credit Card…": "Credit Card…", "信用卡…": "Credit Card…",
+        "Start Dictation…": "Start Dictation…", "开始听写…": "Start Dictation…",
+        "Emoji & Symbols": "Emoji & Symbols", "表情与符号": "Emoji & Symbols",
+        // Navigate
+        "Navigate": "Navigate", "导航": "Navigate",
+        "Grid View": "Grid View", "网格视图": "Grid View",
+        "Fit Window": "Fit Window", "适应窗口": "Fit Window",
+        "Fit Width": "Fit Width", "适应宽度": "Fit Width",
+        "Actual Size": "Actual Size", "实际大小": "Actual Size",
+        "Zoom In": "Zoom In", "放大": "Zoom In",
+        "Zoom Out": "Zoom Out", "缩小": "Zoom Out",
+        "Reset Zoom": "Reset Zoom", "重置缩放": "Reset Zoom",
+        "Thumbnail Strip": "Thumbnail Strip", "缩略图条": "Thumbnail Strip",
+        "Frame Strip": "Frame Strip", "帧条": "Frame Strip",
+        "Info Panel": "Info Panel", "信息面板": "Info Panel",
+        "Sort By": "Sort By", "排序方式": "Sort By",
+        "Filter By": "Filter By", "过滤": "Filter By",
+        "Format": "Format", "格式": "Format",
+        "Name": "Name", "名称": "Name",
+        "Date": "Date", "日期": "Date",
+        "All": "All", "全部": "All",
+        "Today": "Today", "今天": "Today",
+        "This Week": "This Week", "本周": "This Week",
+        "This Month": "This Month", "本月": "This Month",
+        "This Year": "This Year", "今年": "This Year",
+        "Show Status Bar": "Show Status Bar", "显示状态栏": "Show Status Bar",
+        "Fullscreen": "Fullscreen", "全屏": "Fullscreen",
+        "Start Slideshow": "Start Slideshow", "开始幻灯片": "Start Slideshow",
+        // Image
+        "Image": "Image", "图片": "Image",
+        "Crop…": "Crop…", "裁剪…": "Crop…",
+        "Rotate Left": "Rotate Left", "向左旋转": "Rotate Left",
+        "Rotate Right": "Rotate Right", "向右旋转": "Rotate Right",
+        "Flip Horizontal": "Flip Horizontal", "水平翻转": "Flip Horizontal",
+        "Color Picker": "Color Picker", "取色器": "Color Picker",
+        "Rate": "Rate", "评分": "Rate",
+        "None": "None", "无": "None",
+        "Toggle Favorite": "Toggle Favorite", "切换收藏": "Toggle Favorite",
+        "Save Changes": "Save Changes", "保存修改": "Save Changes",
+        "Set as Desktop Wallpaper": "Set as Desktop Wallpaper", "设为桌面壁纸": "Set as Desktop Wallpaper",
+        // Help / View / Window
+        "Help": "Help", "帮助": "Help",
+        "Keyboard Shortcuts": "Keyboard Shortcuts", "键盘快捷键": "Keyboard Shortcuts",
+        "View": "View", "显示": "View",
+        "Window": "Window", "窗口": "Window",
+        "Minimize": "Minimize", "最小化": "Minimize",
+        "Zoom": "Zoom", "缩放": "Zoom",
+        "Bring All to Front": "Bring All to Front", "前置全部窗口": "Bring All to Front",
+        "Readpic Help": "Readpic Help", "Readpic帮助": "Readpic Help",
+    ]
+
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        let center = NotificationCenter.default
+        center.addObserver(
+            self,
+            selector: #selector(languageDidChange),
+            name: .readpicLanguageDidChange,
+            object: nil
+        )
+        center.addObserver(
+            self,
+            selector: #selector(menuDidBeginTracking(_:)),
+            name: NSMenu.didBeginTrackingNotification,
+            object: nil
+        )
+
+        // AppKit localizes the menu bar from `AppleLanguages` before the
+        // runtime language is resolved, which can leave stale titles at launch.
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(400))
+            self.relocalizeMenuBar()
+        }
+    }
+
+    @objc private func languageDidChange(_ notification: Notification) {
+        relocalizeMenuBar()
+        // SwiftUI rebuilds its own commands asynchronously; patch them again
+        // once the rebuild has settled.
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(300))
+            self.relocalizeMenuBar()
+        }
+    }
+
+    @objc private func menuDidBeginTracking(_ notification: Notification) {
+        relocalizeMenuBar()
+    }
+
+    private func relocalizeMenuBar() {
+        guard let menu = NSApp.mainMenu else { return }
+        Self.relocalize(menu)
+    }
+
+    private static func relocalize(_ menu: NSMenu) {
+        for item in menu.items {
+            if let key = menuTitleKeys[item.title] {
+                let title = L(key)
+                if item.title != title { item.title = title }
+            }
+            if let submenu = item.submenu { relocalize(submenu) }
+        }
+    }
+
     /// Called once the scene's model exists; replays URLs delivered at launch.
     func attach(_ model: ViewerModel) {
         Self.model = model
@@ -327,7 +469,7 @@ struct ReadpicApp: App {
             }
 
             // MARK: - Help
-            CommandMenu(L("Help")) {
+            CommandGroup(replacing: .help) {
                 Button(L("Keyboard Shortcuts")) { model.toggleShortcutsHelp() }
                     .keyboardShortcut("?", modifiers: [])
             }

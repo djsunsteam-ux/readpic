@@ -48,7 +48,12 @@ final class Localizer {
         case .chinese: newCode = "zh-Hans"
         case .system:  newCode = Self.detectSystemCode()
         }
-        if code != newCode { code = newCode }
+        if code != newCode {
+            code = newCode
+            // AppKit-owned menu titles (File, Edit, Window, …) are fixed at
+            // launch; the delegate listens for this to relocalize them.
+            NotificationCenter.default.post(name: .readpicLanguageDidChange, object: nil)
+        }
     }
 
     private func bundle(for code: String) -> Bundle {
@@ -92,6 +97,11 @@ func L(_ key: String) -> String {
 /// Localized format string lookup with arguments.
 func Lf(_ key: String, _ args: CVarArg...) -> String {
     String(format: Localizer.shared.string(key), locale: Localizer.shared.locale, arguments: args)
+}
+
+extension Notification.Name {
+    /// Posted when the app language changes at runtime.
+    static let readpicLanguageDidChange = Notification.Name("ReadpicLanguageDidChange")
 }
 
 extension Bundle {
